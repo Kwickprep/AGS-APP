@@ -10,7 +10,7 @@ class AuthService {
   final ApiService _apiService = GetIt.I<ApiService>();
   final StorageService _storage = GetIt.I<StorageService>();
 
-  Future<UserModel?> login(String email, String password) async {
+  Future<UserModel?> login(String email, String password, bool rememberMe) async {
     try {
       final response = await _apiService.post(
         ApiConfig.loginEndpoint,
@@ -30,6 +30,9 @@ class AuthService {
         );
         await _storage.saveUser(authResponse.data!.user);
 
+        // Save remember me preference
+        await _storage.saveRememberMe(rememberMe, email,password);
+
         return authResponse.data!.user;
       }
 
@@ -38,7 +41,7 @@ class AuthService {
       if (e.response != null) {
         throw Exception(e.response?.data['message'] ?? 'Login failed');
       }
-      throw Exception(e.error);
+      throw Exception('Network error. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -54,5 +57,26 @@ class AuthService {
 
   Future<UserModel?> getCurrentUser() async {
     return await _storage.getUser();
+  }
+
+  Future<bool> checkAndRestoreSession() async {
+    // Check if user has valid session
+    final isLoggedIn = await _storage.isLoggedIn();
+    if (isLoggedIn) {
+      // Optionally validate token with server
+      return true;
+    }
+    return false;
+  }
+
+  Future<Map<String, dynamic>> getRememberMeData() async {
+    final rememberMe = await _storage.getRememberMe();
+    final savedEmail = await _storage.getSavedEmail();
+    final savedPassword = await _storage.getSavedEmail();
+
+    return {
+      'rememberMe': rememberMe,
+      'email': savedEmail ?? '',
+    };
   }
 }

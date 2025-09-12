@@ -4,15 +4,16 @@ import 'config/app_theme.dart';
 import 'config/routes.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final bool isLoggedIn;
+
+  const MyApp({Key? key, required this.isLoggedIn}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'AGS APP',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      routerConfig: AppRoutes.router,
+      routerConfig: AppRoutes.router(isLoggedIn),
     );
   }
 }

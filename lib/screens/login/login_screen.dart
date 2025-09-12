@@ -15,7 +15,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => LoginBloc(),
+      create: (context) => LoginBloc()..add(CheckRememberMe()),
       child: const LoginView(),
     );
   }
@@ -47,6 +47,7 @@ class _LoginViewState extends State<LoginView> {
         LoginSubmitted(
           email: _emailController.text,
           password: _passwordController.text,
+          rememberMe: _rememberMe,
         ),
       );
     }
@@ -66,6 +67,15 @@ class _LoginViewState extends State<LoginView> {
                 backgroundColor: AppColors.error,
               ),
             );
+          } else if (state is LoginRememberMeLoaded) {
+            // Load saved email if remember me was checked
+            if (state.rememberMe && state.email.isNotEmpty) {
+              _emailController.text = state.email;
+              _passwordController.text = state.password;
+              setState(() {
+                _rememberMe = state.rememberMe;
+              });
+            }
           }
         },
         builder: (context, state) {
@@ -76,26 +86,26 @@ class _LoginViewState extends State<LoginView> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [AppColors.primary, AppColors.primary],
+                    colors: [AppColors.primary, AppColors.primaryLight],
                   ),
                 ),
                 child: SafeArea(
                   child: Column(
                     children: [
-                      // Expanded(
-                      //   flex: 2,
-                      //   child: Container(
-                      //     decoration: const BoxDecoration(
-                      //       color: AppColors.primary,
-                      //     ),
-                      //     child: Center(
-                      //       child: CustomPaint(
-                      //         size: const Size(200, 150),
-                      //         painter: LoginPatternPainter(),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
+                      Expanded(
+                        flex: 2,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                          ),
+                          child: Center(
+                            child: CustomPaint(
+                              size: const Size(200, 150),
+                              painter: LoginPatternPainter(),
+                            ),
+                          ),
+                        ),
+                      ),
                       Expanded(
                         flex: 5,
                         child: Container(
@@ -144,6 +154,7 @@ class _LoginViewState extends State<LoginView> {
                                     label: 'Password',
                                     prefixIcon: Icons.lock_outline,
                                     obscureText: true,
+                                    validator: Validators.password,
                                   ),
                                   const SizedBox(height: 16),
                                   Row(
@@ -188,7 +199,7 @@ class _LoginViewState extends State<LoginView> {
                                   CustomButton(
                                     text: 'Login',
                                     onPressed: _onLogin,
-                                    isLoading: false,
+                                    isLoading: state is LoginLoading,
                                   ),
                                   const SizedBox(height: 24),
                                   Row(
@@ -226,11 +237,44 @@ class _LoginViewState extends State<LoginView> {
                   ),
                 ),
               ),
-              if (state is LoginLoading) const LoadingOverlay(),
             ],
           );
         },
       ),
     );
   }
+}
+
+class LoginPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.white.withOpacity(0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Draw decorative curves and shapes
+    final path = Path();
+    path.moveTo(20, size.height * 0.3);
+    path.quadraticBezierTo(
+      size.width * 0.3,
+      size.height * 0.1,
+      size.width * 0.6,
+      size.height * 0.4,
+    );
+    path.quadraticBezierTo(
+      size.width * 0.9,
+      size.height * 0.7,
+      size.width - 20,
+      size.height * 0.5,
+    );
+    canvas.drawPath(path, paint);
+
+    // Draw circles
+    canvas.drawCircle(Offset(40, 40), 15, paint);
+    canvas.drawCircle(Offset(size.width - 40, 60), 10, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
