@@ -8,6 +8,8 @@ class CustomButton extends StatelessWidget {
   final ButtonVariant variant;
   final IconData? icon;
   final double? width;
+  final Color? buttonColor;
+  final Color? textColor;
 
   const CustomButton({
     Key? key,
@@ -17,6 +19,8 @@ class CustomButton extends StatelessWidget {
     this.variant = ButtonVariant.primary,
     this.icon,
     this.width,
+    this.buttonColor,
+    this.textColor,
   }) : super(key: key);
 
   @override

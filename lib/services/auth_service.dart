@@ -77,6 +77,7 @@ class AuthService {
     return {
       'rememberMe': rememberMe,
       'email': savedEmail ?? '',
+      'password': savedPassword ?? '',
     };
   }
 }

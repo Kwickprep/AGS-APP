@@ -48,6 +48,11 @@ class DeleteTheme extends ThemeEvent {
   DeleteTheme(this.id);
 }
 
+class ApplyFilters extends ThemeEvent {
+  final Map<String, dynamic> filters;
+  ApplyFilters(this.filters);
+}
+
 // States
 abstract class ThemeState {}
 
@@ -64,6 +69,7 @@ class ThemeLoaded extends ThemeState {
   final String search;
   final String sortBy;
   final String sortOrder;
+  final Map<String, dynamic>? filters;
 
   ThemeLoaded({
     required this.themes,
@@ -74,6 +80,7 @@ class ThemeLoaded extends ThemeState {
     required this.search,
     required this.sortBy,
     required this.sortOrder,
+    this.filters,
   });
 }
 
@@ -92,6 +99,11 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   String _currentSearch = '';
   String _currentSortBy = 'createdAt';
   String _currentSortOrder = 'desc';
+  Map<String, dynamic> _currentFilters = {};
+
+  // Cache original data for client-side filtering
+  List<ThemeModel> _allThemes = [];
+  int _originalTotal = 0;
 
   ThemeBloc() : super(ThemeInitial()) {
     on<LoadThemes>(_onLoadThemes);
@@ -100,6 +112,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     on<ChangePageSize>(_onChangePageSize);
     on<ChangePage>(_onChangePage);
     on<DeleteTheme>(_onDeleteTheme);
+    on<ApplyFilters>(_onApplyFilters);
   }
 
   Future<void> _onLoadThemes(
@@ -123,15 +136,23 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
         sortOrder: event.sortOrder,
       );
 
+      // Store all themes for client-side filtering
+      _allThemes = response.records;
+      _originalTotal = response.total;
+
+      // Apply filters
+      final filteredThemes = _applyClientSideFilters(_allThemes);
+
       emit(ThemeLoaded(
-        themes: response.records,
-        total: response.total,
+        themes: filteredThemes,
+        total: filteredThemes.length,
         page: response.page,
         take: response.take,
-        totalPages: response.totalPages,
+        totalPages: (filteredThemes.length / response.take).ceil(),
         search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
+        filters: _currentFilters,
       ));
     } catch (e) {
       emit(ThemeError(e.toString().replaceAll('Exception: ', '')));
@@ -159,13 +180,32 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       ) async {
     _currentSortBy = event.sortBy;
     _currentSortOrder = event.sortOrder;
-    add(LoadThemes(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
+
+    // If we have cached data, sort it client-side for better performance
+    if (_allThemes.isNotEmpty && state is ThemeLoaded) {
+      final sortedThemes = _sortClientSide([..._allThemes]);
+      final filteredThemes = _applyClientSideFilters(sortedThemes);
+
+      emit(ThemeLoaded(
+        themes: filteredThemes,
+        total: filteredThemes.length,
+        page: _currentPage,
+        take: _currentPageSize,
+        totalPages: (filteredThemes.length / _currentPageSize).ceil(),
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+        filters: _currentFilters,
+      ));
+    } else {
+      add(LoadThemes(
+        page: _currentPage,
+        take: _currentPageSize,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ));
+    }
   }
 
   Future<void> _onChangePageSize(
@@ -214,5 +254,103 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     } catch (e) {
       emit(ThemeError(e.toString().replaceAll('Exception: ', '')));
     }
+  }
+
+  Future<void> _onApplyFilters(
+      ApplyFilters event,
+      Emitter<ThemeState> emit,
+      ) async {
+    _currentFilters = event.filters;
+
+    // Apply filters to cached data
+    if (_allThemes.isNotEmpty && state is ThemeLoaded) {
+      final filteredThemes = _applyClientSideFilters(_allThemes);
+
+      emit(ThemeLoaded(
+        themes: filteredThemes,
+        total: filteredThemes.length,
+        page: _currentPage,
+        take: _currentPageSize,
+        totalPages: (filteredThemes.length / _currentPageSize).ceil(),
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+        filters: _currentFilters,
+      ));
+    } else {
+      // If no cached data, reload from server
+      add(LoadThemes(
+        page: _currentPage,
+        take: _currentPageSize,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ));
+    }
+  }
+
+  List<ThemeModel> _applyClientSideFilters(List<ThemeModel> themes) {
+    List<ThemeModel> filteredThemes = [...themes];
+
+    // Apply status filter
+    if (_currentFilters.containsKey('status')) {
+      final statusFilter = _currentFilters['status'];
+      if (statusFilter == 'active') {
+        filteredThemes = filteredThemes.where((theme) => theme.isActive).toList();
+      } else if (statusFilter == 'inactive') {
+        filteredThemes = filteredThemes.where((theme) => !theme.isActive).toList();
+      }
+    }
+
+    // Apply other filters as needed
+    // You can add more filter types here
+
+    return filteredThemes;
+  }
+
+  List<ThemeModel> _sortClientSide(List<ThemeModel> themes) {
+    themes.sort((a, b) {
+      int comparison = 0;
+
+      switch (_currentSortBy) {
+        case 'name':
+          comparison = a.name.compareTo(b.name);
+          break;
+        case 'createdAt':
+        // Parse dates and compare
+          comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
+          break;
+        case 'isActive':
+          comparison = a.isActive == b.isActive ? 0 : (a.isActive ? 1 : -1);
+          break;
+        case 'createdBy':
+          comparison = a.createdBy.compareTo(b.createdBy);
+          break;
+        default:
+          comparison = 0;
+      }
+
+      // Apply sort order
+      return _currentSortOrder == 'asc' ? comparison : -comparison;
+    });
+
+    return themes;
+  }
+
+  DateTime _parseDate(String dateStr) {
+    // Parse date string in format "DD-MM-YYYY"
+    try {
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        return DateTime(
+          int.parse(parts[2]), // year
+          int.parse(parts[1]), // month
+          int.parse(parts[0]), // day
+        );
+      }
+    } catch (e) {
+      // Return current date if parsing fails
+    }
+    return DateTime.now();
   }
 }

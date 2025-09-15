@@ -200,6 +200,7 @@ class _LoginViewState extends State<LoginView> {
                                     text: 'Login',
                                     onPressed: _onLogin,
                                     isLoading: state is LoginLoading,
+
                                   ),
                                   const SizedBox(height: 24),
                                   Row(

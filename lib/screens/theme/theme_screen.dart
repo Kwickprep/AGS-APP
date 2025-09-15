@@ -1,11 +1,13 @@
-import 'package:ags/config/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import '../../config/app_colors.dart';
 import '../../widgets/ShimmerLoading.dart';
 import '../../widgets/theme_search_bar.dart';
 import '../../widgets/theme_table.dart';
+import 'theme_bloc.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../config/app_colors.dart';
 import 'theme_bloc.dart';
 
 class ThemeScreen extends StatelessWidget {
@@ -28,12 +30,6 @@ class ThemeView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        leading: BackButton(
-          onPressed: (){
-         context.go(AppRoutes.home);
-
-          },
-        ),
         title: const Text('Themes'),
         backgroundColor: AppColors.white,
         elevation: 0,
@@ -41,7 +37,6 @@ class ThemeView extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
             onPressed: () {
-              // TODO: Navigate to create theme
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Create theme not implemented yet')),
               );
@@ -96,11 +91,10 @@ class ThemeView extends StatelessWidget {
                   onSearch: (query) {
                     context.read<ThemeBloc>().add(SearchThemes(query));
                   },
-                  onSort: (sortBy, sortOrder) {
-                    context.read<ThemeBloc>().add(SortThemes(sortBy, sortOrder));
+                  onApplyFilters: (filters) {
+                    context.read<ThemeBloc>().add(ApplyFilters(filters));
                   },
-                  currentSortBy: state.sortBy,
-                  currentSortOrder: state.sortOrder,
+                  currentFilters: state.filters ?? {},
                 ),
                 Expanded(
                   child: ThemeTable(
@@ -109,21 +103,25 @@ class ThemeView extends StatelessWidget {
                     currentPage: state.page,
                     pageSize: state.take,
                     totalPages: state.totalPages,
+                    sortBy: state.sortBy,
+                    sortOrder: state.sortOrder,
                     onPageChange: (page) {
                       context.read<ThemeBloc>().add(ChangePage(page));
                     },
                     onPageSizeChange: (size) {
                       context.read<ThemeBloc>().add(ChangePageSize(size));
                     },
-                    // onDelete: (id) {
-                    //   _showDeleteConfirmation(context, id);
-                    // },
-                    // onEdit: (id) {
-                    //   // TODO: Navigate to edit theme
-                    //   ScaffoldMessenger.of(context).showSnackBar(
-                    //     SnackBar(content: Text('Edit theme $id not implemented yet')),
-                    //   );
-                    // },
+                    onSort: (sortBy, sortOrder) {
+                      context.read<ThemeBloc>().add(SortThemes(sortBy, sortOrder));
+                    },
+                    onDelete: (id) {
+                      _showDeleteConfirmation(context, id);
+                    },
+                    onEdit: (id) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Edit theme $id not implemented yet')),
+                      );
+                    },
                   ),
                 ),
               ],

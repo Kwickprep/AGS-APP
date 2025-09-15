@@ -1,20 +1,17 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 
 class ThemeSearchBar extends StatefulWidget {
   final Function(String) onSearch;
-  final Function(String, String) onSort;
-  final String currentSortBy;
-  final String currentSortOrder;
+  final Function(Map<String, dynamic>) onApplyFilters;
+  final Map<String, dynamic> currentFilters;
 
   const ThemeSearchBar({
     Key? key,
     required this.onSearch,
-    required this.onSort,
-    required this.currentSortBy,
-    required this.currentSortOrder,
+    required this.onApplyFilters,
+    required this.currentFilters,
   }) : super(key: key);
 
   @override
@@ -23,13 +20,35 @@ class ThemeSearchBar extends StatefulWidget {
 
 class _ThemeSearchBarState extends State<ThemeSearchBar> {
   final _searchController = TextEditingController();
-  final _debouncer = Debouncer(milliseconds: 500);
+  Timer? _debounceTimer;
 
   @override
   void dispose() {
     _searchController.dispose();
-    _debouncer.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+
+    if (value.isEmpty || value.length >= 3) {
+      _debounceTimer = Timer(const Duration(seconds: 2), () {
+        widget.onSearch(value);
+      });
+    }
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => FilterDialog(
+        currentFilters: widget.currentFilters,
+        onApply: (filters) {
+          widget.onApplyFilters(filters);
+        },
+      ),
+    );
   }
 
   @override
@@ -53,8 +72,17 @@ class _ThemeSearchBarState extends State<ThemeSearchBar> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search themes...',
+                hintText: 'Search (min 3 characters)...',
                 prefixIcon: const Icon(Icons.search, color: AppColors.grey),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                  icon: const Icon(Icons.clear, color: AppColors.grey),
+                  onPressed: () {
+                    _searchController.clear();
+                    widget.onSearch('');
+                  },
+                )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: AppColors.lightGrey),
@@ -71,59 +99,30 @@ class _ThemeSearchBarState extends State<ThemeSearchBar> {
                 filled: true,
                 fillColor: AppColors.background,
               ),
-              onChanged: (value) {
-                _debouncer.run(() {
-                  widget.onSearch(value);
-                });
-              },
+              onChanged: _onSearchChanged,
             ),
           ),
           const SizedBox(width: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.lightGrey),
-              borderRadius: BorderRadius.circular(8),
-              color: AppColors.background,
+          ElevatedButton.icon(
+            onPressed: _showFilterDialog,
+            icon: const Icon(Icons.filter_list),
+            label: Text(
+              widget.currentFilters.isEmpty
+                  ? 'Filter'
+                  : 'Filter (${widget.currentFilters.length})',
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: widget.currentSortBy,
-                icon: const Icon(Icons.sort, color: AppColors.primary),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'name',
-                    child: Text('Name'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'createdAt',
-                    child: Text('Date'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'isActive',
-                    child: Text('Status'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    widget.onSort(value, widget.currentSortOrder);
-                  }
-                },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: widget.currentFilters.isEmpty
+                  ? AppColors.white
+                  : AppColors.primary,
+              foregroundColor: widget.currentFilters.isEmpty
+                  ? AppColors.primary
+                  : AppColors.white,
+              side: BorderSide(
+                color: AppColors.primary,
+                width: widget.currentFilters.isEmpty ? 1 : 0,
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              widget.currentSortOrder == 'asc'
-                  ? Icons.arrow_upward
-                  : Icons.arrow_downward,
-              color: AppColors.primary,
-            ),
-            onPressed: () {
-              final newOrder = widget.currentSortOrder == 'asc' ? 'desc' : 'asc';
-              widget.onSort(widget.currentSortBy, newOrder);
-            },
           ),
         ],
       ),
@@ -131,18 +130,100 @@ class _ThemeSearchBarState extends State<ThemeSearchBar> {
   }
 }
 
-class Debouncer {
-  final int milliseconds;
-  Timer? _timer;
+class FilterDialog extends StatefulWidget {
+  final Map<String, dynamic> currentFilters;
+  final Function(Map<String, dynamic>) onApply;
 
-  Debouncer({required this.milliseconds});
+  const FilterDialog({
+    Key? key,
+    required this.currentFilters,
+    required this.onApply,
+  }) : super(key: key);
 
-  void run(VoidCallback action) {
-    _timer?.cancel();
-    _timer = Timer(Duration(milliseconds: milliseconds), action);
+  @override
+  State<FilterDialog> createState() => _FilterDialogState();
+}
+
+class _FilterDialogState extends State<FilterDialog> {
+  late Map<String, dynamic> _filters;
+
+  @override
+  void initState() {
+    super.initState();
+    _filters = Map.from(widget.currentFilters);
   }
 
-  void dispose() {
-    _timer?.cancel();
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Filter Options'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Status',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            RadioListTile<String?>(
+              title: const Text('All'),
+              value: null,
+              groupValue: _filters['status'],
+              onChanged: (value) {
+                setState(() {
+                  if (value == null) {
+                    _filters.remove('status');
+                  } else {
+                    _filters['status'] = value;
+                  }
+                });
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Active'),
+              value: 'active',
+              groupValue: _filters['status'],
+              onChanged: (value) {
+                setState(() {
+                  _filters['status'] = value;
+                });
+              },
+            ),
+            RadioListTile<String>(
+              title: const Text('Inactive'),
+              value: 'inactive',
+              groupValue: _filters['status'],
+              onChanged: (value) {
+                setState(() {
+                  _filters['status'] = value;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            setState(() {
+              _filters.clear();
+            });
+          },
+          child: const Text('Clear'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            widget.onApply(_filters);
+            Navigator.pop(context);
+          },
+          child: const Text('Apply'),
+        ),
+      ],
+    );
   }
 }
