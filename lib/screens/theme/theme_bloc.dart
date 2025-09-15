@@ -24,7 +24,7 @@ class LoadThemes extends ThemeEvent {
 
 class SearchThemes extends ThemeEvent {
   final String query;
-  SearchThemes(this.query);
+  SearchThemes(this.query,);
 }
 
 class SortThemes extends ThemeEvent {
@@ -93,7 +93,6 @@ class ThemeError extends ThemeState {
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   final ThemeService _themeService = GetIt.I<ThemeService>();
 
-  // Keep track of current parameters
   int _currentPage = 1;
   int _currentPageSize = 20;
   String _currentSearch = '';
@@ -164,7 +163,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       Emitter<ThemeState> emit,
       ) async {
     _currentSearch = event.query;
-    _currentPage = 1; // Reset to first page on search
+
     add(LoadThemes(
       page: _currentPage,
       take: _currentPageSize,
@@ -181,10 +180,25 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     _currentSortBy = event.sortBy;
     _currentSortOrder = event.sortOrder;
 
+    // Handle reset to default (no sort)
+    if (event.sortBy.isEmpty || event.sortOrder.isEmpty) {
+      _currentSortBy = 'createdAt';
+      _currentSortOrder = 'desc';
+    }
+
     // If we have cached data, sort it client-side for better performance
     if (_allThemes.isNotEmpty && state is ThemeLoaded) {
-      final sortedThemes = _sortClientSide([..._allThemes]);
-      final filteredThemes = _applyClientSideFilters(sortedThemes);
+      List<ThemeModel> processedThemes = [..._allThemes];
+
+      // Only sort if we have valid sort parameters
+      if (event.sortBy.isNotEmpty && event.sortOrder.isNotEmpty) {
+        processedThemes = _sortClientSide(processedThemes);
+      } else {
+        // Reset to original order (by createdAt desc)
+        processedThemes = _sortClientSide(processedThemes);
+      }
+
+      final filteredThemes = _applyClientSideFilters(processedThemes);
 
       emit(ThemeLoaded(
         themes: filteredThemes,
@@ -193,8 +207,8 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
         take: _currentPageSize,
         totalPages: (filteredThemes.length / _currentPageSize).ceil(),
         search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
+        sortBy: event.sortBy.isEmpty ? '' : _currentSortBy,
+        sortOrder: event.sortOrder.isEmpty ? '' : _currentSortOrder,
         filters: _currentFilters,
       ));
     } else {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:ags/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 
@@ -6,12 +7,14 @@ class ThemeSearchBar extends StatefulWidget {
   final Function(String) onSearch;
   final Function(Map<String, dynamic>) onApplyFilters;
   final Map<String, dynamic> currentFilters;
+  final String? initialSearchQuery;
 
   const ThemeSearchBar({
     Key? key,
     required this.onSearch,
     required this.onApplyFilters,
     required this.currentFilters,
+    this.initialSearchQuery,
   }) : super(key: key);
 
   @override
@@ -19,8 +22,46 @@ class ThemeSearchBar extends StatefulWidget {
 }
 
 class _ThemeSearchBarState extends State<ThemeSearchBar> {
-  final _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   Timer? _debounceTimer;
+  bool _showFilters = false;
+  String _selectedStatus = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.currentFilters['status'] ?? 'all';
+    // Set initial search query if provided
+    if (widget.initialSearchQuery != null &&
+        widget.initialSearchQuery!.isNotEmpty) {
+      _searchController.text = widget.initialSearchQuery!;
+    }
+  }
+
+  @override
+  void didUpdateWidget(ThemeSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Update search text if initial query changed and controller is empty
+    if (widget.initialSearchQuery != oldWidget.initialSearchQuery) {
+      if (widget.initialSearchQuery != null &&
+          widget.initialSearchQuery != _searchController.text) {
+        _searchController.text = widget.initialSearchQuery!;
+      } else if (widget.initialSearchQuery == null ||
+          widget.initialSearchQuery!.isEmpty) {
+        if (_searchController.text.isNotEmpty) {
+          _searchController.clear();
+        }
+      }
+    }
+
+    // Update filters if they changed externally
+    if (oldWidget.currentFilters != widget.currentFilters) {
+      setState(() {
+        _selectedStatus = widget.currentFilters['status'] ?? 'all';
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -30,200 +71,243 @@ class _ThemeSearchBarState extends State<ThemeSearchBar> {
   }
 
   void _onSearchChanged(String value) {
+    // Cancel previous timer
     _debounceTimer?.cancel();
 
-    if (value.isEmpty || value.length >= 3) {
-      _debounceTimer = Timer(const Duration(seconds: 2), () {
+    // Update UI immediately to show/hide clear button
+    setState(() {});
+
+    // Set up debounced search with 2-second delay
+    _debounceTimer = Timer(const Duration(seconds: 2), () {
+      if (value.length >= 3 || value.isEmpty) {
         widget.onSearch(value);
-      });
-    }
+      }
+    });
   }
 
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => FilterDialog(
-        currentFilters: widget.currentFilters,
-        onApply: (filters) {
-          widget.onApplyFilters(filters);
-        },
-      ),
-    );
+  void _clearSearch() {
+    _searchController.clear();
+    _debounceTimer?.cancel();
+    setState(() {});
+    widget.onSearch(''); // Clear search results
+  }
+
+  void _applyFilters() {
+    final filters = <String, dynamic>{};
+    if (_selectedStatus != 'all') {
+      filters['status'] = _selectedStatus;
+    }
+    widget.onApplyFilters(filters);
+    setState(() {
+      _showFilters = false;
+    });
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedStatus = 'all';
+    });
+    widget.onApplyFilters({});
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasActiveFilters = widget.currentFilters.isNotEmpty;
+    final hasSearchText = _searchController.text.isNotEmpty;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search (min 3 characters)...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.grey),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                  icon: const Icon(Icons.clear, color: AppColors.grey),
-                  onPressed: () {
-                    _searchController.clear();
-                    widget.onSearch('');
-                  },
-                )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.lightGrey),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search themes...',
+                      prefixIcon: const Icon(
+                        Icons.search,
+                        color: AppColors.grey,
+                      ),
+                      suffixIcon: hasSearchText
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.clear,
+                                color: AppColors.grey,
+                              ),
+                              onPressed: _clearSearch,
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: AppColors.lightGrey,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: AppColors.lightGrey,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: AppColors.primary,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      filled: true,
+                      fillColor: AppColors.background,
+                    ),
+                    onChanged: _onSearchChanged,
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.lightGrey),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: hasActiveFilters
+                        ? AppColors.primary.withOpacity(0.1)
+                        : AppColors.background,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: hasActiveFilters
+                          ? AppColors.primary
+                          : AppColors.lightGrey,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.filter_list,
+                      color: hasActiveFilters
+                          ? AppColors.primary
+                          : AppColors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showFilters = !_showFilters;
+                      });
+                    },
+                    tooltip: 'Filters',
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.primary),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                filled: true,
-                fillColor: AppColors.background,
-              ),
-              onChanged: _onSearchChanged,
+                if (hasActiveFilters) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.error),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.clear,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
+                      onPressed: _clearFilters,
+                      tooltip: 'Clear Filters',
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(width: 16),
-          ElevatedButton.icon(
-            onPressed: _showFilterDialog,
-            icon: const Icon(Icons.filter_list),
-            label: Text(
-              widget.currentFilters.isEmpty
-                  ? 'Filter'
-                  : 'Filter (${widget.currentFilters.length})',
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: widget.currentFilters.isEmpty
-                  ? AppColors.white
-                  : AppColors.primary,
-              foregroundColor: widget.currentFilters.isEmpty
-                  ? AppColors.primary
-                  : AppColors.white,
-              side: BorderSide(
-                color: AppColors.primary,
-                width: widget.currentFilters.isEmpty ? 1 : 0,
+          if (_showFilters)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(12),
+                  bottomRight: Radius.circular(12),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Filter Options',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Text(
+                        'Status:',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            _buildFilterChip('All', 'all'),
+                            _buildFilterChip('Active', 'active'),
+                            _buildFilterChip('Inactive', 'inactive'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _showFilters = false;
+                          });
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 8),
+                      CustomButton(
+                          width: 100,
+                          onPressed: _applyFilters, text: ('Apply')),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
         ],
       ),
     );
   }
-}
 
-class FilterDialog extends StatefulWidget {
-  final Map<String, dynamic> currentFilters;
-  final Function(Map<String, dynamic>) onApply;
-
-  const FilterDialog({
-    Key? key,
-    required this.currentFilters,
-    required this.onApply,
-  }) : super(key: key);
-
-  @override
-  State<FilterDialog> createState() => _FilterDialogState();
-}
-
-class _FilterDialogState extends State<FilterDialog> {
-  late Map<String, dynamic> _filters;
-
-  @override
-  void initState() {
-    super.initState();
-    _filters = Map.from(widget.currentFilters);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Filter Options'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Status',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            RadioListTile<String?>(
-              title: const Text('All'),
-              value: null,
-              groupValue: _filters['status'],
-              onChanged: (value) {
-                setState(() {
-                  if (value == null) {
-                    _filters.remove('status');
-                  } else {
-                    _filters['status'] = value;
-                  }
-                });
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('Active'),
-              value: 'active',
-              groupValue: _filters['status'],
-              onChanged: (value) {
-                setState(() {
-                  _filters['status'] = value;
-                });
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text('Inactive'),
-              value: 'inactive',
-              groupValue: _filters['status'],
-              onChanged: (value) {
-                setState(() {
-                  _filters['status'] = value;
-                });
-              },
-            ),
-          ],
-        ),
+  Widget _buildFilterChip(String label, String value) {
+    final isSelected = _selectedStatus == value;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          _selectedStatus = value;
+        });
+      },
+      backgroundColor: AppColors.white,
+      selectedColor: AppColors.primary.withOpacity(0.1),
+      checkmarkColor: AppColors.primary,
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : AppColors.lightGrey,
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            setState(() {
-              _filters.clear();
-            });
-          },
-          child: const Text('Clear'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            widget.onApply(_filters);
-            Navigator.pop(context);
-          },
-          child: const Text('Apply'),
-        ),
-      ],
     );
   }
 }

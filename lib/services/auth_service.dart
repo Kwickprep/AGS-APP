@@ -60,10 +60,8 @@ class AuthService {
   }
 
   Future<bool> checkAndRestoreSession() async {
-    // Check if user has valid session
     final isLoggedIn = await _storage.isLoggedIn();
     if (isLoggedIn) {
-      // Optionally validate token with server
       return true;
     }
     return false;

@@ -48,6 +48,11 @@ class DeleteCategory extends CategoryEvent {
   DeleteCategory(this.id);
 }
 
+class ApplyFilters extends CategoryEvent {
+  final Map<String, dynamic> filters;
+  ApplyFilters(this.filters);
+}
+
 // States
 abstract class CategoryState {}
 
@@ -64,6 +69,7 @@ class CategoryLoaded extends CategoryState {
   final String search;
   final String sortBy;
   final String sortOrder;
+  final Map<String, dynamic>? filters;
 
   CategoryLoaded({
     required this.categories,
@@ -74,6 +80,7 @@ class CategoryLoaded extends CategoryState {
     required this.search,
     required this.sortBy,
     required this.sortOrder,
+    this.filters,
   });
 }
 
@@ -92,6 +99,11 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
   String _currentSearch = '';
   String _currentSortBy = 'createdAt';
   String _currentSortOrder = 'desc';
+  Map<String, dynamic> _currentFilters = {};
+
+  // Cache original data for client-side filtering
+  List<CategoryModel> _allCategories = [];
+  int _originalTotal = 0;
 
   CategoryBloc() : super(CategoryInitial()) {
     on<LoadCategories>(_onLoadCategories);
@@ -100,6 +112,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
     on<ChangePageSize>(_onChangePageSize);
     on<ChangePage>(_onChangePage);
     on<DeleteCategory>(_onDeleteCategory);
+    on<ApplyFilters>(_onApplyFilters);
   }
 
   Future<void> _onLoadCategories(
@@ -123,15 +136,23 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         sortOrder: event.sortOrder,
       );
 
+      // Store all categories for client-side filtering
+      _allCategories = response.records;
+      _originalTotal = response.total;
+
+      // Apply filters
+      final filteredCategories = _applyClientSideFilters(_allCategories);
+
       emit(CategoryLoaded(
-        categories: response.records,
-        total: response.total,
+        categories: filteredCategories,
+        total: filteredCategories.length,
         page: response.page,
         take: response.take,
-        totalPages: response.totalPages,
+        totalPages: (filteredCategories.length / response.take).ceil(),
         search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
+        filters: _currentFilters,
       ));
     } catch (e) {
       emit(CategoryError(e.toString().replaceAll('Exception: ', '')));
@@ -143,7 +164,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       Emitter<CategoryState> emit,
       ) async {
     _currentSearch = event.query;
-    _currentPage = 1;
+    _currentPage = 1; // Reset to first page on search
     add(LoadCategories(
       page: _currentPage,
       take: _currentPageSize,
@@ -159,13 +180,47 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       ) async {
     _currentSortBy = event.sortBy;
     _currentSortOrder = event.sortOrder;
-    add(LoadCategories(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
+
+    // Handle reset to default (no sort)
+    if (event.sortBy.isEmpty || event.sortOrder.isEmpty) {
+      _currentSortBy = 'createdAt';
+      _currentSortOrder = 'desc';
+    }
+
+    // If we have cached data, sort it client-side for better performance
+    if (_allCategories.isNotEmpty && state is CategoryLoaded) {
+      List<CategoryModel> processedCategories = [..._allCategories];
+
+      // Only sort if we have valid sort parameters
+      if (event.sortBy.isNotEmpty && event.sortOrder.isNotEmpty) {
+        processedCategories = _sortClientSide(processedCategories);
+      } else {
+        // Reset to original order (by createdAt desc)
+        processedCategories = _sortClientSide(processedCategories);
+      }
+
+      final filteredCategories = _applyClientSideFilters(processedCategories);
+
+      emit(CategoryLoaded(
+        categories: filteredCategories,
+        total: filteredCategories.length,
+        page: _currentPage,
+        take: _currentPageSize,
+        totalPages: (filteredCategories.length / _currentPageSize).ceil(),
+        search: _currentSearch,
+        sortBy: event.sortBy.isEmpty ? '' : _currentSortBy,
+        sortOrder: event.sortOrder.isEmpty ? '' : _currentSortOrder,
+        filters: _currentFilters,
+      ));
+    } else {
+      add(LoadCategories(
+        page: _currentPage,
+        take: _currentPageSize,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ));
+    }
   }
 
   Future<void> _onChangePageSize(
@@ -173,7 +228,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       Emitter<CategoryState> emit,
       ) async {
     _currentPageSize = event.pageSize;
-    _currentPage = 1;
+    _currentPage = 1; // Reset to first page when changing page size
     add(LoadCategories(
       page: _currentPage,
       take: _currentPageSize,
@@ -203,6 +258,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       ) async {
     try {
       await _categoryService.deleteCategory(event.id);
+      // Reload categories after deletion
       add(LoadCategories(
         page: _currentPage,
         take: _currentPageSize,
@@ -213,5 +269,103 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
     } catch (e) {
       emit(CategoryError(e.toString().replaceAll('Exception: ', '')));
     }
+  }
+
+  Future<void> _onApplyFilters(
+      ApplyFilters event,
+      Emitter<CategoryState> emit,
+      ) async {
+    _currentFilters = event.filters;
+
+    // Apply filters to cached data
+    if (_allCategories.isNotEmpty && state is CategoryLoaded) {
+      final filteredCategories = _applyClientSideFilters(_allCategories);
+
+      emit(CategoryLoaded(
+        categories: filteredCategories,
+        total: filteredCategories.length,
+        page: _currentPage,
+        take: _currentPageSize,
+        totalPages: (filteredCategories.length / _currentPageSize).ceil(),
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+        filters: _currentFilters,
+      ));
+    } else {
+      // If no cached data, reload from server
+      add(LoadCategories(
+        page: _currentPage,
+        take: _currentPageSize,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ));
+    }
+  }
+
+  List<CategoryModel> _applyClientSideFilters(List<CategoryModel> categories) {
+    List<CategoryModel> filteredCategories = [...categories];
+
+    // Apply status filter
+    if (_currentFilters.containsKey('status')) {
+      final statusFilter = _currentFilters['status'];
+      if (statusFilter == 'active') {
+        filteredCategories = filteredCategories.where((category) => category.isActive).toList();
+      } else if (statusFilter == 'inactive') {
+        filteredCategories = filteredCategories.where((category) => !category.isActive).toList();
+      }
+    }
+
+    // Apply other filters as needed
+    // You can add more filter types here
+
+    return filteredCategories;
+  }
+
+  List<CategoryModel> _sortClientSide(List<CategoryModel> categories) {
+    categories.sort((a, b) {
+      int comparison = 0;
+
+      switch (_currentSortBy) {
+        case 'name':
+          comparison = a.name.compareTo(b.name);
+          break;
+        case 'createdAt':
+        // Parse dates and compare
+          comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
+          break;
+        case 'isActive':
+          comparison = a.isActive == b.isActive ? 0 : (a.isActive ? 1 : -1);
+          break;
+        case 'createdBy':
+          comparison = a.createdBy.compareTo(b.createdBy);
+          break;
+        default:
+          comparison = 0;
+      }
+
+      // Apply sort order
+      return _currentSortOrder == 'asc' ? comparison : -comparison;
+    });
+
+    return categories;
+  }
+
+  DateTime _parseDate(String dateStr) {
+    // Parse date string in format "DD-MM-YYYY"
+    try {
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        return DateTime(
+          int.parse(parts[2]), // year
+          int.parse(parts[1]), // month
+          int.parse(parts[0]), // day
+        );
+      }
+    } catch (e) {
+      // Return current date if parsing fails
+    }
+    return DateTime.now();
   }
 }

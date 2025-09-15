@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
 import '../../../models/theme_model.dart';
@@ -45,10 +46,15 @@ class _ThemeTableState extends State<ThemeTable> {
 
     return InkWell(
       onTap: () {
-        if (isActive) {
-          widget.onSort(field, isAsc ? 'desc' : 'asc');
-        } else {
+        if (!isActive) {
+          // First tap - sort ascending
           widget.onSort(field, 'asc');
+        } else if (isAsc) {
+          // Second tap - sort descending
+          widget.onSort(field, 'desc');
+        } else {
+          // Third tap - reset to default (no sort)
+          widget.onSort('', '');
         }
       },
       child: Row(
@@ -64,21 +70,20 @@ class _ThemeTableState extends State<ThemeTable> {
           const SizedBox(width: 4),
           Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Icon(
-                Icons.arrow_drop_up,
-                size: 16,
-                color: isActive && isAsc
-                    ? AppColors.primary
-                    : AppColors.grey.withOpacity(0.3),
-              ),
-              Icon(
-                Icons.arrow_drop_down,
-                size: 16,
-                color: isActive && !isAsc
-                    ? AppColors.primary
-                    : AppColors.grey.withOpacity(0.3),
-              ),
+              if (isActive)
+                Icon(
+                  isAsc ? CupertinoIcons.sort_up : CupertinoIcons.sort_down,
+                  size: 14,
+                  color: AppColors.primary,
+                )
+              else
+                Icon(
+                  CupertinoIcons.arrow_up_arrow_down,
+                  size: 14,
+                  color: AppColors.grey,
+                ),
             ],
           ),
         ],
@@ -95,7 +100,7 @@ class _ThemeTableState extends State<ThemeTable> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 3),
@@ -108,52 +113,55 @@ class _ThemeTableState extends State<ThemeTable> {
             child: widget.themes.isEmpty
                 ? _buildEmptyState()
                 : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SingleChildScrollView(
-                child: DataTable(
-                  headingRowColor: MaterialStateProperty.all(
-                    AppColors.background,
+                    scrollDirection: Axis.horizontal,
+                    child: SingleChildScrollView(
+                      child: DataTable(
+                        dataRowMaxHeight: double.infinity,
+                        headingRowColor: MaterialStateProperty.all(
+                          AppColors.background,
+                        ),
+                        columns: [
+                          const DataColumn(
+                            label: Text(
+                              'SR',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: _buildSortableHeader('Theme Name', 'name'),
+                          ),
+                          const DataColumn(
+                            label: Text(
+                              'Description',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          DataColumn(
+                            label: _buildSortableHeader('Status', 'isActive'),
+                          ),
+                          DataColumn(
+                            label: _buildSortableHeader(
+                              'Created By',
+                              'createdBy',
+                            ),
+                          ),
+                          DataColumn(
+                            label: _buildSortableHeader(
+                              'Created Date',
+                              'createdAt',
+                            ),
+                          ),
+
+                        ],
+                        rows: _buildRows(context),
+                        horizontalMargin: 20,
+
+                        columnSpacing: 40,
+                        dividerThickness: 1,
+                        showBottomBorder: true,
+                      ),
+                    ),
                   ),
-                  columns: [
-                    const DataColumn(
-                      label: Text(
-                        'SR',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: _buildSortableHeader('Theme Name', 'name'),
-                    ),
-                    const DataColumn(
-                      label: Text(
-                        'Description',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    DataColumn(
-                      label: _buildSortableHeader('Status', 'isActive'),
-                    ),
-                    DataColumn(
-                      label: _buildSortableHeader('Created By', 'createdBy'),
-                    ),
-                    DataColumn(
-                      label: _buildSortableHeader('Created Date', 'createdAt'),
-                    ),
-                    const DataColumn(
-                      label: Text(
-                        'Actions',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                  rows: _buildRows(context),
-                  horizontalMargin: 20,
-                  columnSpacing: 30,
-                  dividerThickness: 1,
-                  showBottomBorder: true,
-                ),
-              ),
-            ),
           ),
           _buildPagination(context),
         ],
@@ -170,18 +178,33 @@ class _ThemeTableState extends State<ThemeTable> {
       final serialNumber = startIndex + index + 1;
       final isExpanded = _expandedRows.contains(index);
 
+      // Calculate description height for proper row expansion
+      final descriptionLines = _getDescriptionLines(
+        theme.description,
+        isExpanded,
+      );
+      final rowHeight = isExpanded ? null : 60.0;
+
       return DataRow(
         cells: [
           DataCell(
-            Text(
-              serialNumber.toString(),
-              style: const TextStyle(fontWeight: FontWeight.w500),
+            Container(
+              height: rowHeight,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                serialNumber.toString(),
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
             ),
           ),
           DataCell(
-            Text(
-              theme.name,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+            Container(
+              height: rowHeight,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                theme.name,
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
             ),
           ),
           DataCell(
@@ -197,64 +220,83 @@ class _ThemeTableState extends State<ThemeTable> {
               },
               child: Container(
                 constraints: BoxConstraints(
-                  maxWidth: isExpanded ? 400 : 250,
+                  maxWidth: isExpanded ? 400 : 250, // width control only
                 ),
+                alignment: Alignment.centerLeft,
                 child: Text(
                   theme.description,
                   maxLines: isExpanded ? null : 2,
-                  overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                  softWrap: true,
+                  overflow: isExpanded
+                      ? TextOverflow.visible
+                      : TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 13, color: AppColors.grey),
+                ),
+              ),
+            ),
+          ),
+
+          DataCell(
+            Container(
+              height: isExpanded ? descriptionLines * 20.0 : null,
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.isActive
+                      ? AppColors.success.withOpacity(0.1)
+                      : AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.isActive ? AppColors.success : AppColors.error,
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  theme.isActive ? 'Active' : 'Inactive',
+                  style: TextStyle(
+                    color: theme.isActive ? AppColors.success : AppColors.error,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
           ),
           DataCell(
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: theme.isActive
-                    ? AppColors.success.withOpacity(0.1)
-                    : AppColors.error.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.isActive ? AppColors.success : AppColors.error,
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                theme.isActive ? 'Active' : 'Inactive',
-                style: TextStyle(
-                  color: theme.isActive ? AppColors.success : AppColors.error,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              height: isExpanded ? descriptionLines * 20.0 : null,
+              alignment: Alignment.centerLeft,
+              child: Text(theme.createdBy),
             ),
           ),
-          DataCell(Text(theme.createdBy)),
-          DataCell(Text(theme.createdAt)),
           DataCell(
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, size: 18),
-                  color: AppColors.primary,
-                  onPressed: () => widget.onEdit(theme.id),
-                  tooltip: 'Edit',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, size: 18),
-                  color: AppColors.error,
-                  onPressed: () => widget.onDelete(theme.id),
-                  tooltip: 'Delete',
-                ),
-              ],
+            Container(
+              height: isExpanded ? descriptionLines * 20.0 : null,
+              alignment: Alignment.centerLeft,
+              child: Text(theme.createdAt),
             ),
           ),
+
         ],
       );
     }).toList();
+  }
+
+  // Helper method to calculate number of lines for description
+  double _getDescriptionLines(String description, bool isExpanded) {
+    if (!isExpanded) return 2.0;
+
+    // Estimate lines based on character count and average characters per line
+    const avgCharsPerLine = 50;
+    final estimatedLines = (description.length / avgCharsPerLine).ceil();
+    return estimatedLines.toDouble().clamp(
+      3.0,
+      10.0,
+    ); // Min 3 lines, max 10 lines
   }
 
   Widget _buildEmptyState() {
@@ -270,10 +312,7 @@ class _ThemeTableState extends State<ThemeTable> {
           const SizedBox(height: 16),
           const Text(
             'No themes found',
-            style: TextStyle(
-              fontSize: 18,
-              color: AppColors.grey,
-            ),
+            style: TextStyle(fontSize: 18, color: AppColors.grey),
           ),
         ],
       ),
@@ -299,7 +338,7 @@ class _ThemeTableState extends State<ThemeTable> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Showing $startItem-$endItem of ${widget.total}',
+            '$startItem-$endItem of ${widget.total}',
             style: const TextStyle(color: AppColors.grey),
           ),
           Row(
@@ -329,13 +368,6 @@ class _ThemeTableState extends State<ThemeTable> {
               ),
               const SizedBox(width: 16),
               IconButton(
-                icon: const Icon(Icons.first_page),
-                onPressed: widget.currentPage > 1
-                    ? () => widget.onPageChange(1)
-                    : null,
-                color: AppColors.primary,
-              ),
-              IconButton(
                 icon: const Icon(Icons.chevron_left),
                 onPressed: widget.currentPage > 1
                     ? () => widget.onPageChange(widget.currentPage - 1)
@@ -343,7 +375,10 @@ class _ThemeTableState extends State<ThemeTable> {
                 color: AppColors.primary,
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(4),
@@ -360,13 +395,6 @@ class _ThemeTableState extends State<ThemeTable> {
                 icon: const Icon(Icons.chevron_right),
                 onPressed: widget.currentPage < widget.totalPages
                     ? () => widget.onPageChange(widget.currentPage + 1)
-                    : null,
-                color: AppColors.primary,
-              ),
-              IconButton(
-                icon: const Icon(Icons.last_page),
-                onPressed: widget.currentPage < widget.totalPages
-                    ? () => widget.onPageChange(widget.totalPages)
                     : null,
                 color: AppColors.primary,
               ),

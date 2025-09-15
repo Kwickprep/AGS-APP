@@ -1,3 +1,4 @@
+import 'package:ags/services/storage_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../services/auth_service.dart';
@@ -52,6 +53,7 @@ class LoginRememberMeLoaded extends LoginState {
 // Bloc
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final AuthService _authService = GetIt.I<AuthService>();
+  final StorageService _storageService = GetIt.I<StorageService>();
 
   LoginBloc() : super(LoginInitial()) {
     on<LoginSubmitted>(_onLoginSubmitted);
@@ -59,9 +61,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   Future<void> _onLoginSubmitted(
-      LoginSubmitted event,
-      Emitter<LoginState> emit,
-      ) async {
+    LoginSubmitted event,
+    Emitter<LoginState> emit,
+  ) async {
     emit(LoginLoading());
 
     try {
@@ -71,6 +73,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         event.rememberMe,
       );
       if (user != null) {
+        _storageService.saveUser(user);
         emit(LoginSuccess(user));
       } else {
         emit(LoginError('Login failed. Please try again.'));
@@ -81,14 +84,16 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   }
 
   Future<void> _onCheckRememberMe(
-      CheckRememberMe event,
-      Emitter<LoginState> emit,
-      ) async {
+    CheckRememberMe event,
+    Emitter<LoginState> emit,
+  ) async {
     final rememberMeData = await _authService.getRememberMeData();
-    emit(LoginRememberMeLoaded(
-      rememberMe: rememberMeData['rememberMe'],
-      email: rememberMeData['email'],
-      password: rememberMeData['password'],
-    ));
+    emit(
+      LoginRememberMeLoaded(
+        rememberMe: rememberMeData['rememberMe'],
+        email: rememberMeData['email'],
+        password: rememberMeData['password'],
+      ),
+    );
   }
 }
