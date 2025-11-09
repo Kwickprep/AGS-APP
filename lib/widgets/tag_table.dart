@@ -1,0 +1,346 @@
+import 'package:flutter/material.dart';
+import '../config/app_colors.dart';
+import '../models/tag_model.dart';
+
+class TagTable extends StatefulWidget {
+  final List<TagModel> tags;
+  final int total;
+  final int currentPage;
+  final int pageSize;
+  final int totalPages;
+  final String sortBy;
+  final String sortOrder;
+  final Function(int) onPageChange;
+  final Function(int) onPageSizeChange;
+  final Function(String) onDelete;
+  final Function(String) onEdit;
+  final Function(String, String) onSort;
+
+  const TagTable({
+    Key? key,
+    required this.tags,
+    required this.total,
+    required this.currentPage,
+    required this.pageSize,
+    required this.totalPages,
+    required this.sortBy,
+    required this.sortOrder,
+    required this.onPageChange,
+    required this.onPageSizeChange,
+    required this.onDelete,
+    required this.onEdit,
+    required this.onSort,
+  }) : super(key: key);
+
+  @override
+  State<TagTable> createState() => _TagTableState();
+}
+
+class _TagTableState extends State<TagTable> {
+  Widget _buildSortableHeader(String label, String field) {
+    final isActive = widget.sortBy == field;
+    final isAsc = widget.sortOrder == 'asc';
+
+    return InkWell(
+      onTap: () {
+        if (isActive) {
+          widget.onSort(field, isAsc ? 'desc' : 'asc');
+        } else {
+          widget.onSort(field, 'asc');
+        }
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isActive ? AppColors.primary : AppColors.black,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.arrow_drop_up,
+                size: 16,
+                color: isActive && isAsc
+                    ? AppColors.primary
+                    : AppColors.grey.withOpacity(0.3),
+              ),
+              Icon(
+                Icons.arrow_drop_down,
+                size: 16,
+                color: isActive && !isAsc
+                    ? AppColors.primary
+                    : AppColors.grey.withOpacity(0.3),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: widget.tags.isEmpty
+                ? _buildEmptyState()
+                : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SingleChildScrollView(
+                child: DataTable(
+                  headingRowColor: MaterialStateProperty.all(
+                    AppColors.background,
+                  ),
+                  columns: [
+                    const DataColumn(
+                      label: Text(
+                        'SR',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: _buildSortableHeader('Name', 'name'),
+                    ),
+                    DataColumn(
+                      label: _buildSortableHeader('Status', 'isActive'),
+                    ),
+                    DataColumn(
+                      label: _buildSortableHeader('Created By', 'createdBy'),
+                    ),
+                    DataColumn(
+                      label: _buildSortableHeader('Created Date', 'createdAt'),
+                    ),
+                    const DataColumn(
+                      label: Text(
+                        'Actions',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                  rows: _buildRows(context),
+                  horizontalMargin: 20,
+                  columnSpacing: 30,
+                  dividerThickness: 1,
+                  showBottomBorder: true,
+                ),
+              ),
+            ),
+          ),
+          _buildPagination(context),
+        ],
+      ),
+    );
+  }
+
+  List<DataRow> _buildRows(BuildContext context) {
+    final startIndex = (widget.currentPage - 1) * widget.pageSize;
+
+    return widget.tags.asMap().entries.map((entry) {
+      final index = entry.key;
+      final tag = entry.value;
+      final serialNumber = startIndex + index + 1;
+
+      return DataRow(
+        cells: [
+          DataCell(
+            Text(
+              serialNumber.toString(),
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          DataCell(
+            Text(
+              tag.name,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          DataCell(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: tag.isActive
+                    ? AppColors.success.withOpacity(0.1)
+                    : AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: tag.isActive ? AppColors.success : AppColors.error,
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                tag.isActive ? 'Active' : 'Inactive',
+                style: TextStyle(
+                  color: tag.isActive ? AppColors.success : AppColors.error,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          DataCell(Text(tag.createdBy)),
+          DataCell(Text(tag.createdAt)),
+          DataCell(
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 18),
+                  color: AppColors.primary,
+                  onPressed: () => widget.onEdit(tag.id),
+                  tooltip: 'Edit',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 18),
+                  color: AppColors.error,
+                  onPressed: () => widget.onDelete(tag.id),
+                  tooltip: 'Delete',
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }).toList();
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.folder_open,
+            size: 80,
+            color: AppColors.grey.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No tags found',
+            style: TextStyle(
+              fontSize: 18,
+              color: AppColors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPagination(BuildContext context) {
+    final startItem = ((widget.currentPage - 1) * widget.pageSize) + 1;
+    final endItem = (widget.currentPage * widget.pageSize > widget.total)
+        ? widget.total
+        : widget.currentPage * widget.pageSize;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Showing $startItem-$endItem of ${widget.total}',
+            style: const TextStyle(color: AppColors.grey),
+          ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.lightGrey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: widget.pageSize,
+                    items: const [
+                      DropdownMenuItem(value: 10, child: Text('10')),
+                      DropdownMenuItem(value: 20, child: Text('20')),
+                      DropdownMenuItem(value: 50, child: Text('50')),
+                      DropdownMenuItem(value: 100, child: Text('100')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        widget.onPageSizeChange(value);
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              IconButton(
+                icon: const Icon(Icons.first_page),
+                onPressed: widget.currentPage > 1
+                    ? () => widget.onPageChange(1)
+                    : null,
+                color: AppColors.primary,
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: widget.currentPage > 1
+                    ? () => widget.onPageChange(widget.currentPage - 1)
+                    : null,
+                color: AppColors.primary,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${widget.currentPage} / ${widget.totalPages}',
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: widget.currentPage < widget.totalPages
+                    ? () => widget.onPageChange(widget.currentPage + 1)
+                    : null,
+                color: AppColors.primary,
+              ),
+              IconButton(
+                icon: const Icon(Icons.last_page),
+                onPressed: widget.currentPage < widget.totalPages
+                    ? () => widget.onPageChange(widget.totalPages)
+                    : null,
+                color: AppColors.primary,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
