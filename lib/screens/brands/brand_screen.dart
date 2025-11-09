@@ -29,7 +29,7 @@ class BrandView extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: BackButton(
-          onPressed: (){
+          onPressed: () {
             context.go(AppRoutes.home);
           },
         ),
@@ -91,14 +91,15 @@ class BrandView extends StatelessWidget {
             return Column(
               children: [
                 BrandSearchBar(
+                  key: const ValueKey('brand_search_bar'), // Add key for widget identity
+                  initialSearchQuery: state.search, // Pass current search query
                   onSearch: (query) {
                     context.read<BrandBloc>().add(SearchBrands(query));
                   },
-                  onSort: (sortBy, sortOrder) {
-                    context.read<BrandBloc>().add(SortBrands(sortBy, sortOrder));
+                  onApplyFilters: (filters) {
+                    context.read<BrandBloc>().add(ApplyFilters(filters));
                   },
-                  currentSortBy: state.sortBy,
-                  currentSortOrder: state.sortOrder,
+                  currentFilters: state.filters ?? {},
                 ),
                 Expanded(
                   child: BrandList(
@@ -107,11 +108,24 @@ class BrandView extends StatelessWidget {
                     currentPage: state.page,
                     pageSize: state.take,
                     totalPages: state.totalPages,
+                    sortBy: state.sortBy,
+                    sortOrder: state.sortOrder,
                     onPageChange: (page) {
                       context.read<BrandBloc>().add(ChangePage(page));
                     },
                     onPageSizeChange: (size) {
                       context.read<BrandBloc>().add(ChangePageSize(size));
+                    },
+                    onSort: (sortBy, sortOrder) {
+                      context.read<BrandBloc>().add(SortBrands(sortBy, sortOrder));
+                    },
+                    onDelete: (id) {
+                      _showDeleteConfirmation(context, id);
+                    },
+                    onEdit: (id) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Edit brand $id not implemented yet')),
+                      );
                     },
                   ),
                 ),
@@ -123,6 +137,32 @@ class BrandView extends StatelessWidget {
             child: Text('No brands available'),
           );
         },
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, String id) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Brand'),
+        content: const Text('Are you sure you want to delete this brand?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              context.read<BrandBloc>().add(DeleteBrand(id));
+              Navigator.pop(dialogContext);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }

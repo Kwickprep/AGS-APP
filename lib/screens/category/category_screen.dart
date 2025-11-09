@@ -8,7 +8,6 @@ import '../../widgets/category_search_bar.dart';
 import '../../widgets/category_table.dart';
 import 'category_bloc.dart';
 
-
 class CategoryScreen extends StatelessWidget {
   const CategoryScreen({Key? key}) : super(key: key);
 
@@ -30,7 +29,7 @@ class CategoryView extends StatelessWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: BackButton(
-          onPressed: (){
+          onPressed: () {
             context.go(AppRoutes.home);
           },
         ),
@@ -92,14 +91,15 @@ class CategoryView extends StatelessWidget {
             return Column(
               children: [
                 CategorySearchBar(
+                  key: const ValueKey('category_search_bar'), // Add key for widget identity
+                  initialSearchQuery: state.search, // Pass current search query
                   onSearch: (query) {
                     context.read<CategoryBloc>().add(SearchCategories(query));
                   },
-                  onSort: (sortBy, sortOrder) {
-                    context.read<CategoryBloc>().add(SortCategories(sortBy, sortOrder));
+                  onApplyFilters: (filters) {
+                    context.read<CategoryBloc>().add(ApplyFilters(filters));
                   },
-                  currentSortBy: state.sortBy,
-                  currentSortOrder: state.sortOrder,
+                  currentFilters: state.filters ?? {},
                   totalCount: state.total,
                 ),
                 Expanded(
@@ -109,11 +109,24 @@ class CategoryView extends StatelessWidget {
                     currentPage: state.page,
                     pageSize: state.take,
                     totalPages: state.totalPages,
+                    sortBy: state.sortBy,
+                    sortOrder: state.sortOrder,
                     onPageChange: (page) {
                       context.read<CategoryBloc>().add(ChangePage(page));
                     },
                     onPageSizeChange: (size) {
                       context.read<CategoryBloc>().add(ChangePageSize(size));
+                    },
+                    onSort: (sortBy, sortOrder) {
+                      context.read<CategoryBloc>().add(SortCategories(sortBy, sortOrder));
+                    },
+                    onDelete: (id) {
+                      _showDeleteConfirmation(context, id);
+                    },
+                    onEdit: (id) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Edit category $id not implemented yet')),
+                      );
                     },
                   ),
                 ),
@@ -125,6 +138,32 @@ class CategoryView extends StatelessWidget {
             child: Text('No categories available'),
           );
         },
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, String id) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Category'),
+        content: const Text('Are you sure you want to delete this category?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              context.read<CategoryBloc>().add(DeleteCategory(id));
+              Navigator.pop(dialogContext);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
