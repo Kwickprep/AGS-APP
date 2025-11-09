@@ -6,8 +6,8 @@ import '../screens/login/login_screen.dart';
 import '../screens/signup/signup_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/theme/theme_screen.dart';
-
 import '../screens/brands/brand_screen.dart';
+import '../screens/tags/tag_screen.dart';
 import '../services/auth_service.dart';
 
 class AppRoutes {
@@ -18,10 +18,31 @@ class AppRoutes {
   static const String themes = '/themes';
   static const String categories = '/categories';
   static const String brands = '/brands';
+  static const String tags = '/tags';
 
-  static GoRouter router(bool isLoggedIn) {
+  static GoRouter router(bool isLoggedIn, {GlobalKey<NavigatorState>? navigatorKey}) {
     return GoRouter(
-      initialLocation: isLoggedIn ? home : startup,
+      navigatorKey: navigatorKey,
+      initialLocation: isLoggedIn ? home : login,
+      redirect: (context, state) async {
+        final authService = GetIt.I<AuthService>();
+        final loggedIn = await authService.isLoggedIn();
+        final isOnStartup = state.uri.path == startup;
+        final isOnLogin = state.uri.path == login;
+        final isOnSignup = state.uri.path == signup;
+
+        // If logged in and trying to access startup/login/signup, redirect to home
+        if (loggedIn && (isOnStartup || isOnLogin || isOnSignup)) {
+          return home;
+        }
+
+        // If not logged in and not on public pages, redirect to login
+        if (!loggedIn && !isOnStartup && !isOnLogin && !isOnSignup) {
+          return login;
+        }
+
+        return null; // No redirect needed
+      },
       routes: [
         GoRoute(
           path: startup,
@@ -38,51 +59,22 @@ class AppRoutes {
         GoRoute(
           path: home,
           builder: (context, state) => const HomeScreen(),
-          redirect: (context, state) async {
-            // Double-check authentication status
-            final authService = GetIt.I<AuthService>();
-            final isLoggedIn = await authService.isLoggedIn();
-            if (!isLoggedIn) {
-              return login;
-            }
-            return null;
-          },
         ),
         GoRoute(
           path: themes,
           builder: (context, state) => const ThemeScreen(),
-          redirect: (context, state) async {
-            final authService = GetIt.I<AuthService>();
-            final isLoggedIn = await authService.isLoggedIn();
-            if (!isLoggedIn) {
-              return login;
-            }
-            return null;
-          },
         ),
         GoRoute(
           path: categories,
           builder: (context, state) => const CategoryScreen(),
-          redirect: (context, state) async {
-            final authService = GetIt.I<AuthService>();
-            final isLoggedIn = await authService.isLoggedIn();
-            if (!isLoggedIn) {
-              return login;
-            }
-            return null;
-          },
         ),
         GoRoute(
           path: brands,
           builder: (context, state) => const BrandScreen(),
-          redirect: (context, state) async {
-            final authService = GetIt.I<AuthService>();
-            final isLoggedIn = await authService.isLoggedIn();
-            if (!isLoggedIn) {
-              return login;
-            }
-            return null;
-          },
+        ),
+        GoRoute(
+          path: tags,
+          builder: (context, state) => const TagScreen(),
         ),
       ],
     );

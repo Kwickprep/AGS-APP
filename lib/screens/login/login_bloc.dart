@@ -18,6 +18,28 @@ class LoginSubmitted extends LoginEvent {
   });
 }
 
+class SendOtpRequested extends LoginEvent {
+  final String phoneCode;
+  final String phoneNumber;
+
+  SendOtpRequested({
+    required this.phoneCode,
+    required this.phoneNumber,
+  });
+}
+
+class VerifyOtpSubmitted extends LoginEvent {
+  final String phoneCode;
+  final String phoneNumber;
+  final String otp;
+
+  VerifyOtpSubmitted({
+    required this.phoneCode,
+    required this.phoneNumber,
+    required this.otp,
+  });
+}
+
 class CheckRememberMe extends LoginEvent {}
 
 // States
@@ -26,6 +48,11 @@ abstract class LoginState {}
 class LoginInitial extends LoginState {}
 
 class LoginLoading extends LoginState {}
+
+class OtpSent extends LoginState {
+  final String phoneNumber;
+  OtpSent(this.phoneNumber);
+}
 
 class LoginSuccess extends LoginState {
   final UserModel user;
@@ -55,13 +82,15 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
   LoginBloc() : super(LoginInitial()) {
     on<LoginSubmitted>(_onLoginSubmitted);
+    on<SendOtpRequested>(_onSendOtpRequested);
+    on<VerifyOtpSubmitted>(_onVerifyOtpSubmitted);
     on<CheckRememberMe>(_onCheckRememberMe);
   }
 
   Future<void> _onLoginSubmitted(
-      LoginSubmitted event,
-      Emitter<LoginState> emit,
-      ) async {
+    LoginSubmitted event,
+    Emitter<LoginState> emit,
+  ) async {
     emit(LoginLoading());
 
     try {
@@ -80,10 +109,48 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     }
   }
 
+  Future<void> _onSendOtpRequested(
+    SendOtpRequested event,
+    Emitter<LoginState> emit,
+  ) async {
+    emit(LoginLoading());
+
+    try {
+      final result = await _authService.sendOtp(event.phoneCode, event.phoneNumber);
+
+      if (result['success'] == true) {
+        emit(OtpSent('${event.phoneCode}${event.phoneNumber}'));
+      } else {
+        emit(LoginError(result['message'] ?? 'Failed to send OTP. Please try again.'));
+      }
+    } catch (e) {
+      emit(LoginError(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  Future<void> _onVerifyOtpSubmitted(
+    VerifyOtpSubmitted event,
+    Emitter<LoginState> emit,
+  ) async {
+    emit(LoginLoading());
+
+    try {
+      final user = await _authService.verifyOtp(event.phoneCode, event.phoneNumber, event.otp);
+
+      if (user != null) {
+        emit(LoginSuccess(user));
+      } else {
+        emit(LoginError('Invalid OTP. Please try again.'));
+      }
+    } catch (e) {
+      emit(LoginError(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
   Future<void> _onCheckRememberMe(
-      CheckRememberMe event,
-      Emitter<LoginState> emit,
-      ) async {
+    CheckRememberMe event,
+    Emitter<LoginState> emit,
+  ) async {
     final rememberMeData = await _authService.getRememberMeData();
     emit(LoginRememberMeLoaded(
       rememberMe: rememberMeData['rememberMe'],

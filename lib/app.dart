@@ -5,15 +5,16 @@ import 'config/routes.dart';
 
 class MyApp extends StatelessWidget {
   final bool isLoggedIn;
+  final GlobalKey<NavigatorState>? navigatorKey;
 
-  const MyApp({Key? key, required this.isLoggedIn}) : super(key: key);
+  const MyApp({Key? key, required this.isLoggedIn, this.navigatorKey}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      routerConfig: AppRoutes.router(isLoggedIn),
+      routerConfig: AppRoutes.router(isLoggedIn, navigatorKey: navigatorKey),
     );
   }
 }

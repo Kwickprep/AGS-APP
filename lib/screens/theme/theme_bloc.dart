@@ -232,6 +232,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       page: _currentPage,
       take: _currentPageSize,
       search: _currentSearch,
+
       sortBy: _currentSortBy,
       sortOrder: _currentSortOrder,
     ));

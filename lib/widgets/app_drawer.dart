@@ -107,11 +107,8 @@ class _AppDrawerState extends State<AppDrawer> {
             leading: const Icon(Icons.tag),
             title: const Text('Tags'),
             onTap: () {
-              // TODO: Navigate to tags page when implemented
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tags page not implemented yet')),
-              );
+              context.go(AppRoutes.tags);
             },
           ),
           const Spacer(),
