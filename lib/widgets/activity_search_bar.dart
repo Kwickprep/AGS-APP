@@ -1,36 +1,36 @@
 import 'dart:async';
 import 'package:ags/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
-import '../config/app_colors.dart';
+import '../../../config/app_colors.dart';
 
-class TagSearchBar extends StatefulWidget {
+class ActivitySearchBar extends StatefulWidget {
   final Function(String) onSearch;
   final Function(Map<String, dynamic>) onApplyFilters;
   final Map<String, dynamic> currentFilters;
+  final int totalCount;
   final String? initialSearchQuery;
 
-  const TagSearchBar({
+  const ActivitySearchBar({
     Key? key,
     required this.onSearch,
     required this.onApplyFilters,
     required this.currentFilters,
+    required this.totalCount,
     this.initialSearchQuery,
   }) : super(key: key);
 
   @override
-  State<TagSearchBar> createState() => _TagSearchBarState();
+  State<ActivitySearchBar> createState() => _ActivitySearchBarState();
 }
 
-class _TagSearchBarState extends State<TagSearchBar> {
-  final TextEditingController _searchController = TextEditingController();
+class _ActivitySearchBarState extends State<ActivitySearchBar> {
+  final _searchController = TextEditingController();
   Timer? _debounceTimer;
   bool _showFilters = false;
-  String _selectedStatus = 'all';
 
   @override
   void initState() {
     super.initState();
-    _selectedStatus = widget.currentFilters['status'] ?? 'all';
     // Set initial search query if provided
     if (widget.initialSearchQuery != null &&
         widget.initialSearchQuery!.isNotEmpty) {
@@ -39,7 +39,7 @@ class _TagSearchBarState extends State<TagSearchBar> {
   }
 
   @override
-  void didUpdateWidget(TagSearchBar oldWidget) {
+  void didUpdateWidget(ActivitySearchBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     // Update search text if initial query changed and controller is empty
@@ -53,13 +53,6 @@ class _TagSearchBarState extends State<TagSearchBar> {
           _searchController.clear();
         }
       }
-    }
-
-    // Update filters if they changed externally
-    if (oldWidget.currentFilters != widget.currentFilters) {
-      setState(() {
-        _selectedStatus = widget.currentFilters['status'] ?? 'all';
-      });
     }
   }
 
@@ -94,9 +87,7 @@ class _TagSearchBarState extends State<TagSearchBar> {
 
   void _applyFilters() {
     final filters = <String, dynamic>{};
-    if (_selectedStatus != 'all') {
-      filters['status'] = _selectedStatus;
-    }
+    // Add filter logic here if needed
     widget.onApplyFilters(filters);
     setState(() {
       _showFilters = false;
@@ -104,9 +95,7 @@ class _TagSearchBarState extends State<TagSearchBar> {
   }
 
   void _clearFilters() {
-    setState(() {
-      _selectedStatus = 'all';
-    });
+    setState(() {});
     widget.onApplyFilters({});
   }
 
@@ -122,7 +111,7 @@ class _TagSearchBarState extends State<TagSearchBar> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -139,7 +128,7 @@ class _TagSearchBarState extends State<TagSearchBar> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Search tags...',
+                      hintText: 'Search Activities...',
                       prefixIcon: const Icon(
                         Icons.search,
                         color: AppColors.grey,
@@ -247,24 +236,9 @@ class _TagSearchBarState extends State<TagSearchBar> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Text(
-                        'Status:',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Wrap(
-                          spacing: 8,
-                          children: [
-                            _buildFilterChip('All', 'all'),
-                            _buildFilterChip('Active', 'active'),
-                            _buildFilterChip('Inactive', 'inactive'),
-                          ],
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'No filters available at the moment',
+                    style: TextStyle(color: AppColors.grey),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -279,34 +253,19 @@ class _TagSearchBarState extends State<TagSearchBar> {
                         child: const Text('Cancel'),
                       ),
                       const SizedBox(width: 8),
-                      CustomButton(
-                          width: 100,
-                          onPressed: _applyFilters, text: ('Apply')),
+                      SizedBox(
+                        width: 80,
+                        child: CustomButton(
+                          onPressed: _applyFilters,
+                          text: 'Apply',
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, String value) {
-    final isSelected = _selectedStatus == value;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedStatus = value;
-        });
-      },
-      backgroundColor: AppColors.white,
-      selectedColor: AppColors.primary.withOpacity(0.1),
-      checkmarkColor: AppColors.primary,
-      side: BorderSide(
-        color: isSelected ? AppColors.primary : AppColors.lightGrey,
       ),
     );
   }

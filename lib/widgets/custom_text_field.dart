@@ -4,6 +4,7 @@ import '../config/app_colors.dart';
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
+  final String? hint;
   final IconData? prefixIcon;
   final IconData? suffixIcon;
   final bool obscureText;
@@ -23,6 +24,7 @@ class CustomTextField extends StatelessWidget {
     this.validator,
     this.errorText,
     this.onSuffixTap,
+    this.hint,
   }) : super(key: key);
 
   @override
@@ -33,6 +35,7 @@ class CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
+       hintText: hint,
         labelText: label,
         errorText: errorText,
         prefixIcon: prefixIcon != null

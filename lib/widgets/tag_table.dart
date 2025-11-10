@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 import '../models/tag_model.dart';
@@ -43,10 +44,15 @@ class _TagTableState extends State<TagTable> {
 
     return InkWell(
       onTap: () {
-        if (isActive) {
-          widget.onSort(field, isAsc ? 'desc' : 'asc');
-        } else {
+        if (!isActive) {
+          // First tap - sort ascending
           widget.onSort(field, 'asc');
+        } else if (isAsc) {
+          // Second tap - sort descending
+          widget.onSort(field, 'desc');
+        } else {
+          // Third tap - reset to default (no sort)
+          widget.onSort('', '');
         }
       },
       child: Row(
@@ -62,21 +68,20 @@ class _TagTableState extends State<TagTable> {
           const SizedBox(width: 4),
           Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Icon(
-                Icons.arrow_drop_up,
-                size: 16,
-                color: isActive && isAsc
-                    ? AppColors.primary
-                    : AppColors.grey.withOpacity(0.3),
-              ),
-              Icon(
-                Icons.arrow_drop_down,
-                size: 16,
-                color: isActive && !isAsc
-                    ? AppColors.primary
-                    : AppColors.grey.withOpacity(0.3),
-              ),
+              if (isActive)
+                Icon(
+                  isAsc ? CupertinoIcons.sort_up : CupertinoIcons.sort_down,
+                  size: 14,
+                  color: AppColors.primary,
+                )
+              else
+                Icon(
+                  CupertinoIcons.arrow_up_arrow_down,
+                  size: 14,
+                  color: AppColors.grey,
+                ),
             ],
           ),
         ],
@@ -131,12 +136,12 @@ class _TagTableState extends State<TagTable> {
                     DataColumn(
                       label: _buildSortableHeader('Created Date', 'createdAt'),
                     ),
-                    const DataColumn(
-                      label: Text(
-                        'Actions',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    // const DataColumn(
+                    //   label: Text(
+                    //     'Actions',
+                    //     style: TextStyle(fontWeight: FontWeight.bold),
+                    //   ),
+                    // ),
                   ],
                   rows: _buildRows(context),
                   horizontalMargin: 20,
@@ -200,25 +205,25 @@ class _TagTableState extends State<TagTable> {
           ),
           DataCell(Text(tag.createdBy)),
           DataCell(Text(tag.createdAt)),
-          DataCell(
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, size: 18),
-                  color: AppColors.primary,
-                  onPressed: () => widget.onEdit(tag.id),
-                  tooltip: 'Edit',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, size: 18),
-                  color: AppColors.error,
-                  onPressed: () => widget.onDelete(tag.id),
-                  tooltip: 'Delete',
-                ),
-              ],
-            ),
-          ),
+          // DataCell(
+          //   Row(
+          //     mainAxisSize: MainAxisSize.min,
+          //     children: [
+          //       IconButton(
+          //         icon: const Icon(Icons.edit, size: 18),
+          //         color: AppColors.primary,
+          //         onPressed: () => widget.onEdit(tag.id),
+          //         tooltip: 'Edit',
+          //       ),
+          //       IconButton(
+          //         icon: const Icon(Icons.delete, size: 18),
+          //         color: AppColors.error,
+          //         onPressed: () => widget.onDelete(tag.id),
+          //         tooltip: 'Delete',
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ],
       );
     }).toList();
@@ -266,7 +271,7 @@ class _TagTableState extends State<TagTable> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Showing $startItem-$endItem of ${widget.total}',
+            '$startItem-$endItem of ${widget.total}',
             style: const TextStyle(color: AppColors.grey),
           ),
           Row(
@@ -296,13 +301,6 @@ class _TagTableState extends State<TagTable> {
               ),
               const SizedBox(width: 16),
               IconButton(
-                icon: const Icon(Icons.first_page),
-                onPressed: widget.currentPage > 1
-                    ? () => widget.onPageChange(1)
-                    : null,
-                color: AppColors.primary,
-              ),
-              IconButton(
                 icon: const Icon(Icons.chevron_left),
                 onPressed: widget.currentPage > 1
                     ? () => widget.onPageChange(widget.currentPage - 1)
@@ -310,7 +308,10 @@ class _TagTableState extends State<TagTable> {
                 color: AppColors.primary,
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(4),
@@ -327,13 +328,6 @@ class _TagTableState extends State<TagTable> {
                 icon: const Icon(Icons.chevron_right),
                 onPressed: widget.currentPage < widget.totalPages
                     ? () => widget.onPageChange(widget.currentPage + 1)
-                    : null,
-                color: AppColors.primary,
-              ),
-              IconButton(
-                icon: const Icon(Icons.last_page),
-                onPressed: widget.currentPage < widget.totalPages
-                    ? () => widget.onPageChange(widget.totalPages)
                     : null,
                 color: AppColors.primary,
               ),

@@ -111,6 +111,14 @@ class _AppDrawerState extends State<AppDrawer> {
               context.go(AppRoutes.tags);
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.event_note),
+            title: const Text('Activities'),
+            onTap: () {
+              Navigator.pop(context);
+              context.go(AppRoutes.activities);
+            },
+          ),
           const Spacer(),
           const Divider(),
           ListTile(

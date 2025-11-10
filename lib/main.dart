@@ -9,6 +9,7 @@ import 'services/theme_service.dart';
 import 'services/category_service.dart';
 import 'services/brand_service.dart';
 import 'services/tag_service.dart';
+import 'services/activity_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -21,6 +22,7 @@ void setupDependencies() {
   getIt.registerSingleton<CategoryService>(CategoryService());
   getIt.registerSingleton<BrandService>(BrandService());
   getIt.registerSingleton<TagService>(TagService());
+  getIt.registerSingleton<ActivityService>(ActivityService());
 }
 
 void main() async {

@@ -4,24 +4,24 @@ import 'package:go_router/go_router.dart';
 import '../../config/app_colors.dart';
 import '../../config/routes.dart';
 import '../../widgets/ShimmerLoading.dart';
-import '../../widgets/tag_search_bar.dart';
-import '../../widgets/tag_table.dart';
-import 'tag_bloc.dart';
+import '../../widgets/activity_search_bar.dart';
+import '../../widgets/activity_table.dart';
+import 'activity_bloc.dart';
 
-class TagScreen extends StatelessWidget {
-  const TagScreen({Key? key}) : super(key: key);
+class ActivityScreen extends StatelessWidget {
+  const ActivityScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => TagBloc()..add(LoadTags()),
-      child: const TagView(),
+      create: (context) => ActivityBloc()..add(LoadActivities()),
+      child: const ActivityView(),
     );
   }
 }
 
-class TagView extends StatelessWidget {
-  const TagView({Key? key}) : super(key: key);
+class ActivityView extends StatelessWidget {
+  const ActivityView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,32 +33,29 @@ class TagView extends StatelessWidget {
             context.go(AppRoutes.home);
           },
         ),
-        title: const Text('Tags'),
+        title: const Text('Activities'),
         backgroundColor: AppColors.white,
         elevation: 0,
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(
-        //       Icons.add_circle_outline,
-        //       color: AppColors.primary,
-        //     ),
-        //     onPressed: () {
-        //       ScaffoldMessenger.of(context).showSnackBar(
-        //         const SnackBar(
-        //           content: Text('Create tag not implemented yet'),
-        //         ),
-        //       );
-        //     },
-        //   ),
-        // ],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+            onPressed: () {
+              context.go(AppRoutes.createActivity);
+            },
+          ),
+        ],
       ),
-      body: BlocBuilder<TagBloc, TagState>(
+      body: BlocBuilder<ActivityBloc, ActivityState>(
         builder: (context, state) {
-          if (state is TagLoading) {
+          print('ActivityScreen: Current state: ${state.runtimeType}');
+
+          if (state is ActivityLoading) {
+            print('ActivityScreen: Showing loading state');
             return const ShimmerLoading();
           }
 
-          if (state is TagError) {
+          if (state is ActivityError) {
+            print('ActivityScreen: Showing error state - ${state.message}');
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -70,7 +67,7 @@ class TagView extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading tags',
+                    'Error loading activities',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
@@ -82,7 +79,7 @@ class TagView extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () {
-                      context.read<TagBloc>().add(LoadTags());
+                      context.read<ActivityBloc>().add(LoadActivities());
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
@@ -92,25 +89,25 @@ class TagView extends StatelessWidget {
             );
           }
 
-          if (state is TagLoaded) {
+          if (state is ActivityLoaded) {
+            print('ActivityScreen: Showing loaded state - ${state.activities.length} activities');
             return Column(
               children: [
-                TagSearchBar(
-                  key: const ValueKey(
-                    'tag_search_bar',
-                  ), // Add key for widget identity
-                  initialSearchQuery: state.search, // Pass current search query
+                ActivitySearchBar(
+                  key: const ValueKey('activity_search_bar'),
+                  initialSearchQuery: state.search,
                   onSearch: (query) {
-                    context.read<TagBloc>().add(SearchTags(query));
+                    context.read<ActivityBloc>().add(SearchActivities(query));
                   },
                   onApplyFilters: (filters) {
-                    context.read<TagBloc>().add(ApplyFilters(filters));
+                    context.read<ActivityBloc>().add(ApplyFilters(filters));
                   },
                   currentFilters: state.filters ?? {},
+                  totalCount: state.total,
                 ),
                 Expanded(
-                  child: TagTable(
-                    tags: state.tags,
+                  child: ActivityTable(
+                    activities: state.activities,
                     total: state.total,
                     currentPage: state.page,
                     pageSize: state.take,
@@ -118,20 +115,20 @@ class TagView extends StatelessWidget {
                     sortBy: state.sortBy,
                     sortOrder: state.sortOrder,
                     onPageChange: (page) {
-                      context.read<TagBloc>().add(ChangePage(page));
+                      context.read<ActivityBloc>().add(ChangePage(page));
                     },
                     onPageSizeChange: (size) {
-                      context.read<TagBloc>().add(ChangePageSize(size));
+                      context.read<ActivityBloc>().add(ChangePageSize(size));
                     },
                     onSort: (sortBy, sortOrder) {
-                      context.read<TagBloc>().add(SortTags(sortBy, sortOrder));
+                      context.read<ActivityBloc>().add(SortActivities(sortBy, sortOrder));
                     },
                     onDelete: (id) {
                       _showDeleteConfirmation(context, id);
                     },
                     onEdit: (id) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Edit tag $id not implemented yet')),
+                        SnackBar(content: Text('Edit activity $id not implemented yet')),
                       );
                     },
                   ),
@@ -140,7 +137,10 @@ class TagView extends StatelessWidget {
             );
           }
 
-          return const Center(child: Text('No tags available'));
+          print('ActivityScreen: Default state - showing no activities message');
+          return const Center(
+            child: Text('No activities available'),
+          );
         },
       ),
     );
@@ -150,8 +150,8 @@ class TagView extends StatelessWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Tag'),
-        content: const Text('Are you sure you want to delete this tag?'),
+        title: const Text('Delete Activity'),
+        content: const Text('Are you sure you want to delete this activity?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -159,7 +159,7 @@ class TagView extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              context.read<TagBloc>().add(DeleteTag(id));
+              context.read<ActivityBloc>().add(DeleteActivity(id));
               Navigator.pop(dialogContext);
             },
             style: ElevatedButton.styleFrom(
