@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
 import '../../config/routes.dart';
@@ -66,7 +65,7 @@ class HomeView extends StatelessWidget {
                       final authService = GetIt.I<AuthService>();
                       await authService.logout();
                       if (context.mounted) {
-                        context.go(AppRoutes.login);
+                        Navigator.pushReplacementNamed(context, AppRoutes.login);
                       }
                     },
                     icon: const Icon(Icons.logout),

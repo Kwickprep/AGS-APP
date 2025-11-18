@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
+
 import '../../config/app_colors.dart';
-import '../../config/routes.dart';
 import '../../widgets/ShimmerLoading.dart';
 import '../../widgets/category_search_bar.dart';
 import '../../widgets/category_table.dart';
@@ -30,7 +29,7 @@ class CategoryView extends StatelessWidget {
       appBar: AppBar(
         leading: BackButton(
           onPressed: () {
-            context.go(AppRoutes.home);
+            Navigator.pop(context);
           },
         ),
         title: const Text('Categories'),

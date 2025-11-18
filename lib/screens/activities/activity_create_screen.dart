@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
-import '../../config/routes.dart';
 import '../../services/activity_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_text_field.dart';
@@ -85,7 +83,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           'Activity created successfully',
           type: ToastType.success,
         );
-        context.go(AppRoutes.activities);
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -111,21 +109,22 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
       appBar: AppBar(
         leading: BackButton(
           onPressed: () {
-            context.go(AppRoutes.activities);
+            Navigator.pop(context);
           },
         ),
         title: const Text('Create Activity'),
         backgroundColor: AppColors.white,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -230,9 +229,14 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                         // maxLines: 4,
                       ),
                       const SizedBox(height: 24),
-                      CustomButton(
-                        onPressed: _isLoading ? (){} : _createActivity,
-                        text: _isLoading ? 'Creating...' : 'Create Activity',
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).padding.bottom + 16,
+                        ),
+                        child: CustomButton(
+                          onPressed: _isLoading ? (){} : _createActivity,
+                          text: _isLoading ? 'Creating...' : 'Create Activity',
+                        ),
                       ),
                     ],
                   ),
@@ -242,6 +246,6 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

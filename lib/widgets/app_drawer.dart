@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:go_router/go_router.dart';
 import '../config/app_colors.dart';
 import '../config/routes.dart';
 import '../models/user_model.dart';
@@ -84,7 +83,7 @@ class _AppDrawerState extends State<AppDrawer> {
             title: const Text('Brands'),
             onTap: () {
               Navigator.pop(context);
-              context.go(AppRoutes.brands);
+              Navigator.pushNamed(context, AppRoutes.brands);
             },
           ),
           ListTile(
@@ -92,7 +91,7 @@ class _AppDrawerState extends State<AppDrawer> {
             title: const Text('Categories'),
             onTap: () {
               Navigator.pop(context);
-              context.go(AppRoutes.categories);
+              Navigator.pushNamed(context, AppRoutes.categories);
             },
           ),
           ListTile(
@@ -100,7 +99,7 @@ class _AppDrawerState extends State<AppDrawer> {
             title: const Text('Themes'),
             onTap: () {
               Navigator.pop(context);
-              context.go(AppRoutes.themes);
+              Navigator.pushNamed(context, AppRoutes.themes);
             },
           ),
           ListTile(
@@ -108,7 +107,7 @@ class _AppDrawerState extends State<AppDrawer> {
             title: const Text('Tags'),
             onTap: () {
               Navigator.pop(context);
-              context.go(AppRoutes.tags);
+              Navigator.pushNamed(context, AppRoutes.tags);
             },
           ),
           ListTile(
@@ -116,7 +115,23 @@ class _AppDrawerState extends State<AppDrawer> {
             title: const Text('Activities'),
             onTap: () {
               Navigator.pop(context);
-              context.go(AppRoutes.activities);
+              Navigator.pushNamed(context, AppRoutes.activities);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.assignment_outlined),
+            title: const Text('Inquiries'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.inquiries);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.group_outlined),
+            title: const Text('Groups'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.groups);
             },
           ),
           const Spacer(),

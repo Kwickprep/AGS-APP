@@ -1,22 +1,26 @@
 import '../widgets/generic/generic_model.dart';
 
-class CategoryModel implements GenericModel {
+class InquiryModel implements GenericModel {
   @override
   final String id;
   final String name;
-  final String description;
-  final bool isActive;
+  final String company;
+  final String contactUser;
+  final String status;
+  final String note;
   @override
   final String createdBy;
   @override
   final String createdAt;
-  final List<CategoryAction> actions;
+  final List<InquiryAction> actions;
 
-  CategoryModel({
+  InquiryModel({
     required this.id,
     required this.name,
-    required this.description,
-    required this.isActive,
+    required this.company,
+    required this.contactUser,
+    required this.status,
+    required this.note,
     required this.createdBy,
     required this.createdAt,
     required this.actions,
@@ -27,8 +31,10 @@ class CategoryModel implements GenericModel {
     return {
       'id': id,
       'name': name,
-      'description': description,
-      'isActive': isActive,
+      'company': company,
+      'contactUser': contactUser,
+      'status': status,
+      'note': note,
       'createdBy': createdBy,
       'createdAt': createdAt,
       'actions': actions.map((a) => {
@@ -49,10 +55,14 @@ class CategoryModel implements GenericModel {
         return id;
       case 'name':
         return name;
-      case 'description':
-        return description;
-      case 'isActive':
-        return isActive ? 'Active' : 'Inactive';
+      case 'company':
+        return company;
+      case 'contactUser':
+        return contactUser;
+      case 'status':
+        return status;
+      case 'note':
+        return note;
       case 'createdBy':
         return createdBy;
       case 'createdAt':
@@ -62,7 +72,7 @@ class CategoryModel implements GenericModel {
     }
   }
 
-  factory CategoryModel.fromJson(Map<String, dynamic> json) {
+  factory InquiryModel.fromJson(Map<String, dynamic> json) {
     // Extract ID from actions if not directly provided
     String extractedId = '';
     if (json['actions'] != null && (json['actions'] as List).isNotEmpty) {
@@ -76,21 +86,23 @@ class CategoryModel implements GenericModel {
       }
     }
 
-    return CategoryModel(
+    return InquiryModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      isActive: json['isActive'] == 'Active' || json['isActive'] == true,
+      company: json['company'] ?? '',
+      contactUser: json['contactUser'] ?? '',
+      status: json['status'] ?? '',
+      note: json['note'] ?? '',
       createdBy: json['createdBy'] ?? '',
       createdAt: json['createdAt'] ?? '',
       actions: (json['actions'] as List<dynamic>?)
-          ?.map((e) => CategoryAction.fromJson(e))
+          ?.map((e) => InquiryAction.fromJson(e))
           .toList() ?? [],
     );
   }
 }
 
-class CategoryAction {
+class InquiryAction {
   final String icon;
   final String type;
   final String? routerLink;
@@ -98,7 +110,7 @@ class CategoryAction {
   final bool isDisabled;
   final String tooltip;
 
-  CategoryAction({
+  InquiryAction({
     required this.icon,
     required this.type,
     this.routerLink,
@@ -107,8 +119,8 @@ class CategoryAction {
     required this.tooltip,
   });
 
-  factory CategoryAction.fromJson(Map<String, dynamic> json) {
-    return CategoryAction(
+  factory InquiryAction.fromJson(Map<String, dynamic> json) {
+    return InquiryAction(
       icon: json['icon'] ?? '',
       type: json['type'] ?? '',
       routerLink: json['routerLink'],
@@ -119,14 +131,14 @@ class CategoryAction {
   }
 }
 
-class CategoryResponse {
+class InquiryResponse {
   final int total;
   final int page;
   final int take;
   final int totalPages;
-  final List<CategoryModel> records;
+  final List<InquiryModel> records;
 
-  CategoryResponse({
+  InquiryResponse({
     required this.total,
     required this.page,
     required this.take,
@@ -134,15 +146,15 @@ class CategoryResponse {
     required this.records,
   });
 
-  factory CategoryResponse.fromJson(Map<String, dynamic> json) {
+  factory InquiryResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'] ?? {};
-    return CategoryResponse(
+    return InquiryResponse(
       total: data['total'] ?? 0,
       page: data['page'] ?? 1,
       take: data['take'] ?? 20,
       totalPages: data['totalPages'] ?? 1,
       records: (data['records'] as List<dynamic>?)
-          ?.map((e) => CategoryModel.fromJson(e))
+          ?.map((e) => InquiryModel.fromJson(e))
           .toList() ?? [],
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'config/app_theme.dart';
 import 'config/routes.dart';
 
@@ -11,10 +10,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
+    return MaterialApp(
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      routerConfig: AppRoutes.router(isLoggedIn, navigatorKey: navigatorKey),
+      navigatorKey: navigatorKey,
+      initialRoute: AppRoutes.getInitialRoute(isLoggedIn),
+      routes: AppRoutes.getRoutes(),
     );
   }
 }

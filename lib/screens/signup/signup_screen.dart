@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
 import '../../config/app_colors.dart';
 import '../../config/routes.dart';
 import '../../widgets/custom_button.dart';
@@ -151,7 +151,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  context.go(AppRoutes.login);
+                                  Navigator.pushReplacementNamed(context, AppRoutes.login);
                                 },
                                 child: const Text(
                                   'Login',

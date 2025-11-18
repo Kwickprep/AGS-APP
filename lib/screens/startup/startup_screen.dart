@@ -1,6 +1,6 @@
 import 'package:ags/screens/signup/signup_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
 import '../../config/app_colors.dart';
 import '../../config/routes.dart';
 
@@ -77,7 +77,7 @@ class _StartupScreenState extends State<StartupScreen> {
                         const Spacer(),
                         GestureDetector(
                           onTap: () {
-                            context.go(AppRoutes.login);
+                            Navigator.pushReplacementNamed(context, AppRoutes.login);
                           },
                           child: Container(
                             width: 60,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import '../../config/app_colors.dart';
 import '../../config/routes.dart';
 import '../../widgets/custom_toast.dart';
@@ -169,7 +169,7 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                 type: ToastType.success,
               );
               Future.delayed(const Duration(milliseconds: 500), () {
-                context.go(AppRoutes.home);
+                Navigator.pushReplacementNamed(context, AppRoutes.home);
               });
             } else if (state is LoginError) {
               CustomToast.show(
@@ -362,13 +362,19 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                   const SizedBox(height: 8),
                   TextField(
                     controller: _phoneController,
-                    keyboardType: TextInputType.phone,
+                    keyboardType: TextInputType.number,
+                    maxLength: 10,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
                     decoration: InputDecoration(
                       hintText: 'Enter your WhatsApp number',
                       hintStyle: const TextStyle(
                         color: AppColors.grey,
                         fontSize: 14,
                       ),
+                      counterText: '',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: const BorderSide(color: AppColors.lightGrey),

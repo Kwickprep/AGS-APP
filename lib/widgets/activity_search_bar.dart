@@ -70,9 +70,9 @@ class _ActivitySearchBarState extends State<ActivitySearchBar> {
     // Update UI immediately to show/hide clear button
     setState(() {});
 
-    // Set up debounced search with 2-second delay
-    _debounceTimer = Timer(const Duration(seconds: 2), () {
-      if (value.length >= 3 || value.isEmpty) {
+    // Set up debounced search with 500ms delay
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (value.length >= 1 || value.isEmpty) {
         widget.onSearch(value);
       }
     });

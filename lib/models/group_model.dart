@@ -1,21 +1,23 @@
 import '../widgets/generic/generic_model.dart';
 
-class CategoryModel implements GenericModel {
+class GroupModel implements GenericModel {
   @override
   final String id;
   final String name;
-  final String description;
+  final String users;
+  final String note;
   final bool isActive;
   @override
   final String createdBy;
   @override
   final String createdAt;
-  final List<CategoryAction> actions;
+  final List<GroupAction> actions;
 
-  CategoryModel({
+  GroupModel({
     required this.id,
     required this.name,
-    required this.description,
+    required this.users,
+    required this.note,
     required this.isActive,
     required this.createdBy,
     required this.createdAt,
@@ -27,7 +29,8 @@ class CategoryModel implements GenericModel {
     return {
       'id': id,
       'name': name,
-      'description': description,
+      'users': users,
+      'note': note,
       'isActive': isActive,
       'createdBy': createdBy,
       'createdAt': createdAt,
@@ -49,8 +52,10 @@ class CategoryModel implements GenericModel {
         return id;
       case 'name':
         return name;
-      case 'description':
-        return description;
+      case 'users':
+        return users;
+      case 'note':
+        return note;
       case 'isActive':
         return isActive ? 'Active' : 'Inactive';
       case 'createdBy':
@@ -62,7 +67,7 @@ class CategoryModel implements GenericModel {
     }
   }
 
-  factory CategoryModel.fromJson(Map<String, dynamic> json) {
+  factory GroupModel.fromJson(Map<String, dynamic> json) {
     // Extract ID from actions if not directly provided
     String extractedId = '';
     if (json['actions'] != null && (json['actions'] as List).isNotEmpty) {
@@ -76,21 +81,22 @@ class CategoryModel implements GenericModel {
       }
     }
 
-    return CategoryModel(
-      id: json['id'] ?? extractedId,
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
+    return GroupModel(
+      id: json['id']?.toString() ?? extractedId,
+      name: json['name']?.toString() ?? '',
+      users: json['users']?.toString() ?? '',
+      note: json['note']?.toString() ?? '',
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
-      createdBy: json['createdBy'] ?? '',
-      createdAt: json['createdAt'] ?? '',
+      createdBy: json['createdBy']?.toString() ?? '',
+      createdAt: json['createdAt']?.toString() ?? '',
       actions: (json['actions'] as List<dynamic>?)
-          ?.map((e) => CategoryAction.fromJson(e))
+          ?.map((e) => GroupAction.fromJson(e))
           .toList() ?? [],
     );
   }
 }
 
-class CategoryAction {
+class GroupAction {
   final String icon;
   final String type;
   final String? routerLink;
@@ -98,7 +104,7 @@ class CategoryAction {
   final bool isDisabled;
   final String tooltip;
 
-  CategoryAction({
+  GroupAction({
     required this.icon,
     required this.type,
     this.routerLink,
@@ -107,26 +113,26 @@ class CategoryAction {
     required this.tooltip,
   });
 
-  factory CategoryAction.fromJson(Map<String, dynamic> json) {
-    return CategoryAction(
-      icon: json['icon'] ?? '',
-      type: json['type'] ?? '',
-      routerLink: json['routerLink'],
-      deleteEndpoint: json['deleteEndpoint'],
-      isDisabled: json['isDisabled'] ?? false,
-      tooltip: json['tooltip'] ?? '',
+  factory GroupAction.fromJson(Map<String, dynamic> json) {
+    return GroupAction(
+      icon: json['icon']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+      routerLink: json['routerLink']?.toString(),
+      deleteEndpoint: json['deleteEndpoint']?.toString(),
+      isDisabled: json['isDisabled'] == true || json['isDisabled'] == 'true',
+      tooltip: json['tooltip']?.toString() ?? '',
     );
   }
 }
 
-class CategoryResponse {
+class GroupResponse {
   final int total;
   final int page;
   final int take;
   final int totalPages;
-  final List<CategoryModel> records;
+  final List<GroupModel> records;
 
-  CategoryResponse({
+  GroupResponse({
     required this.total,
     required this.page,
     required this.take,
@@ -134,15 +140,15 @@ class CategoryResponse {
     required this.records,
   });
 
-  factory CategoryResponse.fromJson(Map<String, dynamic> json) {
+  factory GroupResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'] ?? {};
-    return CategoryResponse(
+    return GroupResponse(
       total: data['total'] ?? 0,
       page: data['page'] ?? 1,
       take: data['take'] ?? 20,
       totalPages: data['totalPages'] ?? 1,
       records: (data['records'] as List<dynamic>?)
-          ?.map((e) => CategoryModel.fromJson(e))
+          ?.map((e) => GroupModel.fromJson(e))
           .toList() ?? [],
     );
   }

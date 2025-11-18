@@ -1,13 +1,13 @@
 import 'package:get_it/get_it.dart';
-import '../models/category_model.dart';
+import '../models/inquiry_model.dart';
 import '../widgets/generic/generic_model.dart';
 import '../widgets/generic/generic_list_bloc.dart';
 import 'api_service.dart';
 
-class CategoryService implements GenericListService<CategoryModel> {
+class InquiryService implements GenericListService<InquiryModel> {
   final ApiService _apiService = GetIt.I<ApiService>();
 
-  Future<CategoryResponse> getCategories({
+  Future<InquiryResponse> getInquiries({
     int page = 1,
     int take = 20,
     String search = '',
@@ -27,25 +27,25 @@ class CategoryService implements GenericListService<CategoryModel> {
       };
 
       final response = await _apiService.get(
-        '/api/categories',
+        '/api/inquiries',
         params: queryParams,
       );
 
-      return CategoryResponse.fromJson(response.data);
+      return InquiryResponse.fromJson(response.data);
     } catch (e) {
-      throw Exception('Failed to load categories: ${e.toString()}');
+      throw Exception('Failed to load inquiries: ${e.toString()}');
     }
   }
 
   @override
-  Future<GenericResponse<CategoryModel>> getData({
+  Future<GenericResponse<InquiryModel>> getData({
     required int page,
     required int take,
     required String search,
     required String sortBy,
     required String sortOrder,
   }) async {
-    final response = await getCategories(
+    final response = await getInquiries(
       page: page,
       take: take,
       search: search,
@@ -53,7 +53,7 @@ class CategoryService implements GenericListService<CategoryModel> {
       sortOrder: sortOrder,
     );
 
-    return GenericResponse<CategoryModel>(
+    return GenericResponse<InquiryModel>(
       total: response.total,
       page: response.page,
       take: response.take,
@@ -62,17 +62,17 @@ class CategoryService implements GenericListService<CategoryModel> {
     );
   }
 
-  Future<bool> deleteCategory(String id) async {
+  Future<bool> deleteInquiry(String id) async {
     try {
-      await _apiService.delete('/api/categories/$id');
+      await _apiService.delete('/api/inquiries/$id');
       return true;
     } catch (e) {
-      throw Exception('Failed to delete category: ${e.toString()}');
+      throw Exception('Failed to delete inquiry: ${e.toString()}');
     }
   }
 
   @override
   Future<void> deleteData(String id) async {
-    await deleteCategory(id);
+    await deleteInquiry(id);
   }
 }

@@ -1,8 +1,13 @@
-class BrandModel {
+import '../widgets/generic/generic_model.dart';
+
+class BrandModel implements GenericModel {
+  @override
   final String id;
   final String name;
   final bool isActive;
+  @override
   final String createdBy;
+  @override
   final String createdAt;
   final List<BrandAction> actions;
 
@@ -14,6 +19,43 @@ class BrandModel {
     required this.createdAt,
     required this.actions,
   });
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'isActive': isActive,
+      'createdBy': createdBy,
+      'createdAt': createdAt,
+      'actions': actions.map((a) => {
+        'icon': a.icon,
+        'type': a.type,
+        'routerLink': a.routerLink,
+        'deleteEndpoint': a.deleteEndpoint,
+        'isDisabled': a.isDisabled,
+        'tooltip': a.tooltip,
+      }).toList(),
+    };
+  }
+
+  @override
+  dynamic getFieldValue(String fieldKey) {
+    switch (fieldKey) {
+      case 'id':
+        return id;
+      case 'name':
+        return name;
+      case 'isActive':
+        return isActive ? 'Active' : 'Inactive';
+      case 'createdBy':
+        return createdBy;
+      case 'createdAt':
+        return createdAt;
+      default:
+        return null;
+    }
+  }
 
   factory BrandModel.fromJson(Map<String, dynamic> json) {
     // Extract ID from actions if not directly provided

@@ -1,8 +1,10 @@
 import 'package:get_it/get_it.dart';
 import '../models/brand_model.dart';
+import '../widgets/generic/generic_model.dart';
+import '../widgets/generic/generic_list_bloc.dart';
 import 'api_service.dart';
 
-class BrandService {
+class BrandService implements GenericListService<BrandModel> {
   final ApiService _apiService = GetIt.I<ApiService>();
 
   Future<BrandResponse> getBrands({
@@ -35,6 +37,31 @@ class BrandService {
     }
   }
 
+  @override
+  Future<GenericResponse<BrandModel>> getData({
+    required int page,
+    required int take,
+    required String search,
+    required String sortBy,
+    required String sortOrder,
+  }) async {
+    final response = await getBrands(
+      page: page,
+      take: take,
+      search: search,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+    );
+
+    return GenericResponse<BrandModel>(
+      total: response.total,
+      page: response.page,
+      take: response.take,
+      totalPages: response.totalPages,
+      records: response.records,
+    );
+  }
+
   Future<bool> deleteBrand(String id) async {
     try {
       await _apiService.delete('/api/brands/$id');
@@ -42,5 +69,10 @@ class BrandService {
     } catch (e) {
       throw Exception('Failed to delete brand: ${e.toString()}');
     }
+  }
+
+  @override
+  Future<void> deleteData(String id) async {
+    await deleteBrand(id);
   }
 }
