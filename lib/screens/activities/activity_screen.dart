@@ -23,7 +23,7 @@ class ActivityScreen extends StatelessWidget {
 class ActivityView extends StatelessWidget {
   const ActivityView({Key? key}) : super(key: key);
 
-  @override
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,

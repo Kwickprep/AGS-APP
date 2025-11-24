@@ -26,66 +26,39 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text('Dashboard'),
         backgroundColor: AppColors.white,
         elevation: 0,
       ),
       drawer: const AppDrawer(),
-      body: BlocBuilder<HomeBloc, HomeState>(
-        builder: (context, state) {
-          if (state is HomeLoaded) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.check_circle_outline,
-                    size: 80,
-                    color: AppColors.success,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Welcome, ${state.user?.fullName ?? "User"}!',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Email: ${state.user?.email ?? ""}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final authService = GetIt.I<AuthService>();
-                      await authService.logout();
-                      if (context.mounted) {
-                        Navigator.pushReplacementNamed(context, AppRoutes.login);
-                      }
-                    },
-                    icon: const Icon(Icons.logout),
-                    label: const Text('Logout'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ],
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.dashboard_outlined,
+              size: 100,
+              color: AppColors.grey.withOpacity(0.5),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Coming Soon',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: AppColors.black,
               ),
-            );
-          }
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        },
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Dashboard features are under development',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppColors.grey.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

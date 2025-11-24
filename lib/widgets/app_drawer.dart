@@ -111,6 +111,14 @@ class _AppDrawerState extends State<AppDrawer> {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.inventory_2_outlined),
+            title: const Text('Products'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.products);
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.event_note),
             title: const Text('Activities'),
             onTap: () {

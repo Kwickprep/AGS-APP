@@ -12,6 +12,7 @@ import '../screens/activities/activity_create_screen.dart';
 import '../screens/inquiries/inquiry_screen.dart';
 import '../screens/groups/group_screen.dart';
 import '../screens/groups/group_create_screen.dart';
+import '../screens/products/product_screen.dart';
 
 class AppRoutes {
   static const String startup = '/startup';
@@ -27,6 +28,7 @@ class AppRoutes {
   static const String inquiries = '/inquiries';
   static const String groups = '/groups';
   static const String createGroup = '/groups/create';
+  static const String products = '/products';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -43,6 +45,7 @@ class AppRoutes {
       inquiries: (context) => const InquiryScreen(),
       groups: (context) => const GroupScreen(),
       createGroup: (context) => const GroupCreateScreen(),
+      products: (context) => const ProductScreen(),
     };
   }
 

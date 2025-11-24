@@ -123,12 +123,25 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
     }
     _otpFocusNodes[0].requestFocus();
 
+    // Reset and restart timer immediately
+    setState(() {
+      _remainingSeconds = 300;
+    });
+    _startTimer();
+
     // Resend OTP request with separate country code and phone number
     context.read<LoginBloc>().add(
       SendOtpRequested(
         phoneCode: _selectedCountryCode,
         phoneNumber: _phoneController.text,
       ),
+    );
+
+    // Show toast
+    CustomToast.show(
+      context,
+      'OTP resent successfully',
+      type: ToastType.success,
     );
   }
 
@@ -178,15 +191,17 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                 type: ToastType.error,
               );
             } else if (state is OtpSent) {
-              setState(() {
-                _showOtpScreen = true;
-              });
-              _startTimer();
-              CustomToast.show(
-                context,
-                'OTP sent successfully to your WhatsApp',
-                type: ToastType.success,
-              );
+              if (!_showOtpScreen) {
+                setState(() {
+                  _showOtpScreen = true;
+                });
+                _startTimer();
+                CustomToast.show(
+                  context,
+                  'OTP sent successfully to your WhatsApp',
+                  type: ToastType.success,
+                );
+              }
             }
           },
           builder: (context, state) {
@@ -556,52 +571,55 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
               const SizedBox(height: 32),
 
               // OTP Input
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(6, (index) {
-                  return Container(
-                    width: 50,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _otpControllers[index],
-                      focusNode: _otpFocusNodes[index],
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      maxLength: 1,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.black,
-                      ),
-                      decoration: InputDecoration(
-                        counterText: '',
-                        filled: true,
-                        fillColor: AppColors.white,
-                        border: OutlineInputBorder(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final boxWidth = (constraints.maxWidth - 60) / 6; // 60 for spacing (5 gaps * 12)
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(6, (index) {
+                      return Container(
+                        width: boxWidth.clamp(40.0, 55.0),
+                        height: 56,
+                        decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            color: AppColors.lightGrey,
-                            width: 1.5,
-                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            color: AppColors.lightGrey,
-                            width: 1.5,
+                        child: TextField(
+                          controller: _otpControllers[index],
+                          focusNode: _otpFocusNodes[index],
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          maxLength: 1,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.black,
                           ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
+                          decoration: InputDecoration(
+                            counterText: '',
+                            filled: true,
+                            fillColor: AppColors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: AppColors.lightGrey,
+                                width: 1.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: AppColors.lightGrey,
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
                             color: AppColors.primary,
@@ -619,7 +637,9 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                       },
                     ),
                   );
-                }),
+                    }),
+                  );
+                },
               ),
               const SizedBox(height: 28),
 
@@ -694,17 +714,15 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
 
               // Resend OTP
               TextButton(
-                onPressed: _remainingSeconds > 0 ? null : _onResendOtp,
+                onPressed: _onResendOtp,
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                child: Text(
+                child: const Text(
                   'Resend OTP',
                   style: TextStyle(
                     fontSize: 15,
-                    color: _remainingSeconds > 0
-                        ? AppColors.grey.withOpacity(0.6)
-                        : AppColors.primary,
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.2,
                   ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'app.dart';
 import 'services/api_service.dart';
@@ -12,6 +11,7 @@ import 'services/tag_service.dart';
 import 'services/activity_service.dart';
 import 'services/inquiry_service.dart';
 import 'services/group_service.dart';
+import 'services/product_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -27,6 +27,7 @@ void setupDependencies() {
   getIt.registerSingleton<ActivityService>(ActivityService());
   getIt.registerSingleton<InquiryService>(InquiryService());
   getIt.registerSingleton<GroupService>(GroupService());
+  getIt.registerSingleton<ProductService>(ProductService());
 }
 
 void main() async {
