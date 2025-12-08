@@ -81,7 +81,7 @@ class _CategorySearchBarState extends State<CategorySearchBar> {
 
     // Set up debounced search with 500ms delay
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (value.length >= 1 || value.isEmpty) {
+      if (value.isNotEmpty || value.isEmpty) {
         widget.onSearch(value);
       }
     });
