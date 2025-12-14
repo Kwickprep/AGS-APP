@@ -103,7 +103,7 @@ class _GenericDataTableState<T extends GenericModel>
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
@@ -138,7 +138,7 @@ class _GenericDataTableState<T extends GenericModel>
                     ),
                   ),
           ),
-          _buildPagination(context),
+          if (widget.data.isNotEmpty) _buildPagination(context),
         ],
       ),
     );
@@ -290,6 +290,7 @@ class _GenericDataTableState<T extends GenericModel>
         : widget.currentPage * widget.pageSize;
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
         color: AppColors.background,

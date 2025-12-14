@@ -10,6 +10,7 @@ import '../screens/tags/tag_screen.dart';
 import '../screens/activities/activity_screen.dart';
 import '../screens/activities/activity_create_screen.dart';
 import '../screens/inquiries/inquiry_screen.dart';
+import '../screens/inquiries/inquiry_create_screen.dart';
 import '../screens/groups/group_screen.dart';
 import '../screens/groups/group_create_screen.dart';
 import '../screens/products/product_screen.dart';
@@ -26,6 +27,7 @@ class AppRoutes {
   static const String activities = '/activities';
   static const String createActivity = '/activities/create';
   static const String inquiries = '/inquiries';
+  static const String createInquiry = '/inquiries/create';
   static const String groups = '/groups';
   static const String createGroup = '/groups/create';
   static const String products = '/products';
@@ -43,6 +45,7 @@ class AppRoutes {
       activities: (context) => const ActivityScreen(),
       createActivity: (context) => const ActivityCreateScreen(),
       inquiries: (context) => const InquiryScreen(),
+      createInquiry: (context) => const InquiryCreateScreen(),
       groups: (context) => const GroupScreen(),
       createGroup: (context) => const GroupCreateScreen(),
       products: (context) => const ProductScreen(),

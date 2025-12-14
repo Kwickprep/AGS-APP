@@ -31,33 +31,35 @@ class HomeView extends StatelessWidget {
         elevation: 0,
       ),
       drawer: const AppDrawer(),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.dashboard_outlined,
-              size: 100,
-              color: AppColors.grey.withOpacity(0.5),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Coming Soon',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.black,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.dashboard_outlined,
+                size: 100,
+                color: AppColors.grey.withOpacity(0.5),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Dashboard features are under development',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.grey.withOpacity(0.7),
+              const SizedBox(height: 24),
+              const Text(
+                'Coming Soon',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.black,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                'Dashboard features are under development',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.grey.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

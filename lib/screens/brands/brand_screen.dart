@@ -1,168 +1,141 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
+import '../../models/brand_model.dart';
+import '../../services/brand_service.dart';
+import '../../widgets/generic/index.dart';
 
-import '../../config/app_colors.dart';
-import '../../widgets/ShimmerLoading.dart';
-import '../../widgets/brand_list.dart';
-import '../../widgets/brand_searchbar.dart';
-import 'brand_bloc.dart';
-
-class BrandScreen extends StatelessWidget {
+/// Brand list screen using generic widgets
+class BrandScreen extends StatefulWidget {
   const BrandScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => BrandBloc()..add(LoadBrands()),
-      child: const BrandView(),
-    );
-  }
+  State<BrandScreen> createState() => _BrandScreenState();
 }
 
-class BrandView extends StatelessWidget {
-  const BrandView({Key? key}) : super(key: key);
-
+class _BrandScreenState extends State<BrandScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
+    return GenericListScreen<BrandModel>(
+      config: GenericListScreenConfig<BrandModel>(
+        title: 'Brands',
+        columns: _buildColumns(),
+        blocBuilder: () => GenericListBloc<BrandModel>(
+          service: GetIt.I<BrandService>(),
+          sortComparator: _brandSortComparator,
+          filterPredicate: _brandFilterPredicate,
         ),
-        title: const Text('Brands'),
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Create brand not implemented yet')),
-              );
-            },
-          ),
-        ],
+        filterConfigs: [FilterConfig.statusFilter()],
+        searchHint: 'Search brands...',
+        emptyIcon: Icons.category_outlined,
+        emptyMessage: 'No brands found',
+        showCreateButton: false,
+        showSerialNumber: true,
+        showTotalCount: false,
+        enableEdit: false,
+        enableDelete: true,
       ),
-      body: BlocBuilder<BrandBloc, BrandState>(
-        builder: (context, state) {
-          if (state is BrandLoading) {
-            return const ShimmerLoading();
-          }
+    );
+  }
 
-          if (state is BrandError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading brands',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    state.message,
-                    style: const TextStyle(color: AppColors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<BrandBloc>().add(LoadBrands());
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (state is BrandLoaded) {
-            return Column(
-              children: [
-                BrandSearchBar(
-                  key: const ValueKey('brand_search_bar'), // Add key for widget identity
-                  initialSearchQuery: state.search, // Pass current search query
-                  onSearch: (query) {
-                    context.read<BrandBloc>().add(SearchBrands(query));
-                  },
-                  onApplyFilters: (filters) {
-                    context.read<BrandBloc>().add(ApplyFilters(filters));
-                  },
-                  currentFilters: state.filters ?? {},
-                ),
-                Expanded(
-                  child: BrandList(
-                    brands: state.brands,
-                    total: state.total,
-                    currentPage: state.page,
-                    pageSize: state.take,
-                    totalPages: state.totalPages,
-                    sortBy: state.sortBy,
-                    sortOrder: state.sortOrder,
-                    onPageChange: (page) {
-                      context.read<BrandBloc>().add(ChangePage(page));
-                    },
-                    onPageSizeChange: (size) {
-                      context.read<BrandBloc>().add(ChangePageSize(size));
-                    },
-                    onSort: (sortBy, sortOrder) {
-                      context.read<BrandBloc>().add(SortBrands(sortBy, sortOrder));
-                    },
-                    onDelete: (id) {
-                      _showDeleteConfirmation(context, id);
-                    },
-                    onEdit: (id) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Edit brand $id not implemented yet')),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          }
-
-          return const Center(
-            child: Text('No brands available'),
+  /// Define columns for brand table
+  List<GenericColumnConfig<BrandModel>> _buildColumns() {
+    return [
+      // Brand Name
+      GenericColumnConfig<BrandModel>(
+        label: 'Name',
+        fieldKey: 'name',
+        sortable: true,
+        customRenderer: (brand, index) {
+          return Text(
+            brand.name,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
           );
         },
       ),
-    );
+
+      // Status badge
+      GenericColumnConfig.statusBadge<BrandModel>(
+        getStatus: (brand) => brand.isActive ? 'Active' : 'Inactive',
+        isActive: (brand) => brand.isActive,
+      ),
+
+      // Created By
+      GenericColumnConfig<BrandModel>(
+        label: 'Created By',
+        fieldKey: 'createdBy',
+        sortable: true,
+      ),
+
+      // Created Date
+      GenericColumnConfig<BrandModel>(
+        label: 'Created Date',
+        fieldKey: 'createdAt',
+        sortable: true,
+      ),
+    ];
   }
 
-  void _showDeleteConfirmation(BuildContext context, String id) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Brand'),
-        content: const Text('Are you sure you want to delete this brand?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<BrandBloc>().add(DeleteBrand(id));
-              Navigator.pop(dialogContext);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+  /// Sort comparator for brands
+  int _brandSortComparator(
+    BrandModel a,
+    BrandModel b,
+    String sortBy,
+    String sortOrder,
+  ) {
+    int comparison = 0;
+
+    switch (sortBy) {
+      case 'name':
+        comparison = a.name.compareTo(b.name);
+        break;
+      case 'isActive':
+        comparison = a.isActive == b.isActive ? 0 : (a.isActive ? 1 : -1);
+        break;
+      case 'createdAt':
+        comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
+        break;
+      case 'createdBy':
+        comparison = a.createdBy.compareTo(b.createdBy);
+        break;
+      default:
+        comparison = 0;
+    }
+
+    return sortOrder == 'asc' ? comparison : -comparison;
+  }
+
+  /// Filter predicate for brands
+  bool _brandFilterPredicate(
+    BrandModel brand,
+    Map<String, dynamic> filters,
+  ) {
+    // Apply status filter
+    if (filters.containsKey('status')) {
+      final statusFilter = filters['status'];
+      if (statusFilter == 'active' && !brand.isActive) return false;
+      if (statusFilter == 'inactive' && brand.isActive) return false;
+    }
+
+    return true;
+  }
+
+  /// Parse date string in format "DD-MM-YYYY"
+  DateTime _parseDate(String dateStr) {
+    try {
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        return DateTime(
+          int.parse(parts[2]), // year
+          int.parse(parts[1]), // month
+          int.parse(parts[0]), // day
+        );
+      }
+    } catch (e) {
+      // Return current date if parsing fails
+    }
+    return DateTime.now();
   }
 }

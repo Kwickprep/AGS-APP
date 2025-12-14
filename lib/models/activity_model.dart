@@ -1,4 +1,7 @@
-class ActivityModel {
+import '../widgets/generic/generic_model.dart';
+
+class ActivityModel implements GenericModel {
+  @override
   final String id;
   final String activityType;
   final String company;
@@ -12,7 +15,9 @@ class ActivityModel {
   final String documents;
   final String nextScheduleDate;
   final String note;
+  @override
   final String createdBy;
+  @override
   final String createdAt;
   final List<ActivityAction> actions;
 
@@ -34,6 +39,44 @@ class ActivityModel {
     required this.createdAt,
     required this.actions,
   });
+
+  @override
+  dynamic getFieldValue(String fieldKey) {
+    switch (fieldKey) {
+      case 'id':
+        return id;
+      case 'activityType':
+        return activityType;
+      case 'company':
+        return company;
+      case 'inquiry':
+        return inquiry;
+      case 'user':
+        return user;
+      case 'theme':
+        return theme;
+      case 'category':
+        return category;
+      case 'priceRange':
+        return priceRange;
+      case 'product':
+        return product;
+      case 'moq':
+        return moq;
+      case 'documents':
+        return documents;
+      case 'nextScheduleDate':
+        return nextScheduleDate;
+      case 'note':
+        return note;
+      case 'createdBy':
+        return createdBy;
+      case 'createdAt':
+        return createdAt;
+      default:
+        return null;
+    }
+  }
 
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
     // Extract ID from actions if not directly provided
@@ -72,6 +115,7 @@ class ActivityModel {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,

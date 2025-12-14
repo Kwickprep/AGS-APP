@@ -142,59 +142,62 @@ class GenericListView<T extends GenericModel> extends StatelessWidget {
           }
 
           if (state is GenericListLoaded<T>) {
-            return Column(
-              children: [
-                GenericSearchBar(
-                  key: ValueKey('${config.title}_search_bar'),
-                  initialSearchQuery: state.search,
-                  onSearch: (query) {
-                    context.read<GenericListBloc<T>>().add(SearchData(query));
-                  },
-                  onApplyFilters: (filters) {
-                    context.read<GenericListBloc<T>>().add(ApplyFilters(filters));
-                  },
-                  currentFilters: state.filters ?? {},
-                  searchHint: config.searchHint,
-                  filterConfigs: config.filterConfigs,
-                  totalCount: config.showTotalCount ? state.total : null,
-                ),
-                Expanded(
-                  child: GenericDataTable<T>(
-                    data: state.data,
-                    columns: config.columns,
-                    total: state.total,
-                    currentPage: state.page,
-                    pageSize: state.take,
-                    totalPages: state.totalPages,
-                    sortBy: state.sortBy,
-                    sortOrder: state.sortOrder,
-                    onPageChange: (page) {
-                      context.read<GenericListBloc<T>>().add(ChangePage(page));
+            return SafeArea(
+              bottom: true,
+              child: Column(
+                children: [
+                  GenericSearchBar(
+                    key: ValueKey('${config.title}_search_bar'),
+                    initialSearchQuery: state.search,
+                    onSearch: (query) {
+                      context.read<GenericListBloc<T>>().add(SearchData(query));
                     },
-                    onPageSizeChange: (size) {
-                      context.read<GenericListBloc<T>>().add(ChangePageSize(size));
+                    onApplyFilters: (filters) {
+                      context.read<GenericListBloc<T>>().add(ApplyFilters(filters));
                     },
-                    onSort: (sortBy, sortOrder) {
-                      context.read<GenericListBloc<T>>().add(SortData(sortBy, sortOrder));
-                    },
-                    onDelete: config.enableDelete
-                        ? (id) => _showDeleteConfirmation(context, id, config.title)
-                        : null,
-                    onEdit: config.enableEdit
-                        ? (id) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'Edit ${config.title.toLowerCase()} $id not implemented yet')),
-                            );
-                          }
-                        : null,
-                    emptyIcon: config.emptyIcon,
-                    emptyMessage: config.emptyMessage,
-                    showSerialNumber: config.showSerialNumber,
+                    currentFilters: state.filters ?? {},
+                    searchHint: config.searchHint,
+                    filterConfigs: config.filterConfigs,
+                    totalCount: config.showTotalCount ? state.total : null,
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: GenericDataTable<T>(
+                      data: state.data,
+                      columns: config.columns,
+                      total: state.total,
+                      currentPage: state.page,
+                      pageSize: state.take,
+                      totalPages: state.totalPages,
+                      sortBy: state.sortBy,
+                      sortOrder: state.sortOrder,
+                      onPageChange: (page) {
+                        context.read<GenericListBloc<T>>().add(ChangePage(page));
+                      },
+                      onPageSizeChange: (size) {
+                        context.read<GenericListBloc<T>>().add(ChangePageSize(size));
+                      },
+                      onSort: (sortBy, sortOrder) {
+                        context.read<GenericListBloc<T>>().add(SortData(sortBy, sortOrder));
+                      },
+                      onDelete: config.enableDelete
+                          ? (id) => _showDeleteConfirmation(context, id, config.title)
+                          : null,
+                      onEdit: config.enableEdit
+                          ? (id) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Edit ${config.title.toLowerCase()} $id not implemented yet')),
+                              );
+                            }
+                          : null,
+                      emptyIcon: config.emptyIcon,
+                      emptyMessage: config.emptyMessage,
+                      showSerialNumber: config.showSerialNumber,
+                    ),
+                  ),
+                ],
+              ),
             );
           }
 

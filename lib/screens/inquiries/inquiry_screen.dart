@@ -1,4 +1,6 @@
+import 'package:ags/screens/inquiries/inquiry_create_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
 import '../../models/inquiry_model.dart';
@@ -20,12 +22,17 @@ class _InquiryScreenState extends State<InquiryScreen> {
   Widget build(BuildContext context) {
     return GenericListScreen<InquiryModel>(
       config: GenericListScreenConfig<InquiryModel>(
+        onCreatePressed: () async {
+          final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => InquiryCreateScreen(),));
+          if (result == true && context.mounted) {
+            // Reload the list if inquiry was created successfully
+            context.read<GenericListBloc<InquiryModel>>().add(LoadData());
+          }
+        },
         title: 'Inquiries',
         columns: _buildColumns(),
-        blocBuilder: () => GenericListBloc<InquiryModel>(
-          service: GetIt.I<InquiryService>(),
-          sortComparator: _inquirySortComparator,
-        ),
+        blocBuilder: () =>
+            GenericListBloc<InquiryModel>(service: GetIt.I<InquiryService>(), sortComparator: _inquirySortComparator),
         filterConfigs: [],
         searchHint: 'Search inquiries...',
         emptyIcon: Icons.assignment_outlined,
@@ -48,13 +55,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
         fieldKey: 'name',
         sortable: true,
         customRenderer: (inquiry, index) {
-          return Text(
-            inquiry.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          );
+          return Text(inquiry.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14));
         },
       ),
 
@@ -64,10 +65,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
         fieldKey: 'company',
         sortable: true,
         customRenderer: (inquiry, index) {
-          return Text(
-            inquiry.company,
-            style: const TextStyle(fontSize: 14),
-          );
+          return Text(inquiry.company, style: const TextStyle(fontSize: 14));
         },
       ),
 
@@ -77,10 +75,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
         fieldKey: 'contactUser',
         sortable: true,
         customRenderer: (inquiry, index) {
-          return Text(
-            inquiry.contactUser,
-            style: const TextStyle(fontSize: 14),
-          );
+          return Text(inquiry.contactUser, style: const TextStyle(fontSize: 14));
         },
       ),
 
@@ -95,18 +90,11 @@ class _InquiryScreenState extends State<InquiryScreen> {
             decoration: BoxDecoration(
               color: _getStatusColor(inquiry.status).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _getStatusColor(inquiry.status),
-                width: 1,
-              ),
+              border: Border.all(color: _getStatusColor(inquiry.status), width: 1),
             ),
             child: Text(
               inquiry.status,
-              style: TextStyle(
-                color: _getStatusColor(inquiry.status),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(color: _getStatusColor(inquiry.status), fontSize: 12, fontWeight: FontWeight.w500),
             ),
           );
         },
@@ -122,10 +110,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
           final note = inquiry.note;
 
           if (note.isEmpty || note == 'NA' || note == '-') {
-            return const Text(
-              '-',
-              style: TextStyle(color: AppColors.grey),
-            );
+            return const Text('-', style: TextStyle(color: AppColors.grey));
           }
 
           return GestureDetector(
@@ -138,19 +123,13 @@ class _InquiryScreenState extends State<InquiryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isExpanded || note.length <= 50
-                      ? note
-                      : '${note.substring(0, 50)}...',
+                  isExpanded || note.length <= 50 ? note : '${note.substring(0, 50)}...',
                   style: const TextStyle(fontSize: 14),
                 ),
                 if (note.length > 50)
                   Text(
                     isExpanded ? 'Show less' : 'Show more',
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w500),
                   ),
               ],
             ),
@@ -159,18 +138,10 @@ class _InquiryScreenState extends State<InquiryScreen> {
       ),
 
       // Created By
-      GenericColumnConfig<InquiryModel>(
-        label: 'Created By',
-        fieldKey: 'createdBy',
-        sortable: true,
-      ),
+      GenericColumnConfig<InquiryModel>(label: 'Created By', fieldKey: 'createdBy', sortable: true),
 
       // Created Date
-      GenericColumnConfig<InquiryModel>(
-        label: 'Created Date',
-        fieldKey: 'createdAt',
-        sortable: true,
-      ),
+      GenericColumnConfig<InquiryModel>(label: 'Created Date', fieldKey: 'createdAt', sortable: true),
     ];
   }
 
@@ -191,12 +162,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
   }
 
   /// Sort comparator for inquiries
-  int _inquirySortComparator(
-    InquiryModel a,
-    InquiryModel b,
-    String sortBy,
-    String sortOrder,
-  ) {
+  int _inquirySortComparator(InquiryModel a, InquiryModel b, String sortBy, String sortOrder) {
     int comparison = 0;
 
     switch (sortBy) {

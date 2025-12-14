@@ -75,4 +75,132 @@ class InquiryService implements GenericListService<InquiryModel> {
   Future<void> deleteData(String id) async {
     await deleteInquiry(id);
   }
+
+  // Get active companies for dropdown
+  Future<List<CompanyDropdownModel>> getActiveCompanies() async {
+    try {
+      final response = await _apiService.get(
+        '/api/companies',
+        params: {
+          'filters': '{"filters":{"isActive":true}}',
+        },
+      );
+
+      final data = response.data['data'] as Map<String, dynamic>;
+      final records = data['records'] as List<dynamic>;
+
+      return records.map((record) => CompanyDropdownModel.fromJson(record)).toList();
+    } catch (e) {
+      throw Exception('Failed to load companies: ${e.toString()}');
+    }
+  }
+
+  // Get active users for dropdown
+  Future<List<UserDropdownModel>> getActiveUsers() async {
+    try {
+      final response = await _apiService.get(
+        '/api/users',
+        params: {
+          'filters': '{"isActive":true}',
+        },
+      );
+
+      final data = response.data['data'] as Map<String, dynamic>;
+      final records = data['records'] as List<dynamic>;
+
+      return records.map((record) => UserDropdownModel.fromJson(record)).toList();
+    } catch (e) {
+      throw Exception('Failed to load users: ${e.toString()}');
+    }
+  }
+
+  // Get users by company ID
+  Future<List<UserDropdownModel>> getUsersByCompany(String companyId) async {
+    try {
+      final response = await _apiService.get(
+        '/api/users',
+        params: {
+          'filters': '{"isActive":true,"companyId":"$companyId"}',
+        },
+      );
+
+      final data = response.data['data'] as Map<String, dynamic>;
+      final records = data['records'] as List<dynamic>;
+
+      return records.map((record) => UserDropdownModel.fromJson(record)).toList();
+    } catch (e) {
+      throw Exception('Failed to load users: ${e.toString()}');
+    }
+  }
+
+  // Create inquiry
+  Future<InquiryModel> createInquiry(Map<String, dynamic> data) async {
+    try {
+      final response = await _apiService.post('/api/inquiries', data: data);
+      return InquiryModel.fromJson(response.data['data']);
+    } catch (e) {
+      throw Exception('Failed to create inquiry: ${e.toString()}');
+    }
+  }
+}
+
+// Dropdown models
+class CompanyDropdownModel {
+  final String id;
+  final String name;
+  final List<UserDropdownModel> users;
+
+  CompanyDropdownModel({
+    required this.id,
+    required this.name,
+    required this.users,
+  });
+
+  factory CompanyDropdownModel.fromJson(Map<String, dynamic> json) {
+    return CompanyDropdownModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      users: (json['users'] as List<dynamic>?)
+          ?.map((user) => UserDropdownModel.fromJson(user))
+          .toList() ?? [],
+    );
+  }
+}
+
+class UserDropdownModel {
+  final String id;
+  final String firstName;
+  final String? middleName;
+  final String? lastName;
+  final String phoneNumber;
+  final String? companyId;
+
+  UserDropdownModel({
+    required this.id,
+    required this.firstName,
+    this.middleName,
+    this.lastName,
+    required this.phoneNumber,
+    this.companyId,
+  });
+
+  String get fullName {
+    final parts = [
+      firstName,
+      if (middleName != null && middleName!.isNotEmpty) middleName,
+      if (lastName != null && lastName!.isNotEmpty) lastName,
+    ];
+    return parts.join(' ');
+  }
+
+  factory UserDropdownModel.fromJson(Map<String, dynamic> json) {
+    return UserDropdownModel(
+      id: json['id'] ?? '',
+      firstName: json['firstName'] ?? '',
+      middleName: json['middleName'],
+      lastName: json['lastName'],
+      phoneNumber: json['phoneNumber'] ?? '',
+      companyId: json['companyId'],
+    );
+  }
 }

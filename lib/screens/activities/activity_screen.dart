@@ -1,174 +1,247 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
 import '../../config/routes.dart';
-import '../../widgets/ShimmerLoading.dart';
-import '../../widgets/activity_search_bar.dart';
-import '../../widgets/activity_table.dart';
-import 'activity_bloc.dart';
+import '../../models/activity_model.dart';
+import '../../services/activity_service.dart';
+import '../../widgets/generic/index.dart';
 
-class ActivityScreen extends StatelessWidget {
+/// Activity list screen using generic widgets
+class ActivityScreen extends StatefulWidget {
   const ActivityScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ActivityBloc()..add(LoadActivities()),
-      child: const ActivityView(),
-    );
-  }
+  State<ActivityScreen> createState() => _ActivityScreenState();
 }
 
-class ActivityView extends StatelessWidget {
-  const ActivityView({Key? key}) : super(key: key);
+class _ActivityScreenState extends State<ActivityScreen> {
+  final Map<int, bool> _expandedRows = {};
 
-    @override
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
+    return GenericListScreen<ActivityModel>(
+      config: GenericListScreenConfig<ActivityModel>(
+        title: 'Activities',
+        columns: _buildColumns(),
+        blocBuilder: () => GenericListBloc<ActivityModel>(
+          service: GetIt.I<ActivityService>(),
+          sortComparator: _activitySortComparator,
         ),
-        title: const Text('Activities'),
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createActivity);
-            },
-          ),
-        ],
+        filterConfigs: [],
+        searchHint: 'Search activities...',
+        emptyIcon: Icons.local_activity_outlined,
+        emptyMessage: 'No activities found',
+        showCreateButton: true,
+        createRoute: AppRoutes.createActivity,
+        showSerialNumber: true,
+        showTotalCount: false,
+        enableEdit: false,
+        enableDelete: true,
       ),
-      body: BlocBuilder<ActivityBloc, ActivityState>(
-        builder: (context, state) {
-          print('ActivityScreen: Current state: ${state.runtimeType}');
+    );
+  }
 
-          if (state is ActivityLoading) {
-            print('ActivityScreen: Showing loading state');
-            return const ShimmerLoading();
-          }
-
-          if (state is ActivityError) {
-            print('ActivityScreen: Showing error state - ${state.message}');
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading activities',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    state.message,
-                    style: const TextStyle(color: AppColors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      context.read<ActivityBloc>().add(LoadActivities());
-                    },
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (state is ActivityLoaded) {
-            print('ActivityScreen: Showing loaded state - ${state.activities.length} activities');
-            return Column(
-              children: [
-                ActivitySearchBar(
-                  key: const ValueKey('activity_search_bar'),
-                  initialSearchQuery: state.search,
-                  onSearch: (query) {
-                    context.read<ActivityBloc>().add(SearchActivities(query));
-                  },
-                  onApplyFilters: (filters) {
-                    context.read<ActivityBloc>().add(ApplyFilters(filters));
-                  },
-                  currentFilters: state.filters ?? {},
-                  totalCount: state.total,
-                ),
-                Expanded(
-                  child: ActivityTable(
-                    activities: state.activities,
-                    total: state.total,
-                    currentPage: state.page,
-                    pageSize: state.take,
-                    totalPages: state.totalPages,
-                    sortBy: state.sortBy,
-                    sortOrder: state.sortOrder,
-                    onPageChange: (page) {
-                      context.read<ActivityBloc>().add(ChangePage(page));
-                    },
-                    onPageSizeChange: (size) {
-                      context.read<ActivityBloc>().add(ChangePageSize(size));
-                    },
-                    onSort: (sortBy, sortOrder) {
-                      context.read<ActivityBloc>().add(SortActivities(sortBy, sortOrder));
-                    },
-                    onDelete: (id) {
-                      _showDeleteConfirmation(context, id);
-                    },
-                    onEdit: (id) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Edit activity $id not implemented yet')),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          }
-
-          print('ActivityScreen: Default state - showing no activities message');
-          return const Center(
-            child: Text('No activities available'),
+  /// Define columns for activity table
+  List<GenericColumnConfig<ActivityModel>> _buildColumns() {
+    return [
+      // Activity Type
+      GenericColumnConfig<ActivityModel>(
+        label: 'Activity Type',
+        fieldKey: 'activityType',
+        sortable: true,
+        customRenderer: (activity, index) {
+          return Text(
+            activity.activityType,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
           );
         },
       ),
-    );
+
+      // Company
+      GenericColumnConfig<ActivityModel>(
+        label: 'Company',
+        fieldKey: 'company',
+        sortable: true,
+        customRenderer: (activity, index) {
+          return Text(
+            activity.company.isEmpty ? '-' : activity.company,
+            style: const TextStyle(fontSize: 14),
+          );
+        },
+      ),
+
+      // Inquiry
+      GenericColumnConfig<ActivityModel>(
+        label: 'Inquiry',
+        fieldKey: 'inquiry',
+        sortable: true,
+        customRenderer: (activity, index) {
+          return Text(
+            activity.inquiry.isEmpty ? '-' : activity.inquiry,
+            style: const TextStyle(fontSize: 14),
+          );
+        },
+      ),
+
+      // User
+      GenericColumnConfig<ActivityModel>(
+        label: 'User',
+        fieldKey: 'user',
+        sortable: true,
+        customRenderer: (activity, index) {
+          return Text(
+            activity.user.isEmpty ? '-' : activity.user,
+            style: const TextStyle(fontSize: 14),
+          );
+        },
+      ),
+
+      // Theme
+      GenericColumnConfig<ActivityModel>(
+        label: 'Theme',
+        fieldKey: 'theme',
+        sortable: true,
+        customRenderer: (activity, index) {
+          return Text(
+            activity.theme.isEmpty ? '-' : activity.theme,
+            style: const TextStyle(fontSize: 14),
+          );
+        },
+      ),
+
+      // Next Schedule Date
+      GenericColumnConfig<ActivityModel>(
+        label: 'Next Schedule',
+        fieldKey: 'nextScheduleDate',
+        sortable: true,
+        customRenderer: (activity, index) {
+          return Text(
+            activity.nextScheduleDate.isEmpty ? '-' : activity.nextScheduleDate,
+            style: const TextStyle(fontSize: 14),
+          );
+        },
+      ),
+
+      // Note (expandable)
+      GenericColumnConfig<ActivityModel>(
+        label: 'Note',
+        fieldKey: 'note',
+        sortable: false,
+        customRenderer: (activity, index) {
+          final isExpanded = _expandedRows[index] ?? false;
+          final note = activity.note;
+
+          if (note.isEmpty || note == 'NA' || note == '-') {
+            return const Text(
+              '-',
+              style: TextStyle(color: AppColors.grey),
+            );
+          }
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _expandedRows[index] = !isExpanded;
+              });
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isExpanded || note.length <= 50
+                      ? note
+                      : '${note.substring(0, 50)}...',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                if (note.length > 50)
+                  Text(
+                    isExpanded ? 'Show less' : 'Show more',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+
+      // Created By
+      GenericColumnConfig<ActivityModel>(
+        label: 'Created By',
+        fieldKey: 'createdBy',
+        sortable: true,
+      ),
+
+      // Created Date
+      GenericColumnConfig<ActivityModel>(
+        label: 'Created Date',
+        fieldKey: 'createdAt',
+        sortable: true,
+      ),
+    ];
   }
 
-  void _showDeleteConfirmation(BuildContext context, String id) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Activity'),
-        content: const Text('Are you sure you want to delete this activity?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<ActivityBloc>().add(DeleteActivity(id));
-              Navigator.pop(dialogContext);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+  /// Sort comparator for activities
+  int _activitySortComparator(
+    ActivityModel a,
+    ActivityModel b,
+    String sortBy,
+    String sortOrder,
+  ) {
+    int comparison = 0;
+
+    switch (sortBy) {
+      case 'activityType':
+        comparison = a.activityType.compareTo(b.activityType);
+        break;
+      case 'company':
+        comparison = a.company.compareTo(b.company);
+        break;
+      case 'inquiry':
+        comparison = a.inquiry.compareTo(b.inquiry);
+        break;
+      case 'user':
+        comparison = a.user.compareTo(b.user);
+        break;
+      case 'theme':
+        comparison = a.theme.compareTo(b.theme);
+        break;
+      case 'nextScheduleDate':
+        comparison = _parseDate(a.nextScheduleDate).compareTo(_parseDate(b.nextScheduleDate));
+        break;
+      case 'createdAt':
+        comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
+        break;
+      case 'createdBy':
+        comparison = a.createdBy.compareTo(b.createdBy);
+        break;
+      default:
+        comparison = 0;
+    }
+
+    return sortOrder == 'asc' ? comparison : -comparison;
+  }
+
+  /// Parse date string in format "DD-MM-YYYY"
+  DateTime _parseDate(String dateStr) {
+    try {
+      final parts = dateStr.split('-');
+      if (parts.length == 3) {
+        return DateTime(
+          int.parse(parts[2]), // year
+          int.parse(parts[1]), // month
+          int.parse(parts[0]), // day
+        );
+      }
+    } catch (e) {
+      // Return current date if parsing fails
+    }
+    return DateTime.now();
   }
 }

@@ -1,9 +1,14 @@
-class ThemeModel {
+import '../widgets/generic/generic_model.dart';
+
+class ThemeModel implements GenericModel {
+  @override
   final String id;
   final String name;
   final String description;
   final bool isActive;
+  @override
   final String createdBy;
+  @override
   final String createdAt;
   final List<ThemeAction> actions;
 
@@ -16,6 +21,46 @@ class ThemeModel {
     required this.createdAt,
     required this.actions,
   });
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'isActive': isActive,
+      'createdBy': createdBy,
+      'createdAt': createdAt,
+      'actions': actions.map((a) => {
+        'icon': a.icon,
+        'type': a.type,
+        'routerLink': a.routerLink,
+        'deleteEndpoint': a.deleteEndpoint,
+        'isDisabled': a.isDisabled,
+        'tooltip': a.tooltip,
+      }).toList(),
+    };
+  }
+
+  @override
+  dynamic getFieldValue(String fieldKey) {
+    switch (fieldKey) {
+      case 'id':
+        return id;
+      case 'name':
+        return name;
+      case 'description':
+        return description;
+      case 'isActive':
+        return isActive ? 'Active' : 'Inactive';
+      case 'createdBy':
+        return createdBy;
+      case 'createdAt':
+        return createdAt;
+      default:
+        return null;
+    }
+  }
 
   factory ThemeModel.fromJson(Map<String, dynamic> json) {
     // Extract ID from actions if not directly provided

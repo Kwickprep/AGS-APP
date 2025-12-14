@@ -5,6 +5,9 @@ import '../../models/contact_model.dart';
 import '../../services/group_service.dart';
 import '../../widgets/contact_selection_table.dart';
 import '../../widgets/custom_toast.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/custom_dropdown.dart';
+import '../../widgets/custom_button.dart';
 
 class GroupCreateScreen extends StatefulWidget {
   const GroupCreateScreen({Key? key}) : super(key: key);
@@ -146,51 +149,38 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      CustomButton(
+                        text: 'Retry',
                         onPressed: _loadContacts,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                        ),
-                        child: const Text('Retry'),
+                        width: 120,
+                        icon: Icons.refresh,
                       ),
                     ],
                   ),
                 )
-              : SafeArea(
-                  child: Column(
-                    children: [
-                      // Scrollable content
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(16),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
+              : GestureDetector(
+                  onTap: () {
+                    // Unfocus any focused widget when tapping outside
+                    FocusScope.of(context).unfocus();
+                  },
+                  child: SafeArea(
+                    child: Column(
+                      children: [
+                        // Scrollable content
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                         // Group Name
-                        const Text(
-                          'Group Name',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
+                        CustomTextField(
                           controller: _nameController,
-                          decoration: InputDecoration(
-                            hintText: 'Enter group name',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
+                          label: 'Group Name',
+                          hint: 'Enter group name',
+                          isRequired: true,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter group name';
@@ -201,35 +191,18 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         const SizedBox(height: 24),
 
                         // Status Dropdown
-                        const Text(
-                          'Status',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        DropdownButtonFormField<bool>(
+                        CustomDropdown<bool>(
+                          label: 'Status',
+                          hint: 'Select Status',
                           value: _isActive,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          items: const [
-                            DropdownMenuItem(
+                          items: [
+                            DropdownItem(
                               value: true,
-                              child: Text('Active'),
+                              label: 'Active',
                             ),
-                            DropdownMenuItem(
+                            DropdownItem(
                               value: false,
-                              child: Text('Inactive'),
+                              label: 'Inactive',
                             ),
                           ],
                           onChanged: (value) {
@@ -243,29 +216,11 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         const SizedBox(height: 24),
 
                         // Note
-                        const Text(
-                          'Note',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
+                        CustomTextField(
                           controller: _noteController,
+                          label: 'Note',
+                          hint: 'Enter note (optional)',
                           maxLines: 4,
-                          decoration: InputDecoration(
-                            hintText: 'Enter note (optional)',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
                         ),
                         const SizedBox(height: 24),
 
@@ -309,39 +264,16 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                         ),
                         child: SafeArea(
                           top: false,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _handleSubmit,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: AppColors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        color: AppColors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Submit',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                            ),
+                          child: CustomButton(
+                            text: 'Submit',
+                            onPressed: _handleSubmit,
+                            isLoading: _isLoading,
+                            icon: Icons.check,
                           ),
                         ),
                       ),
-                    ],
+                      ],
+                    ),
                   ),
                 )
     );

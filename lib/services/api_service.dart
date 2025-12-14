@@ -9,6 +9,9 @@ class ApiService {
   late Dio _dio;
   final StorageService _storage = GetIt.I<StorageService>();
 
+  // Expose Dio instance for file uploads
+  Dio get dio => _dio;
+
   ApiService() {
     _dio = Dio(
       BaseOptions(
@@ -299,6 +302,14 @@ class ApiService {
   Future<Response> delete(String path) async {
     try {
       return await _dio.delete(path);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> put(String path, {Map<String, dynamic>? data}) async {
+    try {
+      return await _dio.put(path, data: data);
     } catch (e) {
       rethrow;
     }
