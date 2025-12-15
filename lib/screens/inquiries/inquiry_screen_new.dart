@@ -9,14 +9,14 @@ import '../../widgets/generic/index.dart';
 import '../../widgets/common_list_card.dart';
 
 /// Inquiry list screen with card-based UI
-class InquiryScreen extends StatefulWidget {
-  const InquiryScreen({Key? key}) : super(key: key);
+class InquiryScreenNew extends StatefulWidget {
+  const InquiryScreenNew({Key? key}) : super(key: key);
 
   @override
-  State<InquiryScreen> createState() => _InquiryScreenState();
+  State<InquiryScreenNew> createState() => _InquiryScreenNewState();
 }
 
-class _InquiryScreenState extends State<InquiryScreen> {
+class _InquiryScreenNewState extends State<InquiryScreenNew> {
   late GenericListBloc<InquiryModel> _bloc;
   final TextEditingController _searchController = TextEditingController();
 

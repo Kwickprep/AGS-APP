@@ -2,31 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
-import '../../models/brand_model.dart';
-import '../../services/brand_service.dart';
+import '../../models/category_model.dart';
+import '../../services/category_service.dart';
 import '../../widgets/generic/index.dart';
 import '../../widgets/common_list_card.dart';
+import '../../widgets/pagination_widget.dart';
 
-/// Brand list screen with card-based UI
-class BrandScreen extends StatefulWidget {
-  const BrandScreen({Key? key}) : super(key: key);
+/// Category list screen with card-based UI
+class CategoryScreenCard extends StatefulWidget {
+  const CategoryScreenCard({Key? key}) : super(key: key);
 
   @override
-  State<BrandScreen> createState() => _BrandScreenState();
+  State<CategoryScreenCard> createState() => _CategoryScreenCardState();
 }
 
-class _BrandScreenState extends State<BrandScreen> {
-  late GenericListBloc<BrandModel> _bloc;
+class _CategoryScreenCardState extends State<CategoryScreenCard> {
+  late GenericListBloc<CategoryModel> _bloc;
   final TextEditingController _searchController = TextEditingController();
   String _statusFilter = 'all';
+  String _currentSortBy = 'createdAt';
+  String _currentSortOrder = 'desc';
 
   @override
   void initState() {
     super.initState();
-    _bloc = GenericListBloc<BrandModel>(
-      service: GetIt.I<BrandService>(),
-      sortComparator: _brandSortComparator,
-      filterPredicate: _brandFilterPredicate,
+    _bloc = GenericListBloc<CategoryModel>(
+      service: GetIt.I<CategoryService>(),
+      sortComparator: _categorySortComparator,
+      filterPredicate: _categoryFilterPredicate,
     );
     _bloc.add(LoadData());
   }
@@ -43,11 +46,11 @@ class _BrandScreenState extends State<BrandScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Brands'),
+        title: const Text('Categories'),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
       ),
-      body: BlocProvider<GenericListBloc<BrandModel>>(
+      body: BlocProvider<GenericListBloc<CategoryModel>>(
         create: (_) => _bloc,
         child: Column(
           children: [
@@ -60,7 +63,7 @@ class _BrandScreenState extends State<BrandScreen> {
                   TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Search brands...',
+                      hintText: 'Search categories...',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
@@ -97,7 +100,56 @@ class _BrandScreenState extends State<BrandScreen> {
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
+
                       children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.lightGrey),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.sort, size: 20, color: AppColors.grey),
+                              const SizedBox(width: 8),
+                              DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _currentSortBy,
+                                  isDense: true,
+                                  items: const [
+                                    DropdownMenuItem(value: 'name', child: Text('Name')),
+                                    DropdownMenuItem(value: 'description', child: Text('Description')),
+                                    DropdownMenuItem(value: 'isActive', child: Text('Status')),
+                                    DropdownMenuItem(value: 'createdBy', child: Text('Created By')),
+                                    DropdownMenuItem(value: 'createdAt', child: Text('Created Date')),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() => _currentSortBy = value);
+                                      _bloc.add(SortData(_currentSortBy, _currentSortOrder));
+                                    }
+                                  },
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _currentSortOrder == 'asc'
+                                      ? Icons.arrow_upward
+                                      : Icons.arrow_downward,
+                                  size: 20,
+                                ),
+                                color: AppColors.primary,
+                                onPressed: () {
+                                  setState(() {
+                                    _currentSortOrder = _currentSortOrder == 'asc' ? 'desc' : 'asc';
+                                  });
+                                  _bloc.add(SortData(_currentSortBy, _currentSortOrder));
+                                },
+                                tooltip: _currentSortOrder == 'asc' ? 'Ascending' : 'Descending',
+                              ),
+                            ],
+                          ),
+                        ),
                         _buildFilterChip('All', 'all'),
                         const SizedBox(width: 8),
                         _buildFilterChip('Active', 'active'),
@@ -106,13 +158,17 @@ class _BrandScreenState extends State<BrandScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 12),
+
+                  // Sorting UI
+
                 ],
               ),
             ),
 
             // Card list
             Expanded(
-              child: BlocBuilder<GenericListBloc<BrandModel>, GenericListState>(
+              child: BlocBuilder<GenericListBloc<CategoryModel>, GenericListState>(
                 builder: (context, state) {
                   if (state is GenericListLoading) {
                     return const Center(child: CircularProgressIndicator());
@@ -132,7 +188,7 @@ class _BrandScreenState extends State<BrandScreen> {
                         ],
                       ),
                     );
-                  } else if (state is GenericListLoaded<BrandModel>) {
+                  } else if (state is GenericListLoaded<CategoryModel>) {
                     if (state.data.isEmpty) {
                       return Center(
                         child: Column(
@@ -140,25 +196,39 @@ class _BrandScreenState extends State<BrandScreen> {
                           children: const [
                             Icon(Icons.category_outlined, size: 64, color: AppColors.grey),
                             SizedBox(height: 16),
-                            Text('No brands found', style: TextStyle(fontSize: 16)),
+                            Text('No categories found', style: TextStyle(fontSize: 16)),
                           ],
                         ),
                       );
                     }
 
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        _bloc.add(LoadData());
-                        await Future.delayed(const Duration(milliseconds: 500));
-                      },
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        itemCount: state.data.length,
-                        itemBuilder: (context, index) {
-                          final brand = state.data[index];
-                          return _buildBrandCard(brand);
-                        },
-                      ),
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: () async {
+                              _bloc.add(LoadData());
+                              await Future.delayed(const Duration(milliseconds: 500));
+                            },
+                            child: ListView.builder(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              itemCount: state.data.length,
+                              itemBuilder: (context, index) {
+                                final category = state.data[index];
+                                return _buildCategoryCard(category);
+                              },
+                            ),
+                          ),
+                        ),
+                        PaginationWidget(
+                          currentPage: state.page,
+                          totalPages: state.totalPages,
+                          pageSize: state.take,
+                          totalItems: state.total,
+                          onPageChange: (page) => _bloc.add(ChangePage(page)),
+                          onPageSizeChange: (size) => _bloc.add(ChangePageSize(size)),
+                        ),
+                      ],
                     );
                   }
 
@@ -196,43 +266,56 @@ class _BrandScreenState extends State<BrandScreen> {
     );
   }
 
-  Widget _buildBrandCard(BrandModel brand) {
+  Widget _buildCategoryCard(CategoryModel category) {
     return CommonListCard(
-      title: brand.name,
-      statusBadge: StatusBadgeConfig.status(brand.isActive ? 'Active' : 'Inactive'),
+      title: category.name,
+      statusBadge: StatusBadgeConfig.status(category.isActive ? 'Active' : 'Inactive'),
+      cardHeaderBackgroundColor: AppColors.background,
+      showActionsDivider: true,
+      showColumnLabels: true,
       rows: [
+        if (category.description.isNotEmpty)
+          CardRowConfig(
+            icon: Icons.description_outlined,
+            text: category.description,
+            label: 'Description',
+            iconColor: AppColors.primary,
+          ),
         CardRowConfig(
           icon: Icons.person_outline,
-          text: brand.createdBy,
+          text: category.createdBy,
+          label: 'Created By',
           iconColor: AppColors.primary,
         ),
         CardRowConfig(
           icon: Icons.calendar_today_outlined,
-          text: brand.createdAt,
+          text: category.createdAt,
+          label: 'Created Date',
           iconColor: AppColors.primary,
         ),
       ],
       onView: () {
-        _showBrandDetails(brand);
+        _showCategoryDetails(category);
       },
       onDelete: () {
-        _confirmDelete(brand);
+        _confirmDelete(category);
       },
     );
   }
 
-  void _showBrandDetails(BrandModel brand) {
+  void _showCategoryDetails(CategoryModel category) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(brand.name),
+        title: Text(category.name),
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDetailRow('Status', brand.isActive ? 'Active' : 'Inactive'),
-            _buildDetailRow('Created By', brand.createdBy),
-            _buildDetailRow('Created Date', brand.createdAt),
+            _buildDetailRow('Description', category.description.isEmpty ? '-' : category.description),
+            _buildDetailRow('Status', category.isActive ? 'Active' : 'Inactive'),
+            _buildDetailRow('Created By', category.createdBy),
+            _buildDetailRow('Created Date', category.createdAt),
           ],
         ),
         actions: [
@@ -272,12 +355,12 @@ class _BrandScreenState extends State<BrandScreen> {
     );
   }
 
-  void _confirmDelete(BrandModel brand) {
+  void _confirmDelete(CategoryModel category) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${brand.name}"?'),
+        content: Text('Are you sure you want to delete "${category.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -286,9 +369,9 @@ class _BrandScreenState extends State<BrandScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteData(brand.id));
+              _bloc.add(DeleteData(category.id));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Brand deleted successfully')),
+                const SnackBar(content: Text('Category deleted successfully')),
               );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
@@ -299,13 +382,16 @@ class _BrandScreenState extends State<BrandScreen> {
     );
   }
 
-  /// Sort comparator for brands
-  int _brandSortComparator(BrandModel a, BrandModel b, String sortBy, String sortOrder) {
+  /// Sort comparator for categories
+  int _categorySortComparator(CategoryModel a, CategoryModel b, String sortBy, String sortOrder) {
     int comparison = 0;
 
     switch (sortBy) {
       case 'name':
         comparison = a.name.compareTo(b.name);
+        break;
+      case 'description':
+        comparison = a.description.compareTo(b.description);
         break;
       case 'isActive':
         comparison = a.isActive == b.isActive ? 0 : (a.isActive ? 1 : -1);
@@ -323,13 +409,13 @@ class _BrandScreenState extends State<BrandScreen> {
     return sortOrder == 'asc' ? comparison : -comparison;
   }
 
-  /// Filter predicate for brands
-  bool _brandFilterPredicate(BrandModel brand, Map<String, dynamic> filters) {
+  /// Filter predicate for categories
+  bool _categoryFilterPredicate(CategoryModel category, Map<String, dynamic> filters) {
     // Apply status filter
     if (filters.containsKey('status') && filters['status'] != null) {
       final statusFilter = filters['status'];
-      if (statusFilter == 'active' && !brand.isActive) return false;
-      if (statusFilter == 'inactive' && brand.isActive) return false;
+      if (statusFilter == 'active' && !category.isActive) return false;
+      if (statusFilter == 'inactive' && category.isActive) return false;
     }
 
     return true;

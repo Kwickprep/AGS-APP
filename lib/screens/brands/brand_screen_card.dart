@@ -8,14 +8,14 @@ import '../../widgets/generic/index.dart';
 import '../../widgets/common_list_card.dart';
 
 /// Brand list screen with card-based UI
-class BrandScreen extends StatefulWidget {
-  const BrandScreen({Key? key}) : super(key: key);
+class BrandScreenCard extends StatefulWidget {
+  const BrandScreenCard({Key? key}) : super(key: key);
 
   @override
-  State<BrandScreen> createState() => _BrandScreenState();
+  State<BrandScreenCard> createState() => _BrandScreenCardState();
 }
 
-class _BrandScreenState extends State<BrandScreen> {
+class _BrandScreenCardState extends State<BrandScreenCard> {
   late GenericListBloc<BrandModel> _bloc;
   final TextEditingController _searchController = TextEditingController();
   String _statusFilter = 'all';

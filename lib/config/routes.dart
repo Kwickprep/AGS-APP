@@ -1,3 +1,11 @@
+import 'package:ags/screens/activities/activity_screen_card.dart';
+import 'package:ags/screens/brands/brand_screen_card.dart';
+import 'package:ags/screens/category/category_screen_card.dart';
+import 'package:ags/screens/groups/group_screen_card.dart';
+import 'package:ags/screens/inquiries/inquiry_screen_new.dart';
+import 'package:ags/screens/products/product_screen_card.dart';
+import 'package:ags/screens/tags/tag_screen_card.dart';
+import 'package:ags/screens/theme/theme_screen_card.dart';
 import 'package:flutter/material.dart';
 import '../screens/category/category_screen.dart';
 import '../screens/startup/startup_screen.dart';
@@ -38,17 +46,17 @@ class AppRoutes {
       login: (context) => const LoginScreen(),
       signup: (context) => const SignupScreen(),
       home: (context) => const HomeScreen(),
-      themes: (context) => const ThemeScreen(),
-      categories: (context) => const CategoryScreen(),
-      brands: (context) => const BrandScreen(),
-      tags: (context) => const TagScreen(),
-      activities: (context) => const ActivityScreen(),
+      themes: (context) => const ThemeScreenCard(),
+      categories: (context) => const CategoryScreenCard(),
+      brands: (context) => const BrandScreenCard(),
+      tags: (context) => const TagScreenCard(),
+      activities: (context) => const ActivityScreenCard(),
       createActivity: (context) => const ActivityCreateScreen(),
-      inquiries: (context) => const InquiryScreen(),
+      inquiries: (context) => const InquiryScreenNew(),
       createInquiry: (context) => const InquiryCreateScreen(),
-      groups: (context) => const GroupScreen(),
+      groups: (context) => const GroupScreenCard(),
       createGroup: (context) => const GroupCreateScreen(),
-      products: (context) => const ProductScreen(),
+      products: (context) => const ProductScreenCard(),
     };
   }
 

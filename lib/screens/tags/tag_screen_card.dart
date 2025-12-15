@@ -2,31 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
-import '../../models/brand_model.dart';
-import '../../services/brand_service.dart';
+import '../../models/tag_model.dart';
+import '../../services/tag_service.dart';
 import '../../widgets/generic/index.dart';
 import '../../widgets/common_list_card.dart';
 
-/// Brand list screen with card-based UI
-class BrandScreen extends StatefulWidget {
-  const BrandScreen({Key? key}) : super(key: key);
+/// Tag list screen with card-based UI
+class TagScreenCard extends StatefulWidget {
+  const TagScreenCard({Key? key}) : super(key: key);
 
   @override
-  State<BrandScreen> createState() => _BrandScreenState();
+  State<TagScreenCard> createState() => _TagScreenCardState();
 }
 
-class _BrandScreenState extends State<BrandScreen> {
-  late GenericListBloc<BrandModel> _bloc;
+class _TagScreenCardState extends State<TagScreenCard> {
+  late GenericListBloc<TagModel> _bloc;
   final TextEditingController _searchController = TextEditingController();
   String _statusFilter = 'all';
 
   @override
   void initState() {
     super.initState();
-    _bloc = GenericListBloc<BrandModel>(
-      service: GetIt.I<BrandService>(),
-      sortComparator: _brandSortComparator,
-      filterPredicate: _brandFilterPredicate,
+    _bloc = GenericListBloc<TagModel>(
+      service: GetIt.I<TagService>(),
+      sortComparator: _tagSortComparator,
+      filterPredicate: _tagFilterPredicate,
     );
     _bloc.add(LoadData());
   }
@@ -43,24 +43,22 @@ class _BrandScreenState extends State<BrandScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Brands'),
+        title: const Text('Tags'),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
       ),
-      body: BlocProvider<GenericListBloc<BrandModel>>(
+      body: BlocProvider<GenericListBloc<TagModel>>(
         create: (_) => _bloc,
         child: Column(
           children: [
-            // Search bar and filters
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Search field
                   TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Search brands...',
+                      hintText: 'Search tags...',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
@@ -92,8 +90,6 @@ class _BrandScreenState extends State<BrandScreen> {
                     },
                   ),
                   const SizedBox(height: 12),
-
-                  // Status filter chips
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -110,9 +106,8 @@ class _BrandScreenState extends State<BrandScreen> {
               ),
             ),
 
-            // Card list
             Expanded(
-              child: BlocBuilder<GenericListBloc<BrandModel>, GenericListState>(
+              child: BlocBuilder<GenericListBloc<TagModel>, GenericListState>(
                 builder: (context, state) {
                   if (state is GenericListLoading) {
                     return const Center(child: CircularProgressIndicator());
@@ -132,15 +127,15 @@ class _BrandScreenState extends State<BrandScreen> {
                         ],
                       ),
                     );
-                  } else if (state is GenericListLoaded<BrandModel>) {
+                  } else if (state is GenericListLoaded<TagModel>) {
                     if (state.data.isEmpty) {
-                      return Center(
+                      return const Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.category_outlined, size: 64, color: AppColors.grey),
+                          children: [
+                            Icon(Icons.label_outlined, size: 64, color: AppColors.grey),
                             SizedBox(height: 16),
-                            Text('No brands found', style: TextStyle(fontSize: 16)),
+                            Text('No tags found', style: TextStyle(fontSize: 16)),
                           ],
                         ),
                       );
@@ -155,8 +150,8 @@ class _BrandScreenState extends State<BrandScreen> {
                         padding: const EdgeInsets.only(bottom: 16),
                         itemCount: state.data.length,
                         itemBuilder: (context, index) {
-                          final brand = state.data[index];
-                          return _buildBrandCard(brand);
+                          final tag = state.data[index];
+                          return _buildTagCard(tag);
                         },
                       ),
                     );
@@ -196,43 +191,39 @@ class _BrandScreenState extends State<BrandScreen> {
     );
   }
 
-  Widget _buildBrandCard(BrandModel brand) {
+  Widget _buildTagCard(TagModel tag) {
     return CommonListCard(
-      title: brand.name,
-      statusBadge: StatusBadgeConfig.status(brand.isActive ? 'Active' : 'Inactive'),
+      title: tag.name,
+      statusBadge: StatusBadgeConfig.status(tag.isActive ? 'Active' : 'Inactive'),
       rows: [
         CardRowConfig(
           icon: Icons.person_outline,
-          text: brand.createdBy,
+          text: tag.createdBy,
           iconColor: AppColors.primary,
         ),
         CardRowConfig(
           icon: Icons.calendar_today_outlined,
-          text: brand.createdAt,
+          text: tag.createdAt,
           iconColor: AppColors.primary,
         ),
       ],
-      onView: () {
-        _showBrandDetails(brand);
-      },
-      onDelete: () {
-        _confirmDelete(brand);
-      },
+      onView: () => _showTagDetails(tag),
+      onDelete: () => _confirmDelete(tag),
     );
   }
 
-  void _showBrandDetails(BrandModel brand) {
+  void _showTagDetails(TagModel tag) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(brand.name),
+        title: Text(tag.name),
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDetailRow('Status', brand.isActive ? 'Active' : 'Inactive'),
-            _buildDetailRow('Created By', brand.createdBy),
-            _buildDetailRow('Created Date', brand.createdAt),
+            _buildDetailRow('Status', tag.isActive ? 'Active' : 'Inactive'),
+            _buildDetailRow('Created By', tag.createdBy),
+            _buildDetailRow('Created Date', tag.createdAt),
           ],
         ),
         actions: [
@@ -251,33 +242,20 @@ class _BrandScreenState extends State<BrandScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-              color: AppColors.grey,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.grey)),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          Text(value, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
         ],
       ),
     );
   }
 
-  void _confirmDelete(BrandModel brand) {
+  void _confirmDelete(TagModel tag) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${brand.name}"?'),
+        content: Text('Are you sure you want to delete "${tag.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -286,9 +264,9 @@ class _BrandScreenState extends State<BrandScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteData(brand.id));
+              _bloc.add(DeleteData(tag.id));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Brand deleted successfully')),
+                const SnackBar(content: Text('Tag deleted successfully')),
               );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
@@ -299,10 +277,8 @@ class _BrandScreenState extends State<BrandScreen> {
     );
   }
 
-  /// Sort comparator for brands
-  int _brandSortComparator(BrandModel a, BrandModel b, String sortBy, String sortOrder) {
+  int _tagSortComparator(TagModel a, TagModel b, String sortBy, String sortOrder) {
     int comparison = 0;
-
     switch (sortBy) {
       case 'name':
         comparison = a.name.compareTo(b.name);
@@ -313,42 +289,28 @@ class _BrandScreenState extends State<BrandScreen> {
       case 'createdAt':
         comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
         break;
-      case 'createdBy':
-        comparison = a.createdBy.compareTo(b.createdBy);
-        break;
       default:
         comparison = 0;
     }
-
     return sortOrder == 'asc' ? comparison : -comparison;
   }
 
-  /// Filter predicate for brands
-  bool _brandFilterPredicate(BrandModel brand, Map<String, dynamic> filters) {
-    // Apply status filter
+  bool _tagFilterPredicate(TagModel tag, Map<String, dynamic> filters) {
     if (filters.containsKey('status') && filters['status'] != null) {
       final statusFilter = filters['status'];
-      if (statusFilter == 'active' && !brand.isActive) return false;
-      if (statusFilter == 'inactive' && brand.isActive) return false;
+      if (statusFilter == 'active' && !tag.isActive) return false;
+      if (statusFilter == 'inactive' && tag.isActive) return false;
     }
-
     return true;
   }
 
-  /// Parse date string in format "DD-MM-YYYY"
   DateTime _parseDate(String dateStr) {
     try {
       final parts = dateStr.split('-');
       if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[2]), // year
-          int.parse(parts[1]), // month
-          int.parse(parts[0]), // day
-        );
+        return DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
       }
-    } catch (e) {
-      // Return current date if parsing fails
-    }
+    } catch (e) {}
     return DateTime.now();
   }
 }

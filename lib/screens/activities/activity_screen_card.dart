@@ -1,31 +1,31 @@
-import 'package:ags/screens/inquiries/inquiry_create_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
-import '../../models/inquiry_model.dart';
-import '../../services/inquiry_service.dart';
+import '../../models/activity_model.dart';
+import '../../services/activity_service.dart';
 import '../../widgets/generic/index.dart';
 import '../../widgets/common_list_card.dart';
+import 'activity_create_screen.dart';
 
-/// Inquiry list screen with card-based UI
-class InquiryScreen extends StatefulWidget {
-  const InquiryScreen({Key? key}) : super(key: key);
+/// Activity list screen with card-based UI
+class ActivityScreenCard extends StatefulWidget {
+  const ActivityScreenCard({Key? key}) : super(key: key);
 
   @override
-  State<InquiryScreen> createState() => _InquiryScreenState();
+  State<ActivityScreenCard> createState() => _ActivityScreenCardState();
 }
 
-class _InquiryScreenState extends State<InquiryScreen> {
-  late GenericListBloc<InquiryModel> _bloc;
+class _ActivityScreenCardState extends State<ActivityScreenCard> {
+  late GenericListBloc<ActivityModel> _bloc;
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _bloc = GenericListBloc<InquiryModel>(
-      service: GetIt.I<InquiryService>(),
-      sortComparator: _inquirySortComparator,
+    _bloc = GenericListBloc<ActivityModel>(
+      service: GetIt.I<ActivityService>(),
+      sortComparator: _activitySortComparator,
     );
     _bloc.add(LoadData());
   }
@@ -42,18 +42,18 @@ class _InquiryScreenState extends State<InquiryScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Inquiries'),
+        title: const Text('Activities'),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: _navigateToCreate,
-            tooltip: 'Create Inquiry',
+            tooltip: 'Create Activity',
           ),
         ],
       ),
-      body: BlocProvider<GenericListBloc<InquiryModel>>(
+      body: BlocProvider<GenericListBloc<ActivityModel>>(
         create: (_) => _bloc,
         child: Column(
           children: [
@@ -63,7 +63,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Search inquiries...',
+                  hintText: 'Search activities...',
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -98,7 +98,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
 
             // Card list
             Expanded(
-              child: BlocBuilder<GenericListBloc<InquiryModel>, GenericListState>(
+              child: BlocBuilder<GenericListBloc<ActivityModel>, GenericListState>(
                 builder: (context, state) {
                   if (state is GenericListLoading) {
                     return const Center(child: CircularProgressIndicator());
@@ -118,19 +118,19 @@ class _InquiryScreenState extends State<InquiryScreen> {
                         ],
                       ),
                     );
-                  } else if (state is GenericListLoaded<InquiryModel>) {
+                  } else if (state is GenericListLoaded<ActivityModel>) {
                     if (state.data.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.assignment_outlined, size: 64, color: AppColors.grey),
+                            const Icon(Icons.event_note_outlined, size: 64, color: AppColors.grey),
                             const SizedBox(height: 16),
-                            const Text('No inquiries found', style: TextStyle(fontSize: 16)),
+                            const Text('No activities found', style: TextStyle(fontSize: 16)),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _navigateToCreate,
-                              child: const Text('Create Inquiry'),
+                              child: const Text('Create Activity'),
                             ),
                           ],
                         ),
@@ -146,8 +146,8 @@ class _InquiryScreenState extends State<InquiryScreen> {
                         padding: const EdgeInsets.only(bottom: 16),
                         itemCount: state.data.length,
                         itemBuilder: (context, index) {
-                          final inquiry = state.data[index];
-                          return _buildInquiryCard(inquiry);
+                          final activity = state.data[index];
+                          return _buildActivityCard(activity);
                         },
                       ),
                     );
@@ -163,53 +163,61 @@ class _InquiryScreenState extends State<InquiryScreen> {
     );
   }
 
-  Widget _buildInquiryCard(InquiryModel inquiry) {
+  Widget _buildActivityCard(ActivityModel activity) {
     return CommonListCard(
-      title: inquiry.name,
-      statusBadge: StatusBadgeConfig.status(inquiry.status),
+      title: activity.inquiry,
+      statusBadge: StatusBadgeConfig.status(activity.activityType),
       rows: [
         CardRowConfig(
           icon: Icons.business_outlined,
-          text: inquiry.company,
+          text: activity.company,
           iconColor: AppColors.primary,
         ),
         CardRowConfig(
           icon: Icons.person_outline,
-          text: inquiry.contactUser,
+          text: activity.user,
           iconColor: AppColors.primary,
         ),
         CardRowConfig(
           icon: Icons.calendar_today_outlined,
-          text: inquiry.createdAt,
+          text: activity.nextScheduleDate.isNotEmpty
+              ? activity.nextScheduleDate
+              : activity.createdAt,
           iconColor: AppColors.primary,
         ),
       ],
       onView: () {
-        // Navigate to inquiry detail/view
-        _showInquiryDetails(inquiry);
+        _showActivityDetails(activity);
       },
       onDelete: () {
-        _confirmDelete(inquiry);
+        _confirmDelete(activity);
       },
     );
   }
 
-  void _showInquiryDetails(InquiryModel inquiry) {
+  void _showActivityDetails(ActivityModel activity) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(inquiry.name),
+        title: Text(activity.inquiry),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDetailRow('Company', inquiry.company),
-              _buildDetailRow('Contact User', inquiry.contactUser),
-              _buildDetailRow('Status', inquiry.status),
-              _buildDetailRow('Note', inquiry.note.isEmpty ? '-' : inquiry.note),
-              _buildDetailRow('Created By', inquiry.createdBy),
-              _buildDetailRow('Created Date', inquiry.createdAt),
+              _buildDetailRow('Activity Type', activity.activityType),
+              _buildDetailRow('Company', activity.company),
+              _buildDetailRow('User', activity.user),
+              _buildDetailRow('Theme', activity.theme),
+              _buildDetailRow('Category', activity.category),
+              _buildDetailRow('Product', activity.product),
+              _buildDetailRow('Price Range', activity.priceRange),
+              _buildDetailRow('MOQ', activity.moq),
+              _buildDetailRow('Documents', activity.documents.isEmpty ? '-' : activity.documents),
+              _buildDetailRow('Next Schedule', activity.nextScheduleDate.isEmpty ? '-' : activity.nextScheduleDate),
+              _buildDetailRow('Note', activity.note.isEmpty ? '-' : activity.note),
+              _buildDetailRow('Created By', activity.createdBy),
+              _buildDetailRow('Created Date', activity.createdAt),
             ],
           ),
         ),
@@ -250,12 +258,12 @@ class _InquiryScreenState extends State<InquiryScreen> {
     );
   }
 
-  void _confirmDelete(InquiryModel inquiry) {
+  void _confirmDelete(ActivityModel activity) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${inquiry.name}"?'),
+        content: Text('Are you sure you want to delete this activity for "${activity.inquiry}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -264,9 +272,9 @@ class _InquiryScreenState extends State<InquiryScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteData(inquiry.id));
+              _bloc.add(DeleteData(activity.id));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Inquiry deleted successfully')),
+                const SnackBar(content: Text('Activity deleted successfully')),
               );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
@@ -280,35 +288,35 @@ class _InquiryScreenState extends State<InquiryScreen> {
   Future<void> _navigateToCreate() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const InquiryCreateScreen()),
+      MaterialPageRoute(builder: (context) => const ActivityCreateScreen()),
     );
     if (result == true && mounted) {
       _bloc.add(LoadData());
     }
   }
 
-  /// Sort comparator for inquiries
-  int _inquirySortComparator(InquiryModel a, InquiryModel b, String sortBy, String sortOrder) {
+  /// Sort comparator for activities
+  int _activitySortComparator(ActivityModel a, ActivityModel b, String sortBy, String sortOrder) {
     int comparison = 0;
 
     switch (sortBy) {
-      case 'name':
-        comparison = a.name.compareTo(b.name);
+      case 'inquiry':
+        comparison = a.inquiry.compareTo(b.inquiry);
+        break;
+      case 'activityType':
+        comparison = a.activityType.compareTo(b.activityType);
         break;
       case 'company':
         comparison = a.company.compareTo(b.company);
         break;
-      case 'contactUser':
-        comparison = a.contactUser.compareTo(b.contactUser);
-        break;
-      case 'status':
-        comparison = a.status.compareTo(b.status);
+      case 'user':
+        comparison = a.user.compareTo(b.user);
         break;
       case 'createdAt':
         comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
         break;
-      case 'createdBy':
-        comparison = a.createdBy.compareTo(b.createdBy);
+      case 'nextScheduleDate':
+        comparison = _parseDate(a.nextScheduleDate).compareTo(_parseDate(b.nextScheduleDate));
         break;
       default:
         comparison = 0;
