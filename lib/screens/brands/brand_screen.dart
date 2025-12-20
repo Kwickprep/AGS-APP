@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
+import '../../config/app_text_styles.dart';
 import '../../models/brand_model.dart';
 import '../../services/brand_service.dart';
 import '../../widgets/generic/index.dart';
-import '../../widgets/common_list_card.dart';
+import '../../widgets/common/record_card.dart';
+import '../../widgets/common/filter_sort_bar.dart';
+import '../../widgets/common/pagination_controls.dart';
+import '../../widgets/common/filter_bottom_sheet.dart';
+import '../../widgets/common/sort_bottom_sheet.dart';
+import '../../widgets/common/details_bottom_sheet.dart';
 
-/// Brand list screen with card-based UI
+/// Brand list screen with full features: filter, sort, pagination, and details
 class BrandScreen extends StatefulWidget {
   const BrandScreen({Key? key}) : super(key: key);
 
@@ -18,7 +24,14 @@ class BrandScreen extends StatefulWidget {
 class _BrandScreenState extends State<BrandScreen> {
   late GenericListBloc<BrandModel> _bloc;
   final TextEditingController _searchController = TextEditingController();
-  String _statusFilter = 'all';
+
+  // Filter and sort state
+  FilterModel _filterModel = FilterModel();
+  SortModel _sortModel = SortModel(sortBy: 'name', sortOrder: 'asc');
+
+  // Pagination state
+  int _currentPage = 1;
+  final int _itemsPerPage = 20;
 
   @override
   void initState() {
@@ -38,237 +51,318 @@ class _BrandScreenState extends State<BrandScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Brands'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.white,
-      ),
-      body: BlocProvider<GenericListBloc<BrandModel>>(
-        create: (_) => _bloc,
-        child: Column(
-          children: [
-            // Search bar and filters
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Search field
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search brands...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                _bloc.add(SearchData(''));
-                              },
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: AppColors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.lightGrey),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.lightGrey),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.primary),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      _bloc.add(SearchData(value));
-                      setState(() {});
-                    },
-                  ),
-                  const SizedBox(height: 12),
+  List<BrandModel> _getPaginatedData(List<BrandModel> allData) {
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+    final endIndex = startIndex + _itemsPerPage;
 
-                  // Status filter chips
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildFilterChip('All', 'all'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Active', 'active'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Inactive', 'inactive'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    if (startIndex >= allData.length) {
+      return [];
+    }
 
-            // Card list
-            Expanded(
-              child: BlocBuilder<GenericListBloc<BrandModel>, GenericListState>(
-                builder: (context, state) {
-                  if (state is GenericListLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (state is GenericListError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline, size: 64, color: AppColors.error),
-                          const SizedBox(height: 16),
-                          Text(state.message, style: const TextStyle(fontSize: 16)),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => _bloc.add(LoadData()),
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
-                    );
-                  } else if (state is GenericListLoaded<BrandModel>) {
-                    if (state.data.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.category_outlined, size: 64, color: AppColors.grey),
-                            SizedBox(height: 16),
-                            Text('No brands found', style: TextStyle(fontSize: 16)),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        _bloc.add(LoadData());
-                        await Future.delayed(const Duration(milliseconds: 500));
-                      },
-                      child: ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        itemCount: state.data.length,
-                        itemBuilder: (context, index) {
-                          final brand = state.data[index];
-                          return _buildBrandCard(brand);
-                        },
-                      ),
-                    );
-                  }
-
-                  return const SizedBox.shrink();
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+    return allData.sublist(
+      startIndex,
+      endIndex > allData.length ? allData.length : endIndex,
     );
   }
 
-  Widget _buildFilterChip(String label, String value) {
-    final isSelected = _statusFilter == value;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
+  int _getTotalPages(int totalItems) {
+    return (totalItems / _itemsPerPage).ceil();
+  }
+
+  void _showFilterSheet() {
+    // Get unique creators from loaded data
+    List<String> creators = [];
+    final state = _bloc.state;
+    if (state is GenericListLoaded<BrandModel>) {
+      creators = state.data.map((b) => b.createdBy).toSet().toList();
+    }
+
+    FilterBottomSheet.show(
+      context: context,
+      initialFilter: _filterModel,
+      creatorOptions: creators,
+      statusOptions: const ['Active', 'Inactive'],
+      onApplyFilters: (filter) {
         setState(() {
-          _statusFilter = value;
-          _bloc.add(ApplyFilters({'status': value == 'all' ? null : value}));
+          _filterModel = filter;
+          _currentPage = 1; // Reset to first page
         });
+        _applyFiltersAndSort();
       },
-      backgroundColor: AppColors.white,
-      selectedColor: AppColors.primary.withOpacity(0.2),
-      checkmarkColor: AppColors.primary,
-      labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : AppColors.textPrimary,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-      side: BorderSide(
-        color: isSelected ? AppColors.primary : AppColors.lightGrey,
-      ),
     );
   }
 
-  Widget _buildBrandCard(BrandModel brand) {
-    return CommonListCard(
-      title: brand.name,
-      statusBadge: StatusBadgeConfig.status(brand.isActive ? 'Active' : 'Inactive'),
-      rows: [
-        CardRowConfig(
-          icon: Icons.person_outline,
-          text: brand.createdBy,
-          iconColor: AppColors.primary,
-        ),
-        CardRowConfig(
-          icon: Icons.calendar_today_outlined,
-          text: brand.createdAt,
-          iconColor: AppColors.primary,
-        ),
+  void _showSortSheet() {
+    SortBottomSheet.show(
+      context: context,
+      initialSort: _sortModel,
+      sortOptions: const [
+        SortOption(field: 'name', label: 'Name'),
+        SortOption(field: 'isActive', label: 'Status'),
+        SortOption(field: 'createdAt', label: 'Created Date'),
+        SortOption(field: 'createdBy', label: 'Created By'),
       ],
-      onView: () {
-        _showBrandDetails(brand);
-      },
-      onDelete: () {
-        _confirmDelete(brand);
+      onApplySort: (sort) {
+        setState(() {
+          _sortModel = sort;
+          _currentPage = 1; // Reset to first page
+        });
+        _applyFiltersAndSort();
       },
     );
+  }
+
+  void _applyFiltersAndSort() {
+    Map<String, dynamic> filters = {};
+
+    if (_filterModel.selectedStatuses.isNotEmpty) {
+      if (_filterModel.selectedStatuses.contains('Active') &&
+          !_filterModel.selectedStatuses.contains('Inactive')) {
+        filters['status'] = 'active';
+      } else if (_filterModel.selectedStatuses.contains('Inactive') &&
+                 !_filterModel.selectedStatuses.contains('Active')) {
+        filters['status'] = 'inactive';
+      }
+    }
+
+    if (_filterModel.createdBy != null) {
+      filters['createdBy'] = _filterModel.createdBy;
+    }
+
+    _bloc.add(ApplyFilters(filters));
+    _bloc.add(SortData(_sortModel.sortBy, _sortModel.sortOrder));
   }
 
   void _showBrandDetails(BrandModel brand) {
-    showDialog(
+    DetailsBottomSheet.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(brand.name),
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDetailRow('Status', brand.isActive ? 'Active' : 'Inactive'),
-            _buildDetailRow('Created By', brand.createdBy),
-            _buildDetailRow('Created Date', brand.createdAt),
-          ],
+      title: brand.name,
+      isActive: brand.isActive,
+      fields: [
+        DetailField(label: 'Brand Name', value: brand.name),
+        DetailField(label: 'Status', value: brand.isActive ? 'Active' : 'Inactive'),
+        DetailField(label: 'Created By', value: brand.createdBy),
+        DetailField(label: 'Created Date', value: brand.createdAt),
+      ],
+      onEdit: () {
+        // TODO: Navigate to edit screen
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Edit functionality coming soon')),
+        );
+      },
+      onDelete: () => _confirmDelete(brand),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        leading: const BackButton(),
+        centerTitle: true,
+        scrolledUnderElevation: 0,
+        bottom: const PreferredSize(
+          preferredSize: Size(double.infinity, 1),
+          child: Divider(height: 0.5, thickness: 1, color: AppColors.divider),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          'Brands',
+          style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: AppColors.iconPrimary),
+            onPressed: () {},
           ),
         ],
+      ),
+      body: BlocProvider<GenericListBloc<BrandModel>>(
+        create: (_) => _bloc,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Search bar
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search brands...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _bloc.add(SearchData(''));
+                              setState(() {});
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    _bloc.add(SearchData(value));
+                    setState(() {
+                      _currentPage = 1; // Reset to first page on search
+                    });
+                  },
+                ),
+              ),
+
+              // Filter and Sort bar
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: FilterSortBar(
+                  onFilterTap: _showFilterSheet,
+                  onSortTap: _showSortSheet,
+                ),
+              ),
+
+              // Card list
+              Expanded(
+                child: BlocBuilder<GenericListBloc<BrandModel>, GenericListState>(
+                  builder: (context, state) {
+                    if (state is GenericListLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (state is GenericListError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                            const SizedBox(height: 16),
+                            Text(state.message, style: const TextStyle(fontSize: 16)),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => _bloc.add(LoadData()),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else if (state is GenericListLoaded<BrandModel>) {
+                      if (state.data.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.category_outlined, size: 64, color: AppColors.grey),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No brands found',
+                                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final paginatedData = _getPaginatedData(state.data);
+                      final totalPages = _getTotalPages(state.data.length);
+
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: RefreshIndicator(
+                              onRefresh: () async {
+                                _bloc.add(LoadData());
+                                await Future.delayed(const Duration(milliseconds: 500));
+                              },
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: paginatedData.length,
+                                itemBuilder: (context, index) {
+                                  final brand = paginatedData[index];
+                                  final serialNumber = (_currentPage - 1) * _itemsPerPage + index + 1;
+                                  return _buildBrandCard(brand, serialNumber);
+                                },
+                              ),
+                            ),
+                          ),
+
+                          // Pagination controls
+                          if (totalPages > 1)
+                            PaginationControls(
+                              currentPage: _currentPage,
+                              totalPages: totalPages,
+                              totalItems: state.data.length,
+                              itemsPerPage: _itemsPerPage,
+                              onFirst: () {
+                                setState(() {
+                                  _currentPage = 1;
+                                });
+                              },
+                              onPrevious: () {
+                                setState(() {
+                                  _currentPage--;
+                                });
+                              },
+                              onNext: () {
+                                setState(() {
+                                  _currentPage++;
+                                });
+                              },
+                              onLast: () {
+                                setState(() {
+                                  _currentPage = totalPages;
+                                });
+                              },
+                            ),
+                        ],
+                      );
+                    }
+
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-              color: AppColors.grey,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
+  Widget _buildBrandCard(BrandModel brand, int serialNumber) {
+    return RecordCard(
+      serialNumber: serialNumber,
+      isActive: brand.isActive,
+      fields: [
+        CardField.title(
+          label: 'Brand Name',
+          value: brand.name,
+        ),
+        CardField.regular(
+          label: 'Created By',
+          value: brand.createdBy,
+        ),
+        CardField.regular(
+          label: 'Created Date',
+          value: brand.createdAt,
+        ),
+      ],
+      onView: () => _showBrandDetails(brand),
+      onDelete: () => _confirmDelete(brand),
+      onTap: () => _showBrandDetails(brand),
     );
   }
 
@@ -325,11 +419,14 @@ class _BrandScreenState extends State<BrandScreen> {
 
   /// Filter predicate for brands
   bool _brandFilterPredicate(BrandModel brand, Map<String, dynamic> filters) {
-    // Apply status filter
     if (filters.containsKey('status') && filters['status'] != null) {
       final statusFilter = filters['status'];
       if (statusFilter == 'active' && !brand.isActive) return false;
       if (statusFilter == 'inactive' && brand.isActive) return false;
+    }
+
+    if (filters.containsKey('createdBy') && filters['createdBy'] != null) {
+      if (brand.createdBy != filters['createdBy']) return false;
     }
 
     return true;

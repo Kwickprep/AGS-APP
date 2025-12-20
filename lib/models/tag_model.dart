@@ -27,6 +27,7 @@ class TagModel implements GenericModel {
       'name': name,
       'isActive': isActive,
       'createdBy': createdBy,
+
       'createdAt': createdAt,
       'actions': actions.map((a) => {
         'icon': a.icon,
