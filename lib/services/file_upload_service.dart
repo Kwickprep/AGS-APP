@@ -15,7 +15,7 @@ class FileUploadService {
 
   /// Upload single file to /api/files endpoint
   /// Returns file information including documentId
-  Future<String> uploadFile(File file) async {
+  Future<String> uploadFile(File file, {bool isPublic = true}) async {
     try {
       final fileName = path.basename(file.path);
       final mimeType = lookupMimeType(file.path) ?? 'application/octet-stream';
@@ -28,7 +28,7 @@ class FileUploadService {
           filename: fileName,
           contentType: DioMediaType.parse(mimeType),
         ),
-        'public': 'true',
+        'public': isPublic.toString(),
       });
 
       // Call files API endpoint

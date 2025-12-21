@@ -5,15 +5,14 @@ import '../../config/app_colors.dart';
 import '../../config/routes.dart';
 
 class StartupScreen extends StatefulWidget {
-  const StartupScreen({Key? key}) : super(key: key);
+  const StartupScreen({super.key});
 
   @override
   State<StartupScreen> createState() => _StartupScreenState();
 }
 
 class _StartupScreenState extends State<StartupScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  final int _currentPage = 0;
 
   @override
   Widget build(BuildContext context) {

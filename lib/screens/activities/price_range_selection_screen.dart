@@ -8,33 +8,38 @@ import '../../services/activity_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_toast.dart';
 import '../../widgets/custom_button.dart';
-import 'category_selection_screen.dart';
+import 'product_selection_screen.dart';
 import '../../widgets/custom_button.dart';
 
-class ThemeSelectionScreen extends StatefulWidget {
+class PriceRangeSelectionScreen extends StatefulWidget {
   final String activityId;
-  final List<dynamic> aiSuggestedThemes;
+  final List<dynamic> availablePriceRanges;
+  final Map<String, dynamic>? selectedTheme;
+  final Map<String, dynamic>? selectedCategory;
 
-  const ThemeSelectionScreen({
+  const PriceRangeSelectionScreen({
     super.key,
     required this.activityId,
-    required this.aiSuggestedThemes,
+    required this.availablePriceRanges,
+    this.selectedTheme,
+    this.selectedCategory,
   });
 
   @override
-  State<ThemeSelectionScreen> createState() => _ThemeSelectionScreenState();
+  State<PriceRangeSelectionScreen> createState() =>
+      _PriceRangeSelectionScreenState();
 }
 
-class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
+class _PriceRangeSelectionScreenState extends State<PriceRangeSelectionScreen> {
   final ActivityService _activityService = GetIt.I<ActivityService>();
-  Map<String, dynamic>? _selectedTheme;
+  Map<String, dynamic>? _selectedPriceRange;
   bool _isLoading = false;
 
-  Future<void> _submitThemeSelection() async {
-    if (_selectedTheme == null) {
+  Future<void> _submitPriceRangeSelection() async {
+    if (_selectedPriceRange == null) {
       CustomToast.show(
         context,
-        'Please select a theme',
+        'Please select a price range',
         type: ToastType.error,
       );
       return;
@@ -47,10 +52,11 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
     try {
       final data = {
         'body': {
-          'selectedTheme': {
-            'id': _selectedTheme!['id'],
-            'name': _selectedTheme!['name'],
-            'reason': _selectedTheme!['reason'],
+          'selectedPriceRange': {
+            'label': _selectedPriceRange!['label'],
+            'value': _selectedPriceRange!['value'],
+            'min': _selectedPriceRange!['min'],
+            'max': _selectedPriceRange!['max'],
           },
         },
       };
@@ -58,35 +64,36 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
       final response = await _activityService.updateActivity(widget.activityId, data);
 
       // Print JSON response for debugging
-      debugPrint('Theme Selection Response:');
+      debugPrint('Price Range Selection Response:');
       debugPrint('Body: ${response.body?.toJson()}');
 
       if (mounted) {
         CustomToast.show(
           context,
-          'Theme selected successfully',
+          'Price range selected successfully',
           type: ToastType.success,
         );
 
-        // Navigate to category selection if available
+        // Navigate to product selection if available
         final responseBody = response.body;
         if (responseBody != null &&
-            responseBody.aiSuggestedCategories != null &&
-            responseBody.aiSuggestedCategories!.isNotEmpty) {
-          // Navigate to category selection screen
-          final categoryResult = await Navigator.push(
+            responseBody.aiSuggestedProducts != null &&
+            responseBody.aiSuggestedProducts!.isNotEmpty) {
+          final productResult = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CategorySelectionScreen(
+              builder: (context) => ProductSelectionScreen(
                 activityId: widget.activityId,
-                aiSuggestedCategories: responseBody.aiSuggestedCategories!,
-                selectedTheme: _selectedTheme,
+                aiSuggestedProducts: responseBody.aiSuggestedProducts!,
+                selectedTheme: widget.selectedTheme,
+                selectedCategory: widget.selectedCategory,
+                selectedPriceRange: _selectedPriceRange,
               ),
             ),
           );
 
-          if (categoryResult != null && mounted) {
-            Navigator.pop(context, categoryResult);
+          if (productResult != null && mounted) {
+            Navigator.pop(context, productResult);
           }
         } else {
           Navigator.pop(context, response);
@@ -94,7 +101,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        debugPrint('Error submitting theme selection: $e');
+        debugPrint('Error submitting price range selection: $e');
         CustomToast.show(
           context,
           e.toString().replaceAll('Exception: ', ''),
@@ -144,8 +151,8 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                     _buildSummarySection(),
                     const SizedBox(height: 24),
 
-                    // Select Theme Section
-                    _buildThemeSelectionSection(),
+                    // Select Price Range Section
+                    _buildPriceRangeSelectionSection(),
                   ],
                 ),
               ),
@@ -166,7 +173,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
               ),
               child: CustomButton(
                 text: 'Next',
-                onPressed: _submitThemeSelection,
+                onPressed: _submitPriceRangeSelection,
                 isLoading: _isLoading,
                 icon: Icons.arrow_forward,
               ),
@@ -189,9 +196,15 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSummaryItem('THEME', 'N/A'),
+          _buildSummaryItem(
+            'THEME',
+            widget.selectedTheme?['name'] ?? 'N/A',
+          ),
           const SizedBox(height: 12),
-          _buildSummaryItem('CATEGORY', 'N/A'),
+          _buildSummaryItem(
+            'CATEGORY',
+            widget.selectedCategory?['name'] ?? 'N/A',
+          ),
           const SizedBox(height: 12),
           _buildSummaryItem('PRICE RANGE', 'N/A'),
           const SizedBox(height: 12),
@@ -227,7 +240,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
     );
   }
 
-  Widget _buildThemeSelectionSection() {
+  Widget _buildPriceRangeSelectionSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,7 +255,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
               ),
               child: const Center(
                 child: Text(
-                  '2',
+                  '4',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -253,7 +266,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
             ),
             const SizedBox(width: 12),
             const Text(
-              'Select a Theme',
+              'Select Price Range',
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 18,
@@ -264,96 +277,56 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Theme Options
-        ...widget.aiSuggestedThemes.map((theme) {
-          final bool isSelected = _selectedTheme != null &&
-              _selectedTheme!['id'] == theme['id'];
+        // Price Range Grid
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2.5,
+          ),
+          itemCount: widget.availablePriceRanges.length,
+          itemBuilder: (context, index) {
+            final priceRange = widget.availablePriceRanges[index];
+            final bool isSelected = _selectedPriceRange != null &&
+                _selectedPriceRange!['value'] == priceRange['value'];
 
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedTheme = theme;
-              });
-            },
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.lightGrey,
-                  width: isSelected ? 2 : 1,
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedPriceRange = priceRange;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : AppColors.lightGrey,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    priceRange['label'] ?? '',
+                    style: TextStyle(
+                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color:
-                            isSelected ? AppColors.primary : AppColors.lightGrey,
-                        width: 2,
-                      ),
-                      color: isSelected ? AppColors.primary : Colors.transparent,
-                    ),
-                    child: isSelected
-                        ? const Icon(
-                            Icons.check,
-                            size: 16,
-                            color: Colors.white,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          theme['name'] ?? '',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 16,
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // const Icon(
-                            //   Icons.auto_awesome,
-                            //   size: 14,
-                            //   color: AppColors.primary,
-                            // ),
-
-                            Expanded(
-                              child: Text(
-                                theme['reason'] ?? '',
-                                style: const TextStyle(
-                                  color: AppColors.grey,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
+            );
+          },
+        ),
       ],
     );
   }

@@ -21,7 +21,7 @@ class CustomTextField extends StatelessWidget {
   final void Function(String)? onChanged;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     this.controller,
     required this.label,
     this.prefixIcon,
@@ -39,7 +39,7 @@ class CustomTextField extends StatelessWidget {
     this.hint,
     this.textInputAction,
     this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -134,12 +134,12 @@ class CustomTextField extends StatelessWidget {
 }
 
 class LoadingOverlay extends StatelessWidget {
-  const LoadingOverlay({Key? key}) : super(key: key);
+  const LoadingOverlay({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withValues(alpha: 0.5),
       child: Center(
         child: Container(
           padding: const EdgeInsets.all(24),

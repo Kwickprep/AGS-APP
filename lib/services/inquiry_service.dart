@@ -1,10 +1,9 @@
 import 'package:get_it/get_it.dart';
 import '../models/inquiry_model.dart';
 import '../widgets/generic/generic_model.dart';
-import '../widgets/generic/generic_list_bloc.dart';
 import 'api_service.dart';
 
-class InquiryService implements GenericListService<InquiryModel> {
+class InquiryService{
   final ApiService _apiService = GetIt.I<ApiService>();
 
   Future<InquiryResponse> getInquiries({

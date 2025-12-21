@@ -10,12 +10,12 @@ class ThemeSearchBar extends StatefulWidget {
   final String? initialSearchQuery;
 
   const ThemeSearchBar({
-    Key? key,
+    super.key,
     required this.onSearch,
     required this.onApplyFilters,
     required this.currentFilters,
     this.initialSearchQuery,
-  }) : super(key: key);
+  });
 
   @override
   State<ThemeSearchBar> createState() => _ThemeSearchBarState();
@@ -79,7 +79,7 @@ class _ThemeSearchBarState extends State<ThemeSearchBar> {
 
     // Set up debounced search with 500ms delay
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (value.length >= 1 || value.isEmpty) {
+      if (value.isNotEmpty || value.isEmpty) {
         widget.onSearch(value);
       }
     });
@@ -183,7 +183,7 @@ class _ThemeSearchBarState extends State<ThemeSearchBar> {
                 Container(
                   decoration: BoxDecoration(
                     color: hasActiveFilters
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : AppColors.background,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
@@ -211,7 +211,7 @@ class _ThemeSearchBarState extends State<ThemeSearchBar> {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.error),
                     ),
@@ -303,7 +303,7 @@ class _ThemeSearchBarState extends State<ThemeSearchBar> {
         });
       },
       backgroundColor: AppColors.white,
-      selectedColor: AppColors.primary.withOpacity(0.1),
+      selectedColor: AppColors.primary.withValues(alpha: 0.1),
       checkmarkColor: AppColors.primary,
       side: BorderSide(
         color: isSelected ? AppColors.primary : AppColors.lightGrey,

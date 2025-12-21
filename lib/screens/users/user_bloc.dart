@@ -1,16 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import '../../models/category_model.dart';
-import '../../services/category_service.dart';
+import '../../models/user_screen_model.dart';
+import '../../services/user_service.dart';
 
 // ============================================================================
 // Events
 // ============================================================================
 
-abstract class CategoryEvent {}
+abstract class UserEvent {}
 
-/// Main event to load categories with all parameters
-class LoadCategories extends CategoryEvent {
+/// Main event to load users with all parameters
+class LoadUsers extends UserEvent {
   final int page;
   final int take;
   final String search;
@@ -18,7 +18,7 @@ class LoadCategories extends CategoryEvent {
   final String sortOrder;
   final Map<String, dynamic> filters;
 
-  LoadCategories({
+  LoadUsers({
     this.page = 1,
     this.take = 20,
     this.search = '',
@@ -28,23 +28,23 @@ class LoadCategories extends CategoryEvent {
   });
 }
 
-class DeleteCategory extends CategoryEvent {
+class DeleteUser extends UserEvent {
   final String id;
-  DeleteCategory(this.id);
+  DeleteUser(this.id);
 }
 
 // ============================================================================
 // States
 // ============================================================================
 
-abstract class CategoryState {}
+abstract class UserState {}
 
-class CategoryInitial extends CategoryState {}
+class UserInitial extends UserState {}
 
-class CategoryLoading extends CategoryState {}
+class UserLoading extends UserState {}
 
-class CategoryLoaded extends CategoryState {
-  final List<CategoryModel> categories;
+class UserLoaded extends UserState {
+  final List<UserScreenModel> users;
   final int total;
   final int page;
   final int take;
@@ -54,8 +54,8 @@ class CategoryLoaded extends CategoryState {
   final String sortOrder;
   final Map<String, dynamic> filters;
 
-  CategoryLoaded({
-    required this.categories,
+  UserLoaded({
+    required this.users,
     required this.total,
     required this.page,
     required this.take,
@@ -66,8 +66,8 @@ class CategoryLoaded extends CategoryState {
     required this.filters,
   });
 
-  CategoryLoaded copyWith({
-    List<CategoryModel>? categories,
+  UserLoaded copyWith({
+    List<UserScreenModel>? users,
     int? total,
     int? page,
     int? take,
@@ -77,8 +77,8 @@ class CategoryLoaded extends CategoryState {
     String? sortOrder,
     Map<String, dynamic>? filters,
   }) {
-    return CategoryLoaded(
-      categories: categories ?? this.categories,
+    return UserLoaded(
+      users: users ?? this.users,
       total: total ?? this.total,
       page: page ?? this.page,
       take: take ?? this.take,
@@ -91,32 +91,32 @@ class CategoryLoaded extends CategoryState {
   }
 }
 
-class CategoryError extends CategoryState {
+class UserError extends UserState {
   final String message;
-  CategoryError(this.message);
+  UserError(this.message);
 }
 
 // ============================================================================
 // BLoC - Simple approach: Every change triggers API call
 // ============================================================================
 
-class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
-  final CategoryService _categoryService = GetIt.I<CategoryService>();
+class UserBloc extends Bloc<UserEvent, UserState> {
+  final UserService _userService = GetIt.I<UserService>();
 
-  CategoryBloc() : super(CategoryInitial()) {
-    on<LoadCategories>(_onLoadCategories);
-    on<DeleteCategory>(_onDeleteCategory);
+  UserBloc() : super(UserInitial()) {
+    on<LoadUsers>(_onLoadUsers);
+    on<DeleteUser>(_onDeleteUser);
   }
 
-  /// Load categories from API with given parameters
-  Future<void> _onLoadCategories(
-    LoadCategories event,
-    Emitter<CategoryState> emit,
+  /// Load users from API with given parameters
+  Future<void> _onLoadUsers(
+    LoadUsers event,
+    Emitter<UserState> emit,
   ) async {
-    emit(CategoryLoading());
+    emit(UserLoading());
 
     try {
-      final response = await _categoryService.getCategories(
+      final response = await _userService.getUsers(
         page: event.page,
         take: event.take,
         search: event.search,
@@ -125,8 +125,8 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         filters: event.filters,
       );
 
-      emit(CategoryLoaded(
-        categories: response.records,
+      emit(UserLoaded(
+        users: response.records,
         total: response.total,
         page: response.page,
         take: response.take,
@@ -137,22 +137,22 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         filters: event.filters,
       ));
     } catch (e) {
-      emit(CategoryError(e.toString().replaceAll('Exception: ', '')));
+      emit(UserError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  /// Delete category and reload current page
-  Future<void> _onDeleteCategory(
-    DeleteCategory event,
-    Emitter<CategoryState> emit,
+  /// Delete user and reload current page
+  Future<void> _onDeleteUser(
+    DeleteUser event,
+    Emitter<UserState> emit,
   ) async {
     try {
-      await _categoryService.deleteCategory(event.id);
+      await _userService.deleteUser(event.id);
       
       // Reload with current parameters if we have a loaded state
-      if (state is CategoryLoaded) {
-        final currentState = state as CategoryLoaded;
-        add(LoadCategories(
+      if (state is UserLoaded) {
+        final currentState = state as UserLoaded;
+        add(LoadUsers(
           page: currentState.page,
           take: currentState.take,
           search: currentState.search,
@@ -162,10 +162,10 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         ));
       } else {
         // Otherwise just reload with defaults
-        add(LoadCategories());
+        add(LoadUsers());
       }
     } catch (e) {
-      emit(CategoryError(e.toString().replaceAll('Exception: ', '')));
+      emit(UserError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 }

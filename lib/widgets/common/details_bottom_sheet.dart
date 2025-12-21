@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../widgets/custom_button.dart';
 import '../../config/app_colors.dart';
+import '../../widgets/custom_button.dart';
 import '../../config/app_text_styles.dart';
+import '../../widgets/custom_button.dart';
 import 'status_badge.dart';
+import '../../widgets/custom_button.dart';
 
 /// Detail field model
 class DetailField {
@@ -60,21 +64,38 @@ class DetailsBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.9;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: maxHeight,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
+      ),
+      child: SafeArea(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.lightGrey,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
             // Header
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: const BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: AppColors.divider),
@@ -86,25 +107,30 @@ class DetailsBottomSheet extends StatelessWidget {
                   Expanded(
                     child: Text(
                       title,
-                      style: AppTextStyles.heading3,
+                      style: AppTextStyles.heading3.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 12),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close, size: 24),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
+                    color: AppColors.textSecondary,
                   ),
                 ],
               ),
             ),
 
             // Content
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -117,17 +143,18 @@ class DetailsBottomSheet extends StatelessWidget {
                           isActive: isActive,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                     ],
 
                     // Fields
                     ...fields.map((field) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: _buildField(
                         label: field.label,
                         value: field.value,
                       ),
                     )),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -138,6 +165,7 @@ class DetailsBottomSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
+                  color: Colors.white,
                   border: Border(
                     top: BorderSide(color: AppColors.divider),
                   ),
@@ -146,44 +174,26 @@ class DetailsBottomSheet extends StatelessWidget {
                   children: [
                     if (onEdit != null)
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: CustomButton(
+                          text: 'Edit',
                           onPressed: () {
                             Navigator.pop(context);
                             onEdit?.call();
                           },
-                          icon: const Icon(Icons.edit_outlined, size: 18),
-                          label:  Text('Edit'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
+                          icon: Icons.edit_outlined,
                         ),
                       ),
                     if (onEdit != null && onDelete != null)
                       const SizedBox(width: 12),
                     if (onDelete != null)
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: CustomButton(
+                          text: 'Delete',
                           onPressed: () {
                             Navigator.pop(context);
                             onDelete?.call();
                           },
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                          label: const Text('Delete'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.error,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
+                          icon: Icons.delete_outline,
                         ),
                       ),
                   ],
@@ -198,10 +208,14 @@ class DetailsBottomSheet extends StatelessWidget {
   Widget _buildField({required String label, required String value}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.5),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,15 +224,17 @@ class DetailsBottomSheet extends StatelessWidget {
             label,
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.textLight,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             value,
             style: AppTextStyles.bodyMedium.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w500,
+              fontSize: 15,
             ),
           ),
         ],

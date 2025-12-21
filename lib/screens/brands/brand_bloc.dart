@@ -3,15 +3,20 @@ import 'package:get_it/get_it.dart';
 import '../../models/brand_model.dart';
 import '../../services/brand_service.dart';
 
+// ============================================================================
 // Events
+// ============================================================================
+
 abstract class BrandEvent {}
 
+/// Main event to load brands with all parameters
 class LoadBrands extends BrandEvent {
   final int page;
   final int take;
   final String search;
   final String sortBy;
   final String sortOrder;
+  final Map<String, dynamic> filters;
 
   LoadBrands({
     this.page = 1,
@@ -19,28 +24,8 @@ class LoadBrands extends BrandEvent {
     this.search = '',
     this.sortBy = 'createdAt',
     this.sortOrder = 'desc',
+    this.filters = const {},
   });
-}
-
-class SearchBrands extends BrandEvent {
-  final String query;
-  SearchBrands(this.query);
-}
-
-class SortBrands extends BrandEvent {
-  final String sortBy;
-  final String sortOrder;
-  SortBrands(this.sortBy, this.sortOrder);
-}
-
-class ChangePageSize extends BrandEvent {
-  final int pageSize;
-  ChangePageSize(this.pageSize);
-}
-
-class ChangePage extends BrandEvent {
-  final int page;
-  ChangePage(this.page);
 }
 
 class DeleteBrand extends BrandEvent {
@@ -48,12 +33,10 @@ class DeleteBrand extends BrandEvent {
   DeleteBrand(this.id);
 }
 
-class ApplyFilters extends BrandEvent {
-  final Map<String, dynamic> filters;
-  ApplyFilters(this.filters);
-}
-
+// ============================================================================
 // States
+// ============================================================================
+
 abstract class BrandState {}
 
 class BrandInitial extends BrandState {}
@@ -69,7 +52,7 @@ class BrandLoaded extends BrandState {
   final String search;
   final String sortBy;
   final String sortOrder;
-  final Map<String, dynamic>? filters;
+  final Map<String, dynamic> filters;
 
   BrandLoaded({
     required this.brands,
@@ -80,8 +63,32 @@ class BrandLoaded extends BrandState {
     required this.search,
     required this.sortBy,
     required this.sortOrder,
-    this.filters,
+    required this.filters,
   });
+
+  BrandLoaded copyWith({
+    List<BrandModel>? brands,
+    int? total,
+    int? page,
+    int? take,
+    int? totalPages,
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+    Map<String, dynamic>? filters,
+  }) {
+    return BrandLoaded(
+      brands: brands ?? this.brands,
+      total: total ?? this.total,
+      page: page ?? this.page,
+      take: take ?? this.take,
+      totalPages: totalPages ?? this.totalPages,
+      search: search ?? this.search,
+      sortBy: sortBy ?? this.sortBy,
+      sortOrder: sortOrder ?? this.sortOrder,
+      filters: filters ?? this.filters,
+    );
+  }
 }
 
 class BrandError extends BrandState {
@@ -89,283 +96,76 @@ class BrandError extends BrandState {
   BrandError(this.message);
 }
 
-// Bloc
+// ============================================================================
+// BLoC - Simple approach: Every change triggers API call
+// ============================================================================
+
 class BrandBloc extends Bloc<BrandEvent, BrandState> {
   final BrandService _brandService = GetIt.I<BrandService>();
 
-  // Keep track of current parameters
-  int _currentPage = 1;
-  int _currentPageSize = 20;
-  String _currentSearch = '';
-  String _currentSortBy = 'createdAt';
-  String _currentSortOrder = 'desc';
-  Map<String, dynamic> _currentFilters = {};
-
-  // Cache original data for client-side filtering
-  List<BrandModel> _allBrands = [];
-  int _originalTotal = 0;
-
   BrandBloc() : super(BrandInitial()) {
     on<LoadBrands>(_onLoadBrands);
-    on<SearchBrands>(_onSearchBrands);
-    on<SortBrands>(_onSortBrands);
-    on<ChangePageSize>(_onChangePageSize);
-    on<ChangePage>(_onChangePage);
     on<DeleteBrand>(_onDeleteBrand);
-    on<ApplyFilters>(_onApplyFilters);
   }
 
+  /// Load brands from API with given parameters
   Future<void> _onLoadBrands(
-      LoadBrands event,
-      Emitter<BrandState> emit,
-      ) async {
+    LoadBrands event,
+    Emitter<BrandState> emit,
+  ) async {
     emit(BrandLoading());
 
     try {
-      _currentPage = event.page;
-      _currentPageSize = event.take;
-      _currentSearch = event.search;
-      _currentSortBy = event.sortBy;
-      _currentSortOrder = event.sortOrder;
-
       final response = await _brandService.getBrands(
         page: event.page,
         take: event.take,
         search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
+        filters: event.filters,
       );
 
-      // Store all brands for client-side filtering
-      _allBrands = response.records;
-      _originalTotal = response.total;
-
-      // Apply filters
-      final filteredBrands = _applyClientSideFilters(_allBrands);
-
       emit(BrandLoaded(
-        brands: filteredBrands,
-        total: filteredBrands.length,
+        brands: response.records,
+        total: response.total,
         page: response.page,
         take: response.take,
-        totalPages: (filteredBrands.length / response.take).ceil(),
+        totalPages: response.totalPages,
         search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
-        filters: _currentFilters,
+        filters: event.filters,
       ));
     } catch (e) {
       emit(BrandError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  Future<void> _onSearchBrands(
-      SearchBrands event,
-      Emitter<BrandState> emit,
-      ) async {
-    _currentSearch = event.query;
-    _currentPage = 1; // Reset to first page on search
-    add(LoadBrands(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
-  Future<void> _onSortBrands(
-      SortBrands event,
-      Emitter<BrandState> emit,
-      ) async {
-    _currentSortBy = event.sortBy;
-    _currentSortOrder = event.sortOrder;
-
-    // Handle reset to default (no sort)
-    if (event.sortBy.isEmpty || event.sortOrder.isEmpty) {
-      _currentSortBy = 'createdAt';
-      _currentSortOrder = 'desc';
-    }
-
-    // If we have cached data, sort it client-side for better performance
-    if (_allBrands.isNotEmpty && state is BrandLoaded) {
-      List<BrandModel> processedBrands = [..._allBrands];
-
-      // Only sort if we have valid sort parameters
-      if (event.sortBy.isNotEmpty && event.sortOrder.isNotEmpty) {
-        processedBrands = _sortClientSide(processedBrands);
-      } else {
-        // Reset to original order (by createdAt desc)
-        processedBrands = _sortClientSide(processedBrands);
-      }
-
-      final filteredBrands = _applyClientSideFilters(processedBrands);
-
-      emit(BrandLoaded(
-        brands: filteredBrands,
-        total: filteredBrands.length,
-        page: _currentPage,
-        take: _currentPageSize,
-        totalPages: (filteredBrands.length / _currentPageSize).ceil(),
-        search: _currentSearch,
-        sortBy: event.sortBy.isEmpty ? '' : _currentSortBy,
-        sortOrder: event.sortOrder.isEmpty ? '' : _currentSortOrder,
-        filters: _currentFilters,
-      ));
-    } else {
-      add(LoadBrands(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
-    }
-  }
-
-  Future<void> _onChangePageSize(
-      ChangePageSize event,
-      Emitter<BrandState> emit,
-      ) async {
-    _currentPageSize = event.pageSize;
-    _currentPage = 1; // Reset to first page when changing page size
-    add(LoadBrands(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
-  Future<void> _onChangePage(
-      ChangePage event,
-      Emitter<BrandState> emit,
-      ) async {
-    _currentPage = event.page;
-    add(LoadBrands(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
+  /// Delete brand and reload current page
   Future<void> _onDeleteBrand(
-      DeleteBrand event,
-      Emitter<BrandState> emit,
-      ) async {
+    DeleteBrand event,
+    Emitter<BrandState> emit,
+  ) async {
     try {
       await _brandService.deleteBrand(event.id);
-      // Reload brands after deletion
-      add(LoadBrands(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
+      
+      // Reload with current parameters if we have a loaded state
+      if (state is BrandLoaded) {
+        final currentState = state as BrandLoaded;
+        add(LoadBrands(
+          page: currentState.page,
+          take: currentState.take,
+          search: currentState.search,
+          sortBy: currentState.sortBy,
+          sortOrder: currentState.sortOrder,
+          filters: currentState.filters,
+        ));
+      } else {
+        // Otherwise just reload with defaults
+        add(LoadBrands());
+      }
     } catch (e) {
       emit(BrandError(e.toString().replaceAll('Exception: ', '')));
     }
-  }
-
-  Future<void> _onApplyFilters(
-      ApplyFilters event,
-      Emitter<BrandState> emit,
-      ) async {
-    _currentFilters = event.filters;
-
-    // Apply filters to cached data
-    if (_allBrands.isNotEmpty && state is BrandLoaded) {
-      final filteredBrands = _applyClientSideFilters(_allBrands);
-
-      emit(BrandLoaded(
-        brands: filteredBrands,
-        total: filteredBrands.length,
-        page: _currentPage,
-        take: _currentPageSize,
-        totalPages: (filteredBrands.length / _currentPageSize).ceil(),
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-        filters: _currentFilters,
-      ));
-    } else {
-      // If no cached data, reload from server
-      add(LoadBrands(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
-    }
-  }
-
-  List<BrandModel> _applyClientSideFilters(List<BrandModel> brands) {
-    List<BrandModel> filteredBrands = [...brands];
-
-    // Apply status filter
-    if (_currentFilters.containsKey('status')) {
-      final statusFilter = _currentFilters['status'];
-      if (statusFilter == 'active') {
-        filteredBrands = filteredBrands.where((brand) => brand.isActive).toList();
-      } else if (statusFilter == 'inactive') {
-        filteredBrands = filteredBrands.where((brand) => !brand.isActive).toList();
-      }
-    }
-
-    // Apply other filters as needed
-    // You can add more filter types here
-
-    return filteredBrands;
-  }
-
-  List<BrandModel> _sortClientSide(List<BrandModel> brands) {
-    brands.sort((a, b) {
-      int comparison = 0;
-
-      switch (_currentSortBy) {
-        case 'name':
-          comparison = a.name.compareTo(b.name);
-          break;
-        case 'createdAt':
-        // Parse dates and compare
-          comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
-          break;
-        case 'isActive':
-          comparison = a.isActive == b.isActive ? 0 : (a.isActive ? 1 : -1);
-          break;
-        case 'createdBy':
-          comparison = a.createdBy.compareTo(b.createdBy);
-          break;
-        default:
-          comparison = 0;
-      }
-
-      // Apply sort order
-      return _currentSortOrder == 'asc' ? comparison : -comparison;
-    });
-
-    return brands;
-  }
-
-  DateTime _parseDate(String dateStr) {
-    // Parse date string in format "DD-MM-YYYY"
-    try {
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[2]), // year
-          int.parse(parts[1]), // month
-          int.parse(parts[0]), // day
-        );
-      }
-    } catch (e) {
-      // Return current date if parsing fails
-    }
-    return DateTime.now();
   }
 }

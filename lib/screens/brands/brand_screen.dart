@@ -1,47 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
 import '../../models/brand_model.dart';
-import '../../services/brand_service.dart';
-import '../../widgets/generic/index.dart';
+import './brand_bloc.dart';
 import '../../widgets/common/record_card.dart';
-import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../widgets/common/filter_sort_bar.dart';
 
 /// Brand list screen with full features: filter, sort, pagination, and details
 class BrandScreen extends StatefulWidget {
-  const BrandScreen({Key? key}) : super(key: key);
+  const BrandScreen({super.key});
 
   @override
   State<BrandScreen> createState() => _BrandScreenState();
 }
 
 class _BrandScreenState extends State<BrandScreen> {
-  late GenericListBloc<BrandModel> _bloc;
+  late BrandBloc _bloc;
   final TextEditingController _searchController = TextEditingController();
 
-  // Filter and sort state
-  FilterModel _filterModel = FilterModel();
-  SortModel _sortModel = SortModel(sortBy: 'name', sortOrder: 'asc');
-
-  // Pagination state
+  // Current state parameters
   int _currentPage = 1;
   final int _itemsPerPage = 20;
+  String _currentSearch = '';
+  String _currentSortBy = 'createdAt';
+  String _currentSortOrder = 'desc';
+  Map<String, dynamic> _currentFilters = {};
 
   @override
   void initState() {
     super.initState();
-    _bloc = GenericListBloc<BrandModel>(
-      service: GetIt.I<BrandService>(),
-      sortComparator: _brandSortComparator,
-      filterPredicate: _brandFilterPredicate,
-    );
-    _bloc.add(LoadData());
+    _bloc = BrandBloc();
+    _loadBrands();
   }
 
   @override
@@ -51,43 +45,52 @@ class _BrandScreenState extends State<BrandScreen> {
     super.dispose();
   }
 
-  List<BrandModel> _getPaginatedData(List<BrandModel> allData) {
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = startIndex + _itemsPerPage;
-
-    if (startIndex >= allData.length) {
-      return [];
-    }
-
-    return allData.sublist(
-      startIndex,
-      endIndex > allData.length ? allData.length : endIndex,
-    );
-  }
-
-  int _getTotalPages(int totalItems) {
-    return (totalItems / _itemsPerPage).ceil();
+  void _loadBrands() {
+    _bloc.add(LoadBrands(
+      page: _currentPage,
+      take: _itemsPerPage,
+      search: _currentSearch,
+      sortBy: _currentSortBy,
+      sortOrder: _currentSortOrder,
+      filters: _currentFilters,
+    ));
   }
 
   void _showFilterSheet() {
-    // Get unique creators from loaded data
-    List<String> creators = [];
-    final state = _bloc.state;
-    if (state is GenericListLoaded<BrandModel>) {
-      creators = state.data.map((b) => b.createdBy).toSet().toList();
+    // Determine current selected statuses
+    List<String> selectedStatuses = [];
+    if (_currentFilters['isActive'] == true) {
+      selectedStatuses.add('Active');
+    } else if (_currentFilters['isActive'] == false) {
+      selectedStatuses.add('Inactive');
     }
 
     FilterBottomSheet.show(
       context: context,
-      initialFilter: _filterModel,
-      creatorOptions: creators,
+      initialFilter: FilterModel(
+        selectedStatuses: selectedStatuses.toSet(),
+        createdBy: _currentFilters['createdBy'],
+      ),
+      creatorOptions: const [],
       statusOptions: const ['Active', 'Inactive'],
       onApplyFilters: (filter) {
         setState(() {
-          _filterModel = filter;
-          _currentPage = 1; // Reset to first page
+          _currentFilters = {};
+          if (filter.selectedStatuses.isNotEmpty) {
+            if (filter.selectedStatuses.contains('Active') &&
+                !filter.selectedStatuses.contains('Inactive')) {
+              _currentFilters['isActive'] = true;
+            } else if (filter.selectedStatuses.contains('Inactive') &&
+                       !filter.selectedStatuses.contains('Active')) {
+              _currentFilters['isActive'] = false;
+            }
+          }
+          if (filter.createdBy != null) {
+            _currentFilters['createdBy'] = filter.createdBy;
+          }
+          _currentPage = 1;
         });
-        _applyFiltersAndSort();
+        _loadBrands();
       },
     );
   }
@@ -95,7 +98,7 @@ class _BrandScreenState extends State<BrandScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: _sortModel,
+      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
         SortOption(field: 'isActive', label: 'Status'),
@@ -104,33 +107,28 @@ class _BrandScreenState extends State<BrandScreen> {
       ],
       onApplySort: (sort) {
         setState(() {
-          _sortModel = sort;
-          _currentPage = 1; // Reset to first page
+          _currentSortBy = sort.sortBy;
+          _currentSortOrder = sort.sortOrder;
+          _currentPage = 1;
         });
-        _applyFiltersAndSort();
+        _loadBrands();
       },
     );
   }
 
-  void _applyFiltersAndSort() {
-    Map<String, dynamic> filters = {};
+  void _onSearchChanged(String value) {
+    setState(() {
+      _currentSearch = value;
+      _currentPage = 1;
+    });
+    _loadBrands();
+  }
 
-    if (_filterModel.selectedStatuses.isNotEmpty) {
-      if (_filterModel.selectedStatuses.contains('Active') &&
-          !_filterModel.selectedStatuses.contains('Inactive')) {
-        filters['status'] = 'active';
-      } else if (_filterModel.selectedStatuses.contains('Inactive') &&
-                 !_filterModel.selectedStatuses.contains('Active')) {
-        filters['status'] = 'inactive';
-      }
-    }
-
-    if (_filterModel.createdBy != null) {
-      filters['createdBy'] = _filterModel.createdBy;
-    }
-
-    _bloc.add(ApplyFilters(filters));
-    _bloc.add(SortData(_sortModel.sortBy, _sortModel.sortOrder));
+  void _onPageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+    _loadBrands();
   }
 
   void _showBrandDetails(BrandModel brand) {
@@ -144,13 +142,6 @@ class _BrandScreenState extends State<BrandScreen> {
         DetailField(label: 'Created By', value: brand.createdBy),
         DetailField(label: 'Created Date', value: brand.createdAt),
       ],
-      onEdit: () {
-        // TODO: Navigate to edit screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Edit functionality coming soon')),
-        );
-      },
-      onDelete: () => _confirmDelete(brand),
     );
   }
 
@@ -161,25 +152,20 @@ class _BrandScreenState extends State<BrandScreen> {
       appBar: AppBar(
         leading: const BackButton(),
         centerTitle: true,
-        scrolledUnderElevation: 0,
+       
         bottom: const PreferredSize(
           preferredSize: Size(double.infinity, 1),
           child: Divider(height: 0.5, thickness: 1, color: AppColors.divider),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         title: Text(
           'Brands',
           style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: AppColors.iconPrimary),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: BlocProvider<GenericListBloc<BrandModel>>(
+      body: BlocProvider<BrandBloc>(
         create: (_) => _bloc,
         child: SafeArea(
           child: Column(
@@ -198,8 +184,11 @@ class _BrandScreenState extends State<BrandScreen> {
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               _searchController.clear();
-                              _bloc.add(SearchData(''));
-                              setState(() {});
+                              setState(() {
+                                _currentSearch = '';
+                                _currentPage = 1;
+                              });
+                              _loadBrands();
                             },
                           )
                         : null,
@@ -218,12 +207,7 @@ class _BrandScreenState extends State<BrandScreen> {
                       borderSide: const BorderSide(color: AppColors.primary),
                     ),
                   ),
-                  onChanged: (value) {
-                    _bloc.add(SearchData(value));
-                    setState(() {
-                      _currentPage = 1; // Reset to first page on search
-                    });
-                  },
+                  onChanged: _onSearchChanged,
                 ),
               ),
 
@@ -239,11 +223,11 @@ class _BrandScreenState extends State<BrandScreen> {
 
               // Card list
               Expanded(
-                child: BlocBuilder<GenericListBloc<BrandModel>, GenericListState>(
+                child: BlocBuilder<BrandBloc, BrandState>(
                   builder: (context, state) {
-                    if (state is GenericListLoading) {
+                    if (state is BrandLoading) {
                       return const Center(child: CircularProgressIndicator());
-                    } else if (state is GenericListError) {
+                    } else if (state is BrandError) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -253,14 +237,14 @@ class _BrandScreenState extends State<BrandScreen> {
                             Text(state.message, style: const TextStyle(fontSize: 16)),
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: () => _bloc.add(LoadData()),
+                              onPressed: _loadBrands,
                               child: const Text('Retry'),
                             ),
                           ],
                         ),
                       );
-                    } else if (state is GenericListLoaded<BrandModel>) {
-                      if (state.data.isEmpty) {
+                    } else if (state is BrandLoaded) {
+                      if (state.brands.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -276,23 +260,20 @@ class _BrandScreenState extends State<BrandScreen> {
                         );
                       }
 
-                      final paginatedData = _getPaginatedData(state.data);
-                      final totalPages = _getTotalPages(state.data.length);
-
                       return Column(
                         children: [
                           Expanded(
                             child: RefreshIndicator(
                               onRefresh: () async {
-                                _bloc.add(LoadData());
+                                _loadBrands();
                                 await Future.delayed(const Duration(milliseconds: 500));
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
-                                itemCount: paginatedData.length,
+                                itemCount: state.brands.length,
                                 itemBuilder: (context, index) {
-                                  final brand = paginatedData[index];
-                                  final serialNumber = (_currentPage - 1) * _itemsPerPage + index + 1;
+                                  final brand = state.brands[index];
+                                  final serialNumber = (state.page - 1) * state.take + index + 1;
                                   return _buildBrandCard(brand, serialNumber);
                                 },
                               ),
@@ -300,33 +281,13 @@ class _BrandScreenState extends State<BrandScreen> {
                           ),
 
                           // Pagination controls
-                          if (totalPages > 1)
-                            PaginationControls(
-                              currentPage: _currentPage,
-                              totalPages: totalPages,
-                              totalItems: state.data.length,
-                              itemsPerPage: _itemsPerPage,
-                              onFirst: () {
-                                setState(() {
-                                  _currentPage = 1;
-                                });
-                              },
-                              onPrevious: () {
-                                setState(() {
-                                  _currentPage--;
-                                });
-                              },
-                              onNext: () {
-                                setState(() {
-                                  _currentPage++;
-                                });
-                              },
-                              onLast: () {
-                                setState(() {
-                                  _currentPage = totalPages;
-                                });
-                              },
-                            ),
+                          PaginationControls(
+                            currentPage: state.page,
+                            totalPages: state.totalPages,
+                            totalItems: state.total,
+                            itemsPerPage: state.take,
+                            onPageChanged: _onPageChanged,
+                          ),
                         ],
                       );
                     }
@@ -380,7 +341,7 @@ class _BrandScreenState extends State<BrandScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteData(brand.id));
+              _bloc.add(DeleteBrand(brand.id));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Brand deleted successfully')),
               );
@@ -393,59 +354,4 @@ class _BrandScreenState extends State<BrandScreen> {
     );
   }
 
-  /// Sort comparator for brands
-  int _brandSortComparator(BrandModel a, BrandModel b, String sortBy, String sortOrder) {
-    int comparison = 0;
-
-    switch (sortBy) {
-      case 'name':
-        comparison = a.name.compareTo(b.name);
-        break;
-      case 'isActive':
-        comparison = a.isActive == b.isActive ? 0 : (a.isActive ? 1 : -1);
-        break;
-      case 'createdAt':
-        comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
-        break;
-      case 'createdBy':
-        comparison = a.createdBy.compareTo(b.createdBy);
-        break;
-      default:
-        comparison = 0;
-    }
-
-    return sortOrder == 'asc' ? comparison : -comparison;
-  }
-
-  /// Filter predicate for brands
-  bool _brandFilterPredicate(BrandModel brand, Map<String, dynamic> filters) {
-    if (filters.containsKey('status') && filters['status'] != null) {
-      final statusFilter = filters['status'];
-      if (statusFilter == 'active' && !brand.isActive) return false;
-      if (statusFilter == 'inactive' && brand.isActive) return false;
-    }
-
-    if (filters.containsKey('createdBy') && filters['createdBy'] != null) {
-      if (brand.createdBy != filters['createdBy']) return false;
-    }
-
-    return true;
-  }
-
-  /// Parse date string in format "DD-MM-YYYY"
-  DateTime _parseDate(String dateStr) {
-    try {
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[2]), // year
-          int.parse(parts[1]), // month
-          int.parse(parts[0]), // day
-        );
-      }
-    } catch (e) {
-      // Return current date if parsing fails
-    }
-    return DateTime.now();
-  }
 }

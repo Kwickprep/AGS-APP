@@ -1,14 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
 import '../../config/routes.dart';
+import '../../widgets/custom_button.dart';
 import '../../widgets/custom_toast.dart';
 import 'login_bloc.dart';
 import 'dart:async';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,23 +22,28 @@ class LoginScreen extends StatelessWidget {
 }
 
 class LoginView extends StatefulWidget {
-  const LoginView({Key? key}) : super(key: key);
+  const LoginView({super.key});
 
   @override
   State<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixin {
+class _LoginViewState extends State<LoginView>
+    with AutomaticKeepAliveClientMixin {
   final _phoneController = TextEditingController();
   String _selectedCountryCode = '+91';
   String _selectedCountryFlag = 'IN';
   bool _showOtpScreen = false;
 
   // OTP related
-  final List<TextEditingController> _otpControllers =
-      List.generate(6, (index) => TextEditingController());
-  final List<FocusNode> _otpFocusNodes =
-      List.generate(6, (index) => FocusNode());
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
+  final List<FocusNode> _otpFocusNodes = List.generate(
+    6,
+    (index) => FocusNode(),
+  );
   Timer? _timer;
   int _remainingSeconds = 300; // 5 minutes
 
@@ -166,7 +173,7 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     return GestureDetector(
       onTap: () {
         // Dismiss keyboard when tapping outside
@@ -182,14 +189,12 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                 type: ToastType.success,
               );
               Future.delayed(const Duration(milliseconds: 500), () {
-                Navigator.pushReplacementNamed(context, AppRoutes.home);
+                if (context.mounted) {
+                  Navigator.pushReplacementNamed(context, AppRoutes.home);
+                }
               });
             } else if (state is LoginError) {
-              CustomToast.show(
-                context,
-                state.message,
-                type: ToastType.error,
-              );
+              CustomToast.show(context, state.message, type: ToastType.error);
             } else if (state is OtpSent) {
               if (!_showOtpScreen) {
                 setState(() {
@@ -205,44 +210,15 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
             }
           },
           builder: (context, state) {
-            return Stack(
-              children: [
-                // Background Image
-                Positioned.fill(
-                  child: Image.asset(
-                    'assets/images/bg_login.jpg',
-                    fit: BoxFit.cover,
-                  ),
+            return SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: _showOtpScreen
+                      ? _buildOtpScreen(state)
+                      : _buildPhoneScreen(state),
                 ),
-
-                // Black Overlay
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.6),
-                          Colors.black.withOpacity(0.7),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Content
-                SafeArea(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(24.0),
-                      child: _showOtpScreen
-                          ? _buildOtpScreen(state)
-                          : _buildPhoneScreen(state),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             );
           },
         ),
@@ -255,11 +231,7 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Logo
-        Image.asset(
-          'assets/images/ags_icon.png',
-          width: 100,
-          height: 100,
-        ),
+        Image.asset('assets/images/ags_full_logo.png', width: 100, height: 100),
         const SizedBox(height: 60),
 
         // Login Card
@@ -270,7 +242,7 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -279,22 +251,36 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Welcome Back',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.black,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              (kDebugMode)
+                  ? GestureDetector(
+                      onDoubleTap: () {
+                        setState(() {
+                          _phoneController.text = '9586829533';
+                        });
+                      },
+                      child: const Text(
+                        'Welcome Back',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.black,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : const Text(
+                      'Welcome Back',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
               const SizedBox(height: 12),
               const Text(
                 'Sign in with your WhatsApp number',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.grey,
-                ),
+                style: TextStyle(fontSize: 14, color: AppColors.grey),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -392,11 +378,15 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                       counterText: '',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.lightGrey),
+                        borderSide: const BorderSide(
+                          color: AppColors.lightGrey,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.lightGrey),
+                        borderSide: const BorderSide(
+                          color: AppColors.lightGrey,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -413,38 +403,12 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
               const SizedBox(height: 32),
 
               // Send OTP Button
-              SizedBox(
+              CustomButton(
+                text: 'Send OTP',
+                onPressed: _onSendOtp,
+                isLoading: state is LoginLoading,
+                variant: ButtonVariant.outline,
                 height: 50,
-                child: ElevatedButton(
-                  onPressed: state is LoginLoading ? null : _onSendOtp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.white,
-                    foregroundColor: AppColors.black,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: const BorderSide(color: AppColors.lightGrey),
-                    ),
-                  ),
-                  child: state is LoginLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primary,
-                            ),
-                          ),
-                        )
-                      : const Text(
-                          'Send OTP',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
               ),
             ],
           ),
@@ -458,11 +422,7 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Logo
-        Image.asset(
-          'assets/images/ags_icon.png',
-          width: 100,
-          height: 100,
-        ),
+        Image.asset('assets/images/ags_icon.png', width: 100, height: 100),
         const SizedBox(height: 60),
 
         // OTP Card
@@ -474,7 +434,7 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -536,7 +496,7 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                       color: AppColors.background,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.lightGrey.withOpacity(0.5),
+                        color: AppColors.lightGrey.withValues(alpha: 0.5),
                       ),
                     ),
                     child: Row(
@@ -573,7 +533,9 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
               // OTP Input
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final boxWidth = (constraints.maxWidth - 60) / 6; // 60 for spacing (5 gaps * 12)
+                  final boxWidth =
+                      (constraints.maxWidth - 60) /
+                      6; // 60 for spacing (5 gaps * 12)
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(6, (index) {
@@ -584,7 +546,7 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
+                              color: Colors.black.withValues(alpha: 0.02),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -620,23 +582,25 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
                               ),
                             ),
                             focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
-                            width: 2,
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 2,
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                            ),
                           ),
+                          onChanged: (value) {
+                            if (value.isNotEmpty && index < 5) {
+                              _otpFocusNodes[index + 1].requestFocus();
+                            } else if (value.isEmpty && index > 0) {
+                              _otpFocusNodes[index - 1].requestFocus();
+                            }
+                          },
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onChanged: (value) {
-                        if (value.isNotEmpty && index < 5) {
-                          _otpFocusNodes[index + 1].requestFocus();
-                        } else if (value.isEmpty && index > 0) {
-                          _otpFocusNodes[index - 1].requestFocus();
-                        }
-                      },
-                    ),
-                  );
+                      );
                     }),
                   );
                 },
@@ -673,42 +637,12 @@ class _LoginViewState extends State<LoginView> with AutomaticKeepAliveClientMixi
               const SizedBox(height: 28),
 
               // Verify OTP Button
-              SizedBox(
+              CustomButton(
+                text: 'Verify OTP',
+                onPressed: _onVerifyOtp,
+                isLoading: state is LoginLoading,
+                variant: ButtonVariant.outline,
                 height: 52,
-                child: ElevatedButton(
-                  onPressed: state is LoginLoading ? null : _onVerifyOtp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.white,
-                    foregroundColor: AppColors.black,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(
-                        color: AppColors.lightGrey,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                  child: state is LoginLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primary,
-                            ),
-                          ),
-                        )
-                      : const Text(
-                          'Verify OTP',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                ),
               ),
               const SizedBox(height: 8),
 
@@ -742,10 +676,10 @@ class CountryPickerSheet extends StatefulWidget {
   final Function(String, String) onCountrySelected;
 
   const CountryPickerSheet({
-    Key? key,
+    super.key,
     required this.selectedCountryCode,
     required this.onCountrySelected,
-  }) : super(key: key);
+  });
 
   @override
   State<CountryPickerSheet> createState() => _CountryPickerSheetState();
@@ -878,7 +812,8 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
               itemCount: _filteredCountries.length,
               itemBuilder: (context, index) {
                 final country = _filteredCountries[index];
-                final isSelected = country['code'] == widget.selectedCountryCode;
+                final isSelected =
+                    country['code'] == widget.selectedCountryCode;
 
                 return InkWell(
                   onTap: () {
@@ -893,7 +828,9 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -908,7 +845,9 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: isSelected ? AppColors.white : AppColors.black,
+                            color: isSelected
+                                ? AppColors.white
+                                : AppColors.black,
                           ),
                         ),
                       ],

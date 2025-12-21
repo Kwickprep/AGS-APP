@@ -1,8 +1,9 @@
-import 'package:ags/screens/activities/activity_screen_card.dart';
-import 'package:ags/screens/groups/group_screen_card.dart';
-import 'package:ags/screens/products/product_screen_card.dart';
+import 'package:ags/screens/activities/activity_screen.dart';
+import 'package:ags/screens/products/product_screen.dart';
+
 import 'package:flutter/material.dart';
 import '../screens/category/category_screen.dart';
+import '../screens/groups/group_screen.dart';
 import '../screens/startup/startup_screen.dart';
 import '../screens/login/login_screen.dart';
 import '../screens/signup/signup_screen.dart';
@@ -10,13 +11,12 @@ import '../screens/home/home_screen.dart';
 import '../screens/theme/theme_screen.dart';
 import '../screens/brands/brand_screen.dart';
 import '../screens/tags/tag_screen.dart';
-import '../screens/activities/activity_screen.dart';
 import '../screens/activities/activity_create_screen.dart';
 import '../screens/inquiries/inquiry_screen.dart';
 import '../screens/inquiries/inquiry_create_screen.dart';
-import '../screens/groups/group_screen.dart';
 import '../screens/groups/group_create_screen.dart';
-import '../screens/products/product_screen.dart';
+import '../screens/users/user_screen.dart';
+import '../screens/users/user_create_screen.dart';
 
 class AppRoutes {
   static const String startup = '/startup';
@@ -34,6 +34,8 @@ class AppRoutes {
   static const String groups = '/groups';
   static const String createGroup = '/groups/create';
   static const String products = '/products';
+  static const String users = '/users';
+  static const String createUser = '/users/create';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -45,13 +47,15 @@ class AppRoutes {
       categories: (context) => const CategoryScreen(),
       brands: (context) => const BrandScreen(),
       tags: (context) => const TagScreen(),
-      activities: (context) => const ActivityScreenCard(),
+      activities: (context) => const ActivityScreen(),
       createActivity: (context) => const ActivityCreateScreen(),
       inquiries: (context) => const InquiryScreen(),
       createInquiry: (context) => const InquiryCreateScreen(),
-      groups: (context) => const GroupScreenCard(),
+      groups: (context) => const GroupScreen(),
       createGroup: (context) => const GroupCreateScreen(),
-      products: (context) => const ProductScreenCard(),
+      products: (context) => const ProductScreen(),
+      users: (context) => const UserScreen(),
+      createUser: (context) => const UserCreateScreen(),
     };
   }
 

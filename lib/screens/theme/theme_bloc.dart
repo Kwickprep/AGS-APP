@@ -3,15 +3,20 @@ import 'package:get_it/get_it.dart';
 import '../../models/theme_model.dart';
 import '../../services/theme_service.dart';
 
+// ============================================================================
 // Events
+// ============================================================================
+
 abstract class ThemeEvent {}
 
+/// Main event to load themes with all parameters
 class LoadThemes extends ThemeEvent {
   final int page;
   final int take;
   final String search;
   final String sortBy;
   final String sortOrder;
+  final Map<String, dynamic> filters;
 
   LoadThemes({
     this.page = 1,
@@ -19,28 +24,8 @@ class LoadThemes extends ThemeEvent {
     this.search = '',
     this.sortBy = 'createdAt',
     this.sortOrder = 'desc',
+    this.filters = const {},
   });
-}
-
-class SearchThemes extends ThemeEvent {
-  final String query;
-  SearchThemes(this.query,);
-}
-
-class SortThemes extends ThemeEvent {
-  final String sortBy;
-  final String sortOrder;
-  SortThemes(this.sortBy, this.sortOrder);
-}
-
-class ChangePageSize extends ThemeEvent {
-  final int pageSize;
-  ChangePageSize(this.pageSize);
-}
-
-class ChangePage extends ThemeEvent {
-  final int page;
-  ChangePage(this.page);
 }
 
 class DeleteTheme extends ThemeEvent {
@@ -48,12 +33,10 @@ class DeleteTheme extends ThemeEvent {
   DeleteTheme(this.id);
 }
 
-class ApplyFilters extends ThemeEvent {
-  final Map<String, dynamic> filters;
-  ApplyFilters(this.filters);
-}
-
+// ============================================================================
 // States
+// ============================================================================
+
 abstract class ThemeState {}
 
 class ThemeInitial extends ThemeState {}
@@ -69,7 +52,7 @@ class ThemeLoaded extends ThemeState {
   final String search;
   final String sortBy;
   final String sortOrder;
-  final Map<String, dynamic>? filters;
+  final Map<String, dynamic> filters;
 
   ThemeLoaded({
     required this.themes,
@@ -80,8 +63,32 @@ class ThemeLoaded extends ThemeState {
     required this.search,
     required this.sortBy,
     required this.sortOrder,
-    this.filters,
+    required this.filters,
   });
+
+  ThemeLoaded copyWith({
+    List<ThemeModel>? themes,
+    int? total,
+    int? page,
+    int? take,
+    int? totalPages,
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+    Map<String, dynamic>? filters,
+  }) {
+    return ThemeLoaded(
+      themes: themes ?? this.themes,
+      total: total ?? this.total,
+      page: page ?? this.page,
+      take: take ?? this.take,
+      totalPages: totalPages ?? this.totalPages,
+      search: search ?? this.search,
+      sortBy: sortBy ?? this.sortBy,
+      sortOrder: sortOrder ?? this.sortOrder,
+      filters: filters ?? this.filters,
+    );
+  }
 }
 
 class ThemeError extends ThemeState {
@@ -89,283 +96,76 @@ class ThemeError extends ThemeState {
   ThemeError(this.message);
 }
 
-// Bloc
+// ============================================================================
+// BLoC - Simple approach: Every change triggers API call
+// ============================================================================
+
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   final ThemeService _themeService = GetIt.I<ThemeService>();
 
-  int _currentPage = 1;
-  int _currentPageSize = 20;
-  String _currentSearch = '';
-  String _currentSortBy = 'createdAt';
-  String _currentSortOrder = 'desc';
-  Map<String, dynamic> _currentFilters = {};
-
-  // Cache original data for client-side filtering
-  List<ThemeModel> _allThemes = [];
-  int _originalTotal = 0;
-
   ThemeBloc() : super(ThemeInitial()) {
     on<LoadThemes>(_onLoadThemes);
-    on<SearchThemes>(_onSearchThemes);
-    on<SortThemes>(_onSortThemes);
-    on<ChangePageSize>(_onChangePageSize);
-    on<ChangePage>(_onChangePage);
     on<DeleteTheme>(_onDeleteTheme);
-    on<ApplyFilters>(_onApplyFilters);
   }
 
+  /// Load themes from API with given parameters
   Future<void> _onLoadThemes(
-      LoadThemes event,
-      Emitter<ThemeState> emit,
-      ) async {
+    LoadThemes event,
+    Emitter<ThemeState> emit,
+  ) async {
     emit(ThemeLoading());
 
     try {
-      _currentPage = event.page;
-      _currentPageSize = event.take;
-      _currentSearch = event.search;
-      _currentSortBy = event.sortBy;
-      _currentSortOrder = event.sortOrder;
-
       final response = await _themeService.getThemes(
         page: event.page,
         take: event.take,
         search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
+        filters: event.filters,
       );
 
-      // Store all themes for client-side filtering
-      _allThemes = response.records;
-      _originalTotal = response.total;
-
-      // Apply filters
-      final filteredThemes = _applyClientSideFilters(_allThemes);
-
       emit(ThemeLoaded(
-        themes: filteredThemes,
-        total: filteredThemes.length,
+        themes: response.records,
+        total: response.total,
         page: response.page,
         take: response.take,
-        totalPages: (filteredThemes.length / response.take).ceil(),
+        totalPages: response.totalPages,
         search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
-        filters: _currentFilters,
+        filters: event.filters,
       ));
     } catch (e) {
       emit(ThemeError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  Future<void> _onSearchThemes(
-      SearchThemes event,
-      Emitter<ThemeState> emit,
-      ) async {
-    _currentSearch = event.query;
-
-    add(LoadThemes(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
-  Future<void> _onSortThemes(
-      SortThemes event,
-      Emitter<ThemeState> emit,
-      ) async {
-    _currentSortBy = event.sortBy;
-    _currentSortOrder = event.sortOrder;
-
-    // Handle reset to default (no sort)
-    if (event.sortBy.isEmpty || event.sortOrder.isEmpty) {
-      _currentSortBy = 'createdAt';
-      _currentSortOrder = 'desc';
-    }
-
-    // If we have cached data, sort it client-side for better performance
-    if (_allThemes.isNotEmpty && state is ThemeLoaded) {
-      List<ThemeModel> processedThemes = [..._allThemes];
-
-      // Only sort if we have valid sort parameters
-      if (event.sortBy.isNotEmpty && event.sortOrder.isNotEmpty) {
-        processedThemes = _sortClientSide(processedThemes);
-      } else {
-        // Reset to original order (by createdAt desc)
-        processedThemes = _sortClientSide(processedThemes);
-      }
-
-      final filteredThemes = _applyClientSideFilters(processedThemes);
-
-      emit(ThemeLoaded(
-        themes: filteredThemes,
-        total: filteredThemes.length,
-        page: _currentPage,
-        take: _currentPageSize,
-        totalPages: (filteredThemes.length / _currentPageSize).ceil(),
-        search: _currentSearch,
-        sortBy: event.sortBy.isEmpty ? '' : _currentSortBy,
-        sortOrder: event.sortOrder.isEmpty ? '' : _currentSortOrder,
-        filters: _currentFilters,
-      ));
-    } else {
-      add(LoadThemes(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
-    }
-  }
-
-  Future<void> _onChangePageSize(
-      ChangePageSize event,
-      Emitter<ThemeState> emit,
-      ) async {
-    _currentPageSize = event.pageSize;
-    _currentPage = 1; // Reset to first page when changing page size
-    add(LoadThemes(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
-  Future<void> _onChangePage(
-      ChangePage event,
-      Emitter<ThemeState> emit,
-      ) async {
-    _currentPage = event.page;
-    add(LoadThemes(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
+  /// Delete theme and reload current page
   Future<void> _onDeleteTheme(
-      DeleteTheme event,
-      Emitter<ThemeState> emit,
-      ) async {
+    DeleteTheme event,
+    Emitter<ThemeState> emit,
+  ) async {
     try {
       await _themeService.deleteTheme(event.id);
-      // Reload themes after deletion
-      add(LoadThemes(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
+      
+      // Reload with current parameters if we have a loaded state
+      if (state is ThemeLoaded) {
+        final currentState = state as ThemeLoaded;
+        add(LoadThemes(
+          page: currentState.page,
+          take: currentState.take,
+          search: currentState.search,
+          sortBy: currentState.sortBy,
+          sortOrder: currentState.sortOrder,
+          filters: currentState.filters,
+        ));
+      } else {
+        // Otherwise just reload with defaults
+        add(LoadThemes());
+      }
     } catch (e) {
       emit(ThemeError(e.toString().replaceAll('Exception: ', '')));
     }
-  }
-
-  Future<void> _onApplyFilters(
-      ApplyFilters event,
-      Emitter<ThemeState> emit,
-      ) async {
-    _currentFilters = event.filters;
-
-    // Apply filters to cached data
-    if (_allThemes.isNotEmpty && state is ThemeLoaded) {
-      final filteredThemes = _applyClientSideFilters(_allThemes);
-
-      emit(ThemeLoaded(
-        themes: filteredThemes,
-        total: filteredThemes.length,
-        page: _currentPage,
-        take: _currentPageSize,
-        totalPages: (filteredThemes.length / _currentPageSize).ceil(),
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-        filters: _currentFilters,
-      ));
-    } else {
-      // If no cached data, reload from server
-      add(LoadThemes(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
-    }
-  }
-
-  List<ThemeModel> _applyClientSideFilters(List<ThemeModel> themes) {
-    List<ThemeModel> filteredThemes = [...themes];
-
-    // Apply status filter
-    if (_currentFilters.containsKey('status')) {
-      final statusFilter = _currentFilters['status'];
-      if (statusFilter == 'active') {
-        filteredThemes = filteredThemes.where((theme) => theme.isActive).toList();
-      } else if (statusFilter == 'inactive') {
-        filteredThemes = filteredThemes.where((theme) => !theme.isActive).toList();
-      }
-    }
-
-    // Apply other filters as needed
-    // You can add more filter types here
-
-    return filteredThemes;
-  }
-
-  List<ThemeModel> _sortClientSide(List<ThemeModel> themes) {
-    themes.sort((a, b) {
-      int comparison = 0;
-
-      switch (_currentSortBy) {
-        case 'name':
-          comparison = a.name.compareTo(b.name);
-          break;
-        case 'createdAt':
-        // Parse dates and compare
-          comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
-          break;
-        case 'isActive':
-          comparison = a.isActive == b.isActive ? 0 : (a.isActive ? 1 : -1);
-          break;
-        case 'createdBy':
-          comparison = a.createdBy.compareTo(b.createdBy);
-          break;
-        default:
-          comparison = 0;
-      }
-
-      // Apply sort order
-      return _currentSortOrder == 'asc' ? comparison : -comparison;
-    });
-
-    return themes;
-  }
-
-  DateTime _parseDate(String dateStr) {
-    // Parse date string in format "DD-MM-YYYY"
-    try {
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[2]), // year
-          int.parse(parts[1]), // month
-          int.parse(parts[0]), // day
-        );
-      }
-    } catch (e) {
-      // Return current date if parsing fails
-    }
-    return DateTime.now();
   }
 }

@@ -2,10 +2,9 @@ import 'package:get_it/get_it.dart';
 import '../models/group_model.dart';
 import '../models/contact_model.dart';
 import '../widgets/generic/generic_model.dart';
-import '../widgets/generic/generic_list_bloc.dart';
 import 'api_service.dart';
 
-class GroupService implements GenericListService<GroupModel> {
+class GroupService {
   final ApiService _apiService = GetIt.I<ApiService>();
 
   Future<GroupResponse> getGroups({

@@ -10,9 +10,10 @@ class CustomDropdown<T> extends StatelessWidget {
   final String? Function(T?)? validator;
   final bool isRequired;
   final VoidCallback? onClear;
+  final bool isEnabled;
 
   const CustomDropdown({
-    Key? key,
+    super.key,
     required this.label,
     required this.hint,
     required this.value,
@@ -21,13 +22,15 @@ class CustomDropdown<T> extends StatelessWidget {
     this.validator,
     this.isRequired = false,
     this.onClear,
-  }) : super(key: key);
+    this.isEnabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        /// LABEL
         RichText(
           text: TextSpan(
             text: label,
@@ -40,85 +43,96 @@ class CustomDropdown<T> extends StatelessWidget {
               if (isRequired)
                 const TextSpan(
                   text: ' *',
-                  style: TextStyle(
-                    color: AppColors.error,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: AppColors.error, fontSize: 14),
                 ),
             ],
           ),
         ),
+
         const SizedBox(height: 8),
-        ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: 200,
-            maxWidth: double.infinity,
-          ),
-          child: DropdownButtonFormField<T>(
-            value: value,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: const TextStyle(
-                color: AppColors.grey,
-                fontSize: 14,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.lightGrey),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.lightGrey),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.primary, width: 2),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: AppColors.error),
-              ),
-              suffixIcon: value != null && onClear != null
-                  ? IconButton(
-                icon: const Icon(Icons.clear, size: 20),
-                onPressed: onClear,
-                color: AppColors.grey,
-              )
-                  : const Icon(Icons.arrow_drop_down, color: AppColors.grey),
+
+        /// DROPDOWN
+        DropdownButtonFormField<T>(
+          initialValue: value,
+          isExpanded: true,
+          alignment: Alignment.topLeft,
+          hint: Text(
+            hint,
+            style: const TextStyle(
+              color: AppColors.grey,
+              fontSize: 14,
             ),
-            items: items.map((item) {
-              return DropdownMenuItem<T>(
-                value: item.value,
-                child: Text(
-                  item.label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              );
-            }).toList(),
-            onChanged: onChanged,
-            validator: validator,
-            isExpanded: true,
-            icon: const SizedBox.shrink(),
           ),
+          icon: value != null && isEnabled
+              ? InkWell(
+                  onTap: () {
+                    if (onClear != null) {
+                      onClear!();
+                    }
+                    onChanged(null);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    child: const Icon(
+                      Icons.clear,
+                      size: 20,
+                      color: AppColors.grey,
+                    ),
+                  ),
+                )
+              : const Icon(
+                  Icons.arrow_drop_down,
+                  color: AppColors.grey,
+                ),
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.lightGrey),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.lightGrey),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.error),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppColors.error, width: 2),
+            ),
+          ),
+
+          items: items.map((item) {
+            return DropdownMenuItem<T>(
+              value: item.value,
+              child: Text(
+                item.label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            );
+          }).toList(),
+
+          onChanged: isEnabled ? onChanged : null,
+          validator: validator,
         ),
       ],
     );
   }
 }
 
+/// DROPDOWN ITEM MODEL
 class DropdownItem<T> {
   final T value;
   final String label;
 
-  DropdownItem({
-    required this.value,
-    required this.label,
-  });
+  DropdownItem({required this.value, required this.label});
 }

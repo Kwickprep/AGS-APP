@@ -1,16 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import '../../models/category_model.dart';
-import '../../services/category_service.dart';
+import '../../models/product_model.dart';
+import '../../services/product_service.dart';
 
 // ============================================================================
 // Events
 // ============================================================================
 
-abstract class CategoryEvent {}
+abstract class ProductEvent {}
 
-/// Main event to load categories with all parameters
-class LoadCategories extends CategoryEvent {
+/// Main event to load products with all parameters
+class LoadProducts extends ProductEvent {
   final int page;
   final int take;
   final String search;
@@ -18,7 +18,7 @@ class LoadCategories extends CategoryEvent {
   final String sortOrder;
   final Map<String, dynamic> filters;
 
-  LoadCategories({
+  LoadProducts({
     this.page = 1,
     this.take = 20,
     this.search = '',
@@ -28,23 +28,23 @@ class LoadCategories extends CategoryEvent {
   });
 }
 
-class DeleteCategory extends CategoryEvent {
+class DeleteProduct extends ProductEvent {
   final String id;
-  DeleteCategory(this.id);
+  DeleteProduct(this.id);
 }
 
 // ============================================================================
 // States
 // ============================================================================
 
-abstract class CategoryState {}
+abstract class ProductState {}
 
-class CategoryInitial extends CategoryState {}
+class ProductInitial extends ProductState {}
 
-class CategoryLoading extends CategoryState {}
+class ProductLoading extends ProductState {}
 
-class CategoryLoaded extends CategoryState {
-  final List<CategoryModel> categories;
+class ProductLoaded extends ProductState {
+  final List<ProductModel> products;
   final int total;
   final int page;
   final int take;
@@ -54,8 +54,8 @@ class CategoryLoaded extends CategoryState {
   final String sortOrder;
   final Map<String, dynamic> filters;
 
-  CategoryLoaded({
-    required this.categories,
+  ProductLoaded({
+    required this.products,
     required this.total,
     required this.page,
     required this.take,
@@ -66,8 +66,8 @@ class CategoryLoaded extends CategoryState {
     required this.filters,
   });
 
-  CategoryLoaded copyWith({
-    List<CategoryModel>? categories,
+  ProductLoaded copyWith({
+    List<ProductModel>? products,
     int? total,
     int? page,
     int? take,
@@ -77,8 +77,8 @@ class CategoryLoaded extends CategoryState {
     String? sortOrder,
     Map<String, dynamic>? filters,
   }) {
-    return CategoryLoaded(
-      categories: categories ?? this.categories,
+    return ProductLoaded(
+      products: products ?? this.products,
       total: total ?? this.total,
       page: page ?? this.page,
       take: take ?? this.take,
@@ -91,32 +91,32 @@ class CategoryLoaded extends CategoryState {
   }
 }
 
-class CategoryError extends CategoryState {
+class ProductError extends ProductState {
   final String message;
-  CategoryError(this.message);
+  ProductError(this.message);
 }
 
 // ============================================================================
 // BLoC - Simple approach: Every change triggers API call
 // ============================================================================
 
-class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
-  final CategoryService _categoryService = GetIt.I<CategoryService>();
+class ProductBloc extends Bloc<ProductEvent, ProductState> {
+  final ProductService _productService = GetIt.I<ProductService>();
 
-  CategoryBloc() : super(CategoryInitial()) {
-    on<LoadCategories>(_onLoadCategories);
-    on<DeleteCategory>(_onDeleteCategory);
+  ProductBloc() : super(ProductInitial()) {
+    on<LoadProducts>(_onLoadProducts);
+    on<DeleteProduct>(_onDeleteProduct);
   }
 
-  /// Load categories from API with given parameters
-  Future<void> _onLoadCategories(
-    LoadCategories event,
-    Emitter<CategoryState> emit,
+  /// Load products from API with given parameters
+  Future<void> _onLoadProducts(
+    LoadProducts event,
+    Emitter<ProductState> emit,
   ) async {
-    emit(CategoryLoading());
+    emit(ProductLoading());
 
     try {
-      final response = await _categoryService.getCategories(
+      final response = await _productService.getProducts(
         page: event.page,
         take: event.take,
         search: event.search,
@@ -125,8 +125,8 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         filters: event.filters,
       );
 
-      emit(CategoryLoaded(
-        categories: response.records,
+      emit(ProductLoaded(
+        products: response.records,
         total: response.total,
         page: response.page,
         take: response.take,
@@ -137,22 +137,22 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         filters: event.filters,
       ));
     } catch (e) {
-      emit(CategoryError(e.toString().replaceAll('Exception: ', '')));
+      emit(ProductError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  /// Delete category and reload current page
-  Future<void> _onDeleteCategory(
-    DeleteCategory event,
-    Emitter<CategoryState> emit,
+  /// Delete product and reload current page
+  Future<void> _onDeleteProduct(
+    DeleteProduct event,
+    Emitter<ProductState> emit,
   ) async {
     try {
-      await _categoryService.deleteCategory(event.id);
+      await _productService.deleteProduct(event.id);
       
       // Reload with current parameters if we have a loaded state
-      if (state is CategoryLoaded) {
-        final currentState = state as CategoryLoaded;
-        add(LoadCategories(
+      if (state is ProductLoaded) {
+        final currentState = state as ProductLoaded;
+        add(LoadProducts(
           page: currentState.page,
           take: currentState.take,
           search: currentState.search,
@@ -162,10 +162,10 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         ));
       } else {
         // Otherwise just reload with defaults
-        add(LoadCategories());
+        add(LoadProducts());
       }
     } catch (e) {
-      emit(CategoryError(e.toString().replaceAll('Exception: ', '')));
+      emit(ProductError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 }

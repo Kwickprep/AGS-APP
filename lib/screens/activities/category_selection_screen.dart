@@ -8,33 +8,36 @@ import '../../services/activity_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_toast.dart';
 import '../../widgets/custom_button.dart';
-import 'category_selection_screen.dart';
+import 'price_range_selection_screen.dart';
 import '../../widgets/custom_button.dart';
 
-class ThemeSelectionScreen extends StatefulWidget {
+class CategorySelectionScreen extends StatefulWidget {
   final String activityId;
-  final List<dynamic> aiSuggestedThemes;
+  final List<dynamic> aiSuggestedCategories;
+  final Map<String, dynamic>? selectedTheme;
 
-  const ThemeSelectionScreen({
+  const CategorySelectionScreen({
     super.key,
     required this.activityId,
-    required this.aiSuggestedThemes,
+    required this.aiSuggestedCategories,
+    this.selectedTheme,
   });
 
   @override
-  State<ThemeSelectionScreen> createState() => _ThemeSelectionScreenState();
+  State<CategorySelectionScreen> createState() =>
+      _CategorySelectionScreenState();
 }
 
-class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
+class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
   final ActivityService _activityService = GetIt.I<ActivityService>();
-  Map<String, dynamic>? _selectedTheme;
+  Map<String, dynamic>? _selectedCategory;
   bool _isLoading = false;
 
-  Future<void> _submitThemeSelection() async {
-    if (_selectedTheme == null) {
+  Future<void> _submitCategorySelection() async {
+    if (_selectedCategory == null) {
       CustomToast.show(
         context,
-        'Please select a theme',
+        'Please select a category',
         type: ToastType.error,
       );
       return;
@@ -47,10 +50,10 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
     try {
       final data = {
         'body': {
-          'selectedTheme': {
-            'id': _selectedTheme!['id'],
-            'name': _selectedTheme!['name'],
-            'reason': _selectedTheme!['reason'],
+          'selectedCategory': {
+            'id': _selectedCategory!['id'],
+            'name': _selectedCategory!['name'],
+            'reason': _selectedCategory!['reason'],
           },
         },
       };
@@ -58,35 +61,35 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
       final response = await _activityService.updateActivity(widget.activityId, data);
 
       // Print JSON response for debugging
-      debugPrint('Theme Selection Response:');
+      debugPrint('Category Selection Response:');
       debugPrint('Body: ${response.body?.toJson()}');
 
       if (mounted) {
         CustomToast.show(
           context,
-          'Theme selected successfully',
+          'Category selected successfully',
           type: ToastType.success,
         );
 
-        // Navigate to category selection if available
+        // Navigate to price range selection if available
         final responseBody = response.body;
         if (responseBody != null &&
-            responseBody.aiSuggestedCategories != null &&
-            responseBody.aiSuggestedCategories!.isNotEmpty) {
-          // Navigate to category selection screen
-          final categoryResult = await Navigator.push(
+            responseBody.availablePriceRanges != null &&
+            responseBody.availablePriceRanges!.isNotEmpty) {
+          final priceRangeResult = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CategorySelectionScreen(
+              builder: (context) => PriceRangeSelectionScreen(
                 activityId: widget.activityId,
-                aiSuggestedCategories: responseBody.aiSuggestedCategories!,
-                selectedTheme: _selectedTheme,
+                availablePriceRanges: responseBody.availablePriceRanges!,
+                selectedTheme: widget.selectedTheme,
+                selectedCategory: _selectedCategory,
               ),
             ),
           );
 
-          if (categoryResult != null && mounted) {
-            Navigator.pop(context, categoryResult);
+          if (priceRangeResult != null && mounted) {
+            Navigator.pop(context, priceRangeResult);
           }
         } else {
           Navigator.pop(context, response);
@@ -94,7 +97,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        debugPrint('Error submitting theme selection: $e');
+        debugPrint('Error submitting category selection: $e');
         CustomToast.show(
           context,
           e.toString().replaceAll('Exception: ', ''),
@@ -144,8 +147,8 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                     _buildSummarySection(),
                     const SizedBox(height: 24),
 
-                    // Select Theme Section
-                    _buildThemeSelectionSection(),
+                    // Select Category Section
+                    _buildCategorySelectionSection(),
                   ],
                 ),
               ),
@@ -166,7 +169,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
               ),
               child: CustomButton(
                 text: 'Next',
-                onPressed: _submitThemeSelection,
+                onPressed: _submitCategorySelection,
                 isLoading: _isLoading,
                 icon: Icons.arrow_forward,
               ),
@@ -189,7 +192,10 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSummaryItem('THEME', 'N/A'),
+          _buildSummaryItem(
+            'THEME',
+            widget.selectedTheme?['name'] ?? 'N/A',
+          ),
           const SizedBox(height: 12),
           _buildSummaryItem('CATEGORY', 'N/A'),
           const SizedBox(height: 12),
@@ -227,7 +233,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
     );
   }
 
-  Widget _buildThemeSelectionSection() {
+  Widget _buildCategorySelectionSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,7 +248,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
               ),
               child: const Center(
                 child: Text(
-                  '2',
+                  '3',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -253,7 +259,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
             ),
             const SizedBox(width: 12),
             const Text(
-              'Select a Theme',
+              'Select a Category',
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 18,
@@ -264,15 +270,15 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Theme Options
-        ...widget.aiSuggestedThemes.map((theme) {
-          final bool isSelected = _selectedTheme != null &&
-              _selectedTheme!['id'] == theme['id'];
+        // Category Options
+        ...widget.aiSuggestedCategories.map((category) {
+          final bool isSelected = _selectedCategory != null &&
+              _selectedCategory!['id'] == category['id'];
 
           return GestureDetector(
             onTap: () {
               setState(() {
-                _selectedTheme = theme;
+                _selectedCategory = category;
               });
             },
             child: Container(
@@ -317,7 +323,7 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          theme['name'] ?? '',
+                          category['name'] ?? '',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 16,
@@ -326,25 +332,12 @@ class _ThemeSelectionScreenState extends State<ThemeSelectionScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // const Icon(
-                            //   Icons.auto_awesome,
-                            //   size: 14,
-                            //   color: AppColors.primary,
-                            // ),
-
-                            Expanded(
-                              child: Text(
-                                theme['reason'] ?? '',
-                                style: const TextStyle(
-                                  color: AppColors.grey,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          category['reason'] ?? '',
+                          style: const TextStyle(
+                            color: AppColors.grey,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),

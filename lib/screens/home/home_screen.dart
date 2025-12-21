@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
-import '../../config/routes.dart';
 import '../../widgets/app_drawer.dart';
-import '../../services/auth_service.dart';
 import 'home_bloc.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +17,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 class HomeView extends StatelessWidget {
-  const HomeView({Key? key}) : super(key: key);
+  const HomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +26,7 @@ class HomeView extends StatelessWidget {
         title: const Text('Dashboard'),
         backgroundColor: AppColors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       drawer: const AppDrawer(),
       body: SafeArea(
@@ -39,7 +37,7 @@ class HomeView extends StatelessWidget {
               Icon(
                 Icons.dashboard_outlined,
                 size: 100,
-                color: AppColors.grey.withOpacity(0.5),
+                color: AppColors.grey.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 24),
               const Text(
@@ -55,7 +53,7 @@ class HomeView extends StatelessWidget {
                 'Dashboard features are under development',
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppColors.grey.withOpacity(0.7),
+                  color: AppColors.grey.withValues(alpha: 0.7),
                 ),
               ),
             ],

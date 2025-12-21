@@ -7,6 +7,7 @@ class ActivityModel implements GenericModel {
   final String company;
   final String inquiry;
   final String user;
+  final String source;
   final String theme;
   final String category;
   final String priceRange;
@@ -20,6 +21,7 @@ class ActivityModel implements GenericModel {
   @override
   final String createdAt;
   final List<ActivityAction> actions;
+  final ActivityBody? body; // New field for complete body data
 
   ActivityModel({
     required this.id,
@@ -27,6 +29,7 @@ class ActivityModel implements GenericModel {
     required this.company,
     required this.inquiry,
     required this.user,
+    required this.source,
     required this.theme,
     required this.category,
     required this.priceRange,
@@ -38,6 +41,7 @@ class ActivityModel implements GenericModel {
     required this.createdBy,
     required this.createdAt,
     required this.actions,
+    this.body,
   });
 
   @override
@@ -53,6 +57,8 @@ class ActivityModel implements GenericModel {
         return inquiry;
       case 'user':
         return user;
+      case 'source':
+        return source;
       case 'theme':
         return theme;
       case 'category':
@@ -92,26 +98,44 @@ class ActivityModel implements GenericModel {
       }
     }
 
+    // Parse body if available
+    ActivityBody? activityBody;
+    if (json['body'] != null) {
+      activityBody = ActivityBody.fromJson(json['body']);
+    }
+
+    // Helper function to extract string value from either string or object
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return value['name']?.toString() ?? value['id']?.toString() ?? '';
+      }
+      return value.toString();
+    }
+
     return ActivityModel(
       id: json['id'] ?? extractedId,
-      activityType: json['activityType'] ?? '',
-      company: json['company'] ?? '',
-      inquiry: json['inquiry'] ?? '',
-      user: json['user'] ?? '',
-      theme: json['theme'] ?? '',
-      category: json['category'] ?? '',
-      priceRange: json['priceRange'] ?? '',
-      product: json['product'] ?? '',
-      moq: json['moq'] ?? '',
-      documents: json['documents'] ?? '',
-      nextScheduleDate: json['nextScheduleDate'] ?? '',
-      note: json['note'] ?? '',
-      createdBy: json['createdBy'] ?? '',
-      createdAt: json['createdAt'] ?? '',
+      activityType: extractString(json['activityType']),
+      company: extractString(json['company']),
+      inquiry: extractString(json['inquiry']),
+      user: extractString(json['user']),
+      source: extractString(json['source']),
+      theme: extractString(json['theme']),
+      category: extractString(json['category']),
+      priceRange: extractString(json['priceRange']),
+      product: extractString(json['product']),
+      moq: extractString(json['moq']),
+      documents: extractString(json['documents']),
+      nextScheduleDate: extractString(json['nextScheduleDate']),
+      note: extractString(json['note']),
+      createdBy: extractString(json['createdBy']),
+      createdAt: extractString(json['createdAt']),
       actions: (json['actions'] as List<dynamic>?)
               ?.map((e) => ActivityAction.fromJson(e))
               .toList() ??
           [],
+      body: activityBody,
     );
   }
 
@@ -123,6 +147,7 @@ class ActivityModel implements GenericModel {
       'company': company,
       'inquiry': inquiry,
       'user': user,
+      'source': source,
       'theme': theme,
       'category': category,
       'priceRange': priceRange,
@@ -193,5 +218,90 @@ class ActivityResponse {
               .toList() ??
           [],
     );
+  }
+}
+
+// Activity Body Model for Product Search activities
+class ActivityBody {
+  final String? note;
+  final String? nextScheduleDate;
+  final String? nextScheduleNote;
+  final bool? scheduledCallCompleted;
+  final String? inputText;
+  final List<String>? documentIds;
+  final String? stage;
+  final List<dynamic>? aiSuggestedThemes;
+  final Map<String, dynamic>? selectedTheme;
+  final List<dynamic>? aiSuggestedCategories;
+  final Map<String, dynamic>? selectedCategory;
+  final List<dynamic>? availablePriceRanges;
+  final Map<String, dynamic>? selectedPriceRange;
+  final List<dynamic>? aiSuggestedProducts;
+  final Map<String, dynamic>? selectedProduct;
+  final String? moq;
+
+  ActivityBody({
+    this.note,
+    this.nextScheduleDate,
+    this.nextScheduleNote,
+    this.scheduledCallCompleted,
+    this.inputText,
+    this.documentIds,
+    this.stage,
+    this.aiSuggestedThemes,
+    this.selectedTheme,
+    this.aiSuggestedCategories,
+    this.selectedCategory,
+    this.availablePriceRanges,
+    this.selectedPriceRange,
+    this.aiSuggestedProducts,
+    this.selectedProduct,
+    this.moq,
+  });
+
+  factory ActivityBody.fromJson(Map<String, dynamic> json) {
+    return ActivityBody(
+      note: json['note'],
+      nextScheduleDate: json['nextScheduleDate'],
+      nextScheduleNote: json['nextScheduleNote'],
+      scheduledCallCompleted: json['scheduledCallCompleted'],
+      inputText: json['inputText'],
+      documentIds: json['documentIds'] != null
+          ? List<String>.from(json['documentIds'])
+          : null,
+      stage: json['stage'],
+      aiSuggestedThemes: json['aiSuggestedThemes'],
+      selectedTheme: json['selectedTheme'],
+      aiSuggestedCategories: json['aiSuggestedCategories'],
+      selectedCategory: json['selectedCategory'],
+      availablePriceRanges: json['availablePriceRanges'],
+      selectedPriceRange: json['selectedPriceRange'],
+      aiSuggestedProducts: json['aiSuggestedProducts'],
+      selectedProduct: json['selectedProduct'],
+      moq: json['moq'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    
+    if (note != null) data['note'] = note;
+    if (nextScheduleDate != null) data['nextScheduleDate'] = nextScheduleDate;
+    if (nextScheduleNote != null) data['nextScheduleNote'] = nextScheduleNote;
+    if (scheduledCallCompleted != null) data['scheduledCallCompleted'] = scheduledCallCompleted;
+    if (inputText != null) data['inputText'] = inputText;
+    if (documentIds != null) data['documentIds'] = documentIds;
+    if (stage != null) data['stage'] = stage;
+    if (aiSuggestedThemes != null) data['aiSuggestedThemes'] = aiSuggestedThemes;
+    if (selectedTheme != null) data['selectedTheme'] = selectedTheme;
+    if (aiSuggestedCategories != null) data['aiSuggestedCategories'] = aiSuggestedCategories;
+    if (selectedCategory != null) data['selectedCategory'] = selectedCategory;
+    if (availablePriceRanges != null) data['availablePriceRanges'] = availablePriceRanges;
+    if (selectedPriceRange != null) data['selectedPriceRange'] = selectedPriceRange;
+    if (aiSuggestedProducts != null) data['aiSuggestedProducts'] = aiSuggestedProducts;
+    if (selectedProduct != null) data['selectedProduct'] = selectedProduct;
+    if (moq != null) data['moq'] = moq;
+    
+    return data;
   }
 }

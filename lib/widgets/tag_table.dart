@@ -18,7 +18,7 @@ class TagTable extends StatefulWidget {
   final Function(String, String) onSort;
 
   const TagTable({
-    Key? key,
+    super.key,
     required this.tags,
     required this.total,
     required this.currentPage,
@@ -31,7 +31,7 @@ class TagTable extends StatefulWidget {
     required this.onDelete,
     required this.onEdit,
     required this.onSort,
-  }) : super(key: key);
+  });
 
   @override
   State<TagTable> createState() => _TagTableState();
@@ -98,7 +98,7 @@ class _TagTableState extends State<TagTable> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 3),
@@ -114,7 +114,7 @@ class _TagTableState extends State<TagTable> {
               scrollDirection: Axis.horizontal,
               child: SingleChildScrollView(
                 child: DataTable(
-                  headingRowColor: MaterialStateProperty.all(
+                  headingRowColor: WidgetStateProperty.all(
                     AppColors.background,
                   ),
                   columns: [
@@ -185,8 +185,8 @@ class _TagTableState extends State<TagTable> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: tag.isActive
-                    ? AppColors.success.withOpacity(0.1)
-                    : AppColors.error.withOpacity(0.1),
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: tag.isActive ? AppColors.success : AppColors.error,
@@ -237,7 +237,7 @@ class _TagTableState extends State<TagTable> {
           Icon(
             Icons.folder_open,
             size: 80,
-            color: AppColors.grey.withOpacity(0.5),
+            color: AppColors.grey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           const Text(

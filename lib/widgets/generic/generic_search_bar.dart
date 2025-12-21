@@ -52,7 +52,7 @@ class GenericSearchBar extends StatefulWidget {
   final int minSearchLength;
 
   const GenericSearchBar({
-    Key? key,
+    super.key,
     required this.onSearch,
     required this.onApplyFilters,
     required this.currentFilters,
@@ -62,7 +62,7 @@ class GenericSearchBar extends StatefulWidget {
     this.totalCount,
     this.debounceDuration = const Duration(milliseconds: 500),
     this.minSearchLength = 1,
-  }) : super(key: key);
+  });
 
   @override
   State<GenericSearchBar> createState() => _GenericSearchBarState();
@@ -177,7 +177,7 @@ class _GenericSearchBarState extends State<GenericSearchBar> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -239,7 +239,7 @@ class _GenericSearchBarState extends State<GenericSearchBar> {
                   Container(
                     decoration: BoxDecoration(
                       color: hasActiveFilters
-                          ? AppColors.primary.withOpacity(0.1)
+                          ? AppColors.primary.withValues(alpha: 0.1)
                           : AppColors.background,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
@@ -268,7 +268,7 @@ class _GenericSearchBarState extends State<GenericSearchBar> {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.error),
                     ),
@@ -291,7 +291,7 @@ class _GenericSearchBarState extends State<GenericSearchBar> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.primary),
                     ),
@@ -389,7 +389,7 @@ class _GenericSearchBarState extends State<GenericSearchBar> {
         });
       },
       backgroundColor: AppColors.white,
-      selectedColor: AppColors.primary.withOpacity(0.1),
+      selectedColor: AppColors.primary.withValues(alpha: 0.1),
       checkmarkColor: AppColors.primary,
       side: BorderSide(
         color: isSelected ? AppColors.primary : AppColors.lightGrey,

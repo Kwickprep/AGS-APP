@@ -3,15 +3,20 @@ import 'package:get_it/get_it.dart';
 import '../../models/activity_model.dart';
 import '../../services/activity_service.dart';
 
+// ============================================================================
 // Events
+// ============================================================================
+
 abstract class ActivityEvent {}
 
+/// Main event to load activities with all parameters
 class LoadActivities extends ActivityEvent {
   final int page;
   final int take;
   final String search;
   final String sortBy;
   final String sortOrder;
+  final Map<String, dynamic> filters;
 
   LoadActivities({
     this.page = 1,
@@ -19,28 +24,8 @@ class LoadActivities extends ActivityEvent {
     this.search = '',
     this.sortBy = 'createdAt',
     this.sortOrder = 'desc',
+    this.filters = const {},
   });
-}
-
-class SearchActivities extends ActivityEvent {
-  final String query;
-  SearchActivities(this.query);
-}
-
-class SortActivities extends ActivityEvent {
-  final String sortBy;
-  final String sortOrder;
-  SortActivities(this.sortBy, this.sortOrder);
-}
-
-class ChangePageSize extends ActivityEvent {
-  final int pageSize;
-  ChangePageSize(this.pageSize);
-}
-
-class ChangePage extends ActivityEvent {
-  final int page;
-  ChangePage(this.page);
 }
 
 class DeleteActivity extends ActivityEvent {
@@ -48,12 +33,10 @@ class DeleteActivity extends ActivityEvent {
   DeleteActivity(this.id);
 }
 
-class ApplyFilters extends ActivityEvent {
-  final Map<String, dynamic> filters;
-  ApplyFilters(this.filters);
-}
-
+// ============================================================================
 // States
+// ============================================================================
+
 abstract class ActivityState {}
 
 class ActivityInitial extends ActivityState {}
@@ -69,7 +52,7 @@ class ActivityLoaded extends ActivityState {
   final String search;
   final String sortBy;
   final String sortOrder;
-  final Map<String, dynamic>? filters;
+  final Map<String, dynamic> filters;
 
   ActivityLoaded({
     required this.activities,
@@ -80,8 +63,33 @@ class ActivityLoaded extends ActivityState {
     required this.search,
     required this.sortBy,
     required this.sortOrder,
-    this.filters,
+    required this.filters,
   });
+
+  /// Helper method to create a new state with updated parameters
+  ActivityLoaded copyWith({
+    List<ActivityModel>? activities,
+    int? total,
+    int? page,
+    int? take,
+    int? totalPages,
+    String? search,
+    String? sortBy,
+    String? sortOrder,
+    Map<String, dynamic>? filters,
+  }) {
+    return ActivityLoaded(
+      activities: activities ?? this.activities,
+      total: total ?? this.total,
+      page: page ?? this.page,
+      take: take ?? this.take,
+      totalPages: totalPages ?? this.totalPages,
+      search: search ?? this.search,
+      sortBy: sortBy ?? this.sortBy,
+      sortOrder: sortOrder ?? this.sortOrder,
+      filters: filters ?? this.filters,
+    );
+  }
 }
 
 class ActivityError extends ActivityState {
@@ -89,291 +97,76 @@ class ActivityError extends ActivityState {
   ActivityError(this.message);
 }
 
-// Bloc
+// ============================================================================
+// BLoC - Simple approach: Every change triggers API call
+// ============================================================================
+
 class ActivityBloc extends Bloc<ActivityEvent, ActivityState> {
   final ActivityService _activityService = GetIt.I<ActivityService>();
 
-  // Keep track of current parameters
-  int _currentPage = 1;
-  int _currentPageSize = 20;
-  String _currentSearch = '';
-  String _currentSortBy = 'createdAt';
-  String _currentSortOrder = 'desc';
-  Map<String, dynamic> _currentFilters = {};
-
-  // Cache original data for client-side filtering
-  List<ActivityModel> _allActivities = [];
-  int _originalTotal = 0;
-
   ActivityBloc() : super(ActivityInitial()) {
     on<LoadActivities>(_onLoadActivities);
-    on<SearchActivities>(_onSearchActivities);
-    on<SortActivities>(_onSortActivities);
-    on<ChangePageSize>(_onChangePageSize);
-    on<ChangePage>(_onChangePage);
     on<DeleteActivity>(_onDeleteActivity);
-    on<ApplyFilters>(_onApplyFilters);
   }
 
+  /// Load activities from API with given parameters
   Future<void> _onLoadActivities(
     LoadActivities event,
     Emitter<ActivityState> emit,
   ) async {
-    print('ActivityBloc: Loading activities...');
     emit(ActivityLoading());
 
     try {
-      _currentPage = event.page;
-      _currentPageSize = event.take;
-      _currentSearch = event.search;
-      _currentSortBy = event.sortBy;
-      _currentSortOrder = event.sortOrder;
-
-      print('ActivityBloc: Calling API...');
       final response = await _activityService.getActivities(
         page: event.page,
         take: event.take,
         search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
+        filters: event.filters,
       );
 
-      print('ActivityBloc: Response received - Total: ${response.total}, Records: ${response.records.length}');
-
-      // Store all activities for client-side filtering
-      _allActivities = response.records;
-      _originalTotal = response.total;
-
-      // Apply filters
-      final filteredActivities = _applyClientSideFilters(_allActivities);
-
-      print('ActivityBloc: Emitting ActivityLoaded state');
       emit(ActivityLoaded(
-        activities: filteredActivities,
-        total: filteredActivities.length,
+        activities: response.records,
+        total: response.total,
         page: response.page,
         take: response.take,
-        totalPages: (filteredActivities.length / response.take).ceil(),
+        totalPages: response.totalPages,
         search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
-        filters: _currentFilters,
+        filters: event.filters,
       ));
     } catch (e) {
-      print('ActivityBloc: Error - $e');
       emit(ActivityError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  Future<void> _onSearchActivities(
-    SearchActivities event,
-    Emitter<ActivityState> emit,
-  ) async {
-    _currentSearch = event.query;
-    _currentPage = 1; // Reset to first page on search
-    add(LoadActivities(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
-  Future<void> _onSortActivities(
-    SortActivities event,
-    Emitter<ActivityState> emit,
-  ) async {
-    _currentSortBy = event.sortBy;
-    _currentSortOrder = event.sortOrder;
-
-    // Handle reset to default (no sort)
-    if (event.sortBy.isEmpty || event.sortOrder.isEmpty) {
-      _currentSortBy = 'createdAt';
-      _currentSortOrder = 'desc';
-    }
-
-    // If we have cached data, sort it client-side for better performance
-    if (_allActivities.isNotEmpty && state is ActivityLoaded) {
-      List<ActivityModel> processedActivities = [..._allActivities];
-
-      // Only sort if we have valid sort parameters
-      if (event.sortBy.isNotEmpty && event.sortOrder.isNotEmpty) {
-        processedActivities = _sortClientSide(processedActivities);
-      } else {
-        // Reset to original order (by createdAt desc)
-        processedActivities = _sortClientSide(processedActivities);
-      }
-
-      final filteredActivities = _applyClientSideFilters(processedActivities);
-
-      emit(ActivityLoaded(
-        activities: filteredActivities,
-        total: filteredActivities.length,
-        page: _currentPage,
-        take: _currentPageSize,
-        totalPages: (filteredActivities.length / _currentPageSize).ceil(),
-        search: _currentSearch,
-        sortBy: event.sortBy.isEmpty ? '' : _currentSortBy,
-        sortOrder: event.sortOrder.isEmpty ? '' : _currentSortOrder,
-        filters: _currentFilters,
-      ));
-    } else {
-      add(LoadActivities(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
-    }
-  }
-
-  Future<void> _onChangePageSize(
-    ChangePageSize event,
-    Emitter<ActivityState> emit,
-  ) async {
-    _currentPageSize = event.pageSize;
-    _currentPage = 1; // Reset to first page when changing page size
-    add(LoadActivities(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
-  Future<void> _onChangePage(
-    ChangePage event,
-    Emitter<ActivityState> emit,
-  ) async {
-    _currentPage = event.page;
-    add(LoadActivities(
-      page: _currentPage,
-      take: _currentPageSize,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-    ));
-  }
-
+  /// Delete activity and reload current page
   Future<void> _onDeleteActivity(
     DeleteActivity event,
     Emitter<ActivityState> emit,
   ) async {
     try {
       await _activityService.deleteActivity(event.id);
-      // Reload activities after deletion
-      add(LoadActivities(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
+      
+      // Reload with current parameters if we have a loaded state
+      if (state is ActivityLoaded) {
+        final currentState = state as ActivityLoaded;
+        add(LoadActivities(
+          page: currentState.page,
+          take: currentState.take,
+          search: currentState.search,
+          sortBy: currentState.sortBy,
+          sortOrder: currentState.sortOrder,
+          filters: currentState.filters,
+        ));
+      } else {
+        // Otherwise just reload with defaults
+        add(LoadActivities());
+      }
     } catch (e) {
       emit(ActivityError(e.toString().replaceAll('Exception: ', '')));
     }
-  }
-
-  Future<void> _onApplyFilters(
-    ApplyFilters event,
-    Emitter<ActivityState> emit,
-  ) async {
-    _currentFilters = event.filters;
-
-    // Apply filters to cached data
-    if (_allActivities.isNotEmpty && state is ActivityLoaded) {
-      final filteredActivities = _applyClientSideFilters(_allActivities);
-
-      emit(ActivityLoaded(
-        activities: filteredActivities,
-        total: filteredActivities.length,
-        page: _currentPage,
-        take: _currentPageSize,
-        totalPages: (filteredActivities.length / _currentPageSize).ceil(),
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-        filters: _currentFilters,
-      ));
-    } else {
-      // If no cached data, reload from server
-      add(LoadActivities(
-        page: _currentPage,
-        take: _currentPageSize,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ));
-    }
-  }
-
-  List<ActivityModel> _applyClientSideFilters(List<ActivityModel> activities) {
-    List<ActivityModel> filteredActivities = [...activities];
-
-    // Apply filters as needed
-    // You can add more filter types here based on requirements
-
-    return filteredActivities;
-  }
-
-  List<ActivityModel> _sortClientSide(List<ActivityModel> activities) {
-    activities.sort((a, b) {
-      int comparison = 0;
-
-      switch (_currentSortBy) {
-        case 'activityType':
-          comparison = a.activityType.compareTo(b.activityType);
-          break;
-        case 'company':
-          comparison = a.company.compareTo(b.company);
-          break;
-        case 'inquiry':
-          comparison = a.inquiry.compareTo(b.inquiry);
-          break;
-        case 'user':
-          comparison = a.user.compareTo(b.user);
-          break;
-        case 'theme':
-          comparison = a.theme.compareTo(b.theme);
-          break;
-        case 'category':
-          comparison = a.category.compareTo(b.category);
-          break;
-        case 'createdAt':
-          // Parse dates and compare
-          comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
-          break;
-        case 'createdBy':
-          comparison = a.createdBy.compareTo(b.createdBy);
-          break;
-        default:
-          comparison = 0;
-      }
-
-      // Apply sort order
-      return _currentSortOrder == 'asc' ? comparison : -comparison;
-    });
-
-    return activities;
-  }
-
-  DateTime _parseDate(String dateStr) {
-    // Parse date string in format "DD-MM-YYYY"
-    try {
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[2]), // year
-          int.parse(parts[1]), // month
-          int.parse(parts[0]), // day
-        );
-      }
-    } catch (e) {
-      // Return current date if parsing fails
-    }
-    return DateTime.now();
   }
 }

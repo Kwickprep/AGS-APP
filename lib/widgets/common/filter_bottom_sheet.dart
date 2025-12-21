@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
+import '../custom_button.dart';
 import 'filter_chip_button.dart';
 
 /// Generic filter model for filtering records
@@ -314,22 +315,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: ElevatedButton(
+                    child: CustomButton(
+                      text: 'Apply Filters',
                       onPressed: _applyFilters,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Apply Filters',
-                        style: AppTextStyles.button.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
                     ),
                   ),
                 ],

@@ -18,7 +18,7 @@ class ThemeTable extends StatefulWidget {
   final Function(String, String) onSort;
 
   const ThemeTable({
-    Key? key,
+    super.key,
     required this.themes,
     required this.total,
     required this.currentPage,
@@ -31,7 +31,7 @@ class ThemeTable extends StatefulWidget {
     required this.onDelete,
     required this.onEdit,
     required this.onSort,
-  }) : super(key: key);
+  });
 
   @override
   State<ThemeTable> createState() => _ThemeTableState();
@@ -117,7 +117,7 @@ class _ThemeTableState extends State<ThemeTable> {
                     child: SingleChildScrollView(
                       child: DataTable(
                         dataRowMaxHeight: double.infinity,
-                        headingRowColor: MaterialStateProperty.all(
+                        headingRowColor: WidgetStateProperty.all(
                           AppColors.background,
                         ),
                         columns: [
@@ -247,8 +247,8 @@ class _ThemeTableState extends State<ThemeTable> {
                 ),
                 decoration: BoxDecoration(
                   color: theme.isActive
-                      ? AppColors.success.withOpacity(0.1)
-                      : AppColors.error.withOpacity(0.1),
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: theme.isActive ? AppColors.success : AppColors.error,
@@ -307,7 +307,7 @@ class _ThemeTableState extends State<ThemeTable> {
           Icon(
             Icons.folder_open,
             size: 80,
-            color: AppColors.grey.withOpacity(0.5),
+            color: AppColors.grey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           const Text(

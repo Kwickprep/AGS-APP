@@ -1,10 +1,9 @@
 import 'package:get_it/get_it.dart';
 import '../models/tag_model.dart';
 import '../widgets/generic/generic_model.dart';
-import '../widgets/generic/generic_list_bloc.dart';
 import 'api_service.dart';
 
-class TagService implements GenericListService<TagModel> {
+class TagService  {
   final ApiService _apiService = GetIt.I<ApiService>();
 
   Future<TagResponse> getTags({

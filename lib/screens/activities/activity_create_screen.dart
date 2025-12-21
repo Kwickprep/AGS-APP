@@ -11,7 +11,7 @@ import '../../widgets/custom_toast.dart';
 import 'theme_selection_screen.dart';
 
 class ActivityCreateScreen extends StatefulWidget {
-  const ActivityCreateScreen({Key? key}) : super(key: key);
+  const ActivityCreateScreen({super.key});
 
   @override
   State<ActivityCreateScreen> createState() => _ActivityCreateScreenState();
@@ -44,7 +44,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
   List<UserDropdownModel> _filteredUsers = [];
 
   // Image upload
-  List<File> _selectedImages = [];
+  final List<File> _selectedImages = [];
   List<String> _uploadedDocumentIds = [];
   bool _isUploadingImages = false;
 
@@ -128,10 +128,13 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
     });
   }
 
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
+  DateTime? _selectedDateTime;
+
+  Future<void> _selectDateTime() async {
+    // First pick the date
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: _selectedDateTime ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
       builder: (context, child) {
@@ -148,21 +151,52 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
       },
     );
 
-    if (picked != null) {
-      setState(() {
-        _nextScheduleDateController.text =
-            '${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}';
-      });
+    if (pickedDate != null && mounted) {
+      // Then pick the time
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime ?? DateTime.now()),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppColors.primary,
+                onPrimary: AppColors.white,
+                onSurface: AppColors.textPrimary,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedTime != null && mounted) {
+        final combinedDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        setState(() {
+          _selectedDateTime = combinedDateTime;
+          _nextScheduleDateController.text =
+              '${combinedDateTime.day.toString().padLeft(2, '0')}-${combinedDateTime.month.toString().padLeft(2, '0')}-${combinedDateTime.year} ${combinedDateTime.hour.toString().padLeft(2, '0')}:${combinedDateTime.minute.toString().padLeft(2, '0')}';
+        });
+      }
     }
   }
 
   Future<void> _pickImages() async {
     try {
-      final List<XFile>? images = await _imagePicker.pickMultiImage();
+      final List<XFile> images = await _imagePicker.pickMultiImage();
 
-      if (images != null && images.isNotEmpty) {
+      if (images.isNotEmpty) {
         setState(() {
-          _selectedImages.addAll(images.map((xFile) => File(xFile.path)).toList());
+          _selectedImages.addAll(
+            images.map((xFile) => File(xFile.path)).toList(),
+          );
         });
 
         // Upload images immediately to get document IDs
@@ -187,7 +221,9 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
     });
 
     try {
-      final documentIds = await _fileUploadService.uploadMultipleFiles(_selectedImages);
+      final documentIds = await _fileUploadService.uploadMultipleFiles(
+        _selectedImages,
+      );
       setState(() {
         _uploadedDocumentIds = documentIds;
         _isUploadingImages = false;
@@ -256,17 +292,33 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           },
         };
       } else {
-        // Standard activity format
+        // Standard activity format - use body structure
         data = {
           'activityTypeId': _selectedActivityTypeId,
-          'inquiryId': _selectedInquiryId,
           'companyId': _selectedCompanyId,
+          'inquiryId': _selectedInquiryId,
           'userId': _selectedUserId,
-          'activityNote': _activityNoteController.text.trim(),
-          'nextScheduleNote': _nextScheduleNoteController.text.trim(),
-          'nextScheduleDate': _nextScheduleDateController.text.trim(),
-          'scheduledCallCompleted': _scheduledCallCompleted,
+          'body': {},
         };
+
+        // Add fields to body only if they have values
+        final activityNote = _activityNoteController.text.trim();
+        final nextScheduleNote = _nextScheduleNoteController.text.trim();
+        
+        if (activityNote.isNotEmpty) {
+          data['body']['note'] = activityNote;
+        }
+        
+        if (nextScheduleNote.isNotEmpty) {
+          data['body']['nextScheduleNote'] = nextScheduleNote;
+        }
+        
+        if (_selectedDateTime != null) {
+          // Convert to ISO 8601 format
+          data['body']['nextScheduleDate'] = _selectedDateTime!.toUtc().toIso8601String();
+        }
+        
+        data['body']['scheduledCallCompleted'] = _scheduledCallCompleted;
       }
 
       final createdActivityRecord = await _activityService.createActivity(data);
@@ -277,7 +329,9 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           final body = createdActivityRecord['body'] as Map<String, dynamic>?;
           final aiSuggestedThemes = body?['aiSuggestedThemes'];
 
-          if (aiSuggestedThemes != null && aiSuggestedThemes is List && aiSuggestedThemes.isNotEmpty) {
+          if (aiSuggestedThemes != null &&
+              aiSuggestedThemes is List &&
+              aiSuggestedThemes.isNotEmpty) {
             // Navigate to theme selection screen
             final result = await Navigator.push(
               context,
@@ -335,6 +389,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
@@ -391,63 +446,80 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    // Activity Type
-                    CustomDropdown<String>(
-                      label: 'Activity Type',
-                      hint: 'Select Activity Type',
-                      value: _selectedActivityTypeId,
-                      items: _activityTypes.map((type) {
-                        return DropdownItem(
-                          value: type.id,
-                          label: type.name,
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedActivityTypeId = value;
-                        });
-                      },
-                      isRequired: true,
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Activity type is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
+                        // Activity Type
+                        CustomDropdown<String>(
+                          label: 'Activity Type',
+                          hint: 'Select Activity Type',
+                          value: _activityTypes.isEmpty
+                              ? null
+                              : _selectedActivityTypeId,
+                          items: _activityTypes.map((type) {
+                            return DropdownItem(
+                              value: type.id,
+                              label: type.name,
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedActivityTypeId = value;
+                              // Reset dependent dropdowns when activity type changes
+                              if (value == null) {
+                                _selectedInquiryId = null;
+                                _selectedCompanyId = null;
+                                _selectedUserId = null;
+                              }
+                            });
+                          },
+                          isRequired: true,
+                          isEnabled: _activityTypes.isNotEmpty,
+                          onClear: () {
+                            setState(() {
+                              _selectedActivityTypeId = null;
+                              _selectedInquiryId = null;
+                              _selectedCompanyId = null;
+                              _selectedUserId = null;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Activity type is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
 
-                    // Always show basic dropdowns
-                    _buildBasicDropdowns(),
+                        // Always show basic dropdowns
+                        _buildBasicDropdowns(),
 
-                    // Conditional rendering based on activity type selection
-                    if (_selectedActivityTypeId != null) ...[
-                      const SizedBox(height: 24),
-                      if (_isProductSearch) ...[
-                        // Requirements field for Product Search
-                        _buildRequirementsField(),
-                      ] else ...[
-                        // Standard fields for other activity types
-                        _buildStandardFields(),
-                      ],
-                    ],
+                        // Conditional rendering based on activity type selection
+                        if (_selectedActivityTypeId != null) ...[
+                          const SizedBox(height: 24),
+                          if (_isProductSearch) ...[
+                            // Requirements field for Product Search
+                            _buildRequirementsField(),
+                          ] else ...[
+                            // Standard fields for other activity types
+                            _buildStandardFields(),
+                          ],
+                        ],
 
-                    // Buttons
-                    const SizedBox(height: 32),
-                    CustomButton(
-                      text: 'Submit',
-                      onPressed: _createActivity,
-                      isLoading: _isLoading,
-                      icon: Icons.check,
-                    ),
-                    const SizedBox(height: 12),
-                    CustomButton(
-                      text: 'Cancel',
-                      onPressed: () => Navigator.pop(context),
-                      variant: ButtonVariant.outline,
-                      icon: Icons.close,
-                    ),
-                    const SizedBox(height: 24),
+                        // Buttons
+                        const SizedBox(height: 32),
+                        CustomButton(
+                          text: 'Submit',
+                          onPressed: _createActivity,
+                          isLoading: _isLoading,
+                          icon: Icons.check,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomButton(
+                          text: 'Cancel',
+                          onPressed: () => Navigator.pop(context),
+                          variant: ButtonVariant.outline,
+                          icon: Icons.close,
+                        ),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),
@@ -458,6 +530,12 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
   }
 
   Widget _buildBasicDropdowns() {
+    // Check if activity type is selected
+    final bool isActivityTypeSelected = _selectedActivityTypeId != null;
+
+    // Check if company is selected (for enabling user dropdown)
+    final bool isCompanySelected = _selectedCompanyId != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -465,12 +543,9 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         CustomDropdown<String>(
           label: 'Inquiry',
           hint: 'Select Inquiry',
-          value: _selectedInquiryId,
+          value: _inquiries.isEmpty ? null : _selectedInquiryId,
           items: _inquiries.map((inquiry) {
-            return DropdownItem(
-              value: inquiry.id,
-              label: inquiry.name,
-            );
+            return DropdownItem(value: inquiry.id, label: inquiry.name);
           }).toList(),
           onChanged: (value) {
             setState(() {
@@ -478,6 +553,12 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
             });
           },
           isRequired: false,
+          isEnabled: isActivityTypeSelected && _inquiries.isNotEmpty,
+          onClear: () {
+            setState(() {
+              _selectedInquiryId = null;
+            });
+          },
         ),
         const SizedBox(height: 24),
 
@@ -485,15 +566,13 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         CustomDropdown<String>(
           label: 'Company',
           hint: 'Select Company',
-          value: _selectedCompanyId,
+          value: _companies.isEmpty ? null : _selectedCompanyId,
           items: _companies.map((company) {
-            return DropdownItem(
-              value: company.id,
-              label: company.name,
-            );
+            return DropdownItem(value: company.id, label: company.name);
           }).toList(),
           onChanged: _onCompanyChanged,
           isRequired: false,
+          isEnabled: isActivityTypeSelected && _companies.isNotEmpty,
           onClear: () {
             _onCompanyChanged(null);
           },
@@ -504,12 +583,9 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         CustomDropdown<String>(
           label: 'User',
           hint: 'Select User',
-          value: _selectedUserId,
+          value: _filteredUsers.isEmpty ? null : _selectedUserId,
           items: _filteredUsers.map((user) {
-            return DropdownItem(
-              value: user.id,
-              label: user.fullName,
-            );
+            return DropdownItem(value: user.id, label: user.fullName);
           }).toList(),
           onChanged: (value) {
             setState(() {
@@ -517,6 +593,10 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
             });
           },
           isRequired: false,
+          isEnabled:
+              isActivityTypeSelected &&
+              isCompanySelected &&
+              _filteredUsers.isNotEmpty,
           onClear: () {
             setState(() {
               _selectedUserId = null;
@@ -531,7 +611,6 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-
         // Activity Note
         const Text(
           'Activity Note',
@@ -547,10 +626,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           maxLines: 4,
           decoration: InputDecoration(
             hintText: 'Enter activity notes',
-            hintStyle: const TextStyle(
-              color: AppColors.grey,
-              fontSize: 14,
-            ),
+            hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
@@ -586,10 +662,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           maxLines: 4,
           decoration: InputDecoration(
             hintText: 'Enter note',
-            hintStyle: const TextStyle(
-              color: AppColors.grey,
-              fontSize: 14,
-            ),
+            hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
@@ -610,9 +683,9 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Next Schedule Date
+        // Next Schedule Date & Time
         const Text(
-          'Next Schedule Date',
+          'Next Schedule Date & Time',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 14,
@@ -623,14 +696,19 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         TextFormField(
           controller: _nextScheduleDateController,
           readOnly: true,
-          onTap: _selectDate,
+          onTap: _selectDateTime,
           decoration: InputDecoration(
-            hintText: 'Select date',
-            hintStyle: const TextStyle(
-              color: AppColors.grey,
-              fontSize: 14,
+            hintText: 'Select date and time',
+            hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.calendar_today, color: AppColors.grey, size: 20),
+                SizedBox(width: 8),
+                Icon(Icons.access_time, color: AppColors.grey, size: 20),
+                SizedBox(width: 8),
+              ],
             ),
-            suffixIcon: const Icon(Icons.calendar_today, color: AppColors.grey),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
@@ -661,7 +739,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                   _scheduledCallCompleted = value;
                 });
               },
-              activeColor: AppColors.primary,
+              activeThumbColor: AppColors.primary,
             ),
             const SizedBox(width: 12),
             const Text(
@@ -693,10 +771,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
             children: [
               TextSpan(
                 text: ' *',
-                style: TextStyle(
-                  color: AppColors.error,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: AppColors.error, fontSize: 14),
               ),
             ],
           ),
@@ -706,11 +781,9 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           controller: _requirementsController,
           maxLines: 4,
           decoration: InputDecoration(
-            hintText: 'E.g., Looking for corporate gifts for 100 employees, budget around 500 per piece...',
-            hintStyle: const TextStyle(
-              color: AppColors.grey,
-              fontSize: 14,
-            ),
+            hintText:
+                'E.g., Looking for corporate gifts for 100 employees, budget around 500 per piece...',
+            hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
             suffixIcon: IconButton(
               icon: const Icon(Icons.attach_file, color: AppColors.grey),
               onPressed: _pickImages,
@@ -744,7 +817,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.primaryLight.withOpacity(0.1),
+              color: AppColors.primaryLight.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -754,16 +827,15 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                   ),
                 ),
                 SizedBox(width: 12),
                 Text(
                   'Uploading images...',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
                 ),
               ],
             ),

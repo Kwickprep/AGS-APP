@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../config/app_colors.dart';
@@ -7,7 +6,7 @@ import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
 class AppDrawer extends StatefulWidget {
-  const AppDrawer({Key? key}) : super(key: key);
+  const AppDrawer({super.key});
 
   @override
   State<AppDrawer> createState() => _AppDrawerState();
@@ -36,19 +35,20 @@ class _AppDrawerState extends State<AppDrawer> {
   Widget build(BuildContext context) {
     return Drawer(
       child: Column(
+        mainAxisSize: MainAxisSize.max,
         children: [
-          DrawerHeader(
+          Container(
             margin: EdgeInsets.zero,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-            ),
-            child: Container(
+            padding: EdgeInsets.all(20),
+            decoration: const BoxDecoration(color: AppColors.primary),
+            child: SizedBox(
               width: double.infinity,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
+                  SizedBox(height: MediaQuery.of(context).viewPadding.top),
                   const CircleAvatar(
                     radius: 30,
                     backgroundColor: AppColors.white,
@@ -60,15 +60,27 @@ class _AppDrawerState extends State<AppDrawer> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _user?.fullName ?? 'User',
+                    '${_user?.fullName} (${_user?.email})' ?? 'User',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: AppColors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+
+                  const SizedBox(height: 12),
                   Text(
-                    _user?.email ?? '',
+                    _user?.role.toLowerCase() ?? '',
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _user?.phone ?? '',
                     style: const TextStyle(
                       color: AppColors.white,
                       fontSize: 14,
@@ -140,6 +152,14 @@ class _AppDrawerState extends State<AppDrawer> {
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.groups);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.person),
+            title: const Text('Users'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, AppRoutes.users);
             },
           ),
           const Spacer(),

@@ -1,16 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import '../../models/category_model.dart';
-import '../../services/category_service.dart';
+import '../../models/group_model.dart';
+import '../../services/group_service.dart';
 
 // ============================================================================
 // Events
 // ============================================================================
 
-abstract class CategoryEvent {}
+abstract class GroupEvent {}
 
-/// Main event to load categories with all parameters
-class LoadCategories extends CategoryEvent {
+/// Main event to load groups with all parameters
+class LoadGroups extends GroupEvent {
   final int page;
   final int take;
   final String search;
@@ -18,7 +18,7 @@ class LoadCategories extends CategoryEvent {
   final String sortOrder;
   final Map<String, dynamic> filters;
 
-  LoadCategories({
+  LoadGroups({
     this.page = 1,
     this.take = 20,
     this.search = '',
@@ -28,23 +28,23 @@ class LoadCategories extends CategoryEvent {
   });
 }
 
-class DeleteCategory extends CategoryEvent {
+class DeleteGroup extends GroupEvent {
   final String id;
-  DeleteCategory(this.id);
+  DeleteGroup(this.id);
 }
 
 // ============================================================================
 // States
 // ============================================================================
 
-abstract class CategoryState {}
+abstract class GroupState {}
 
-class CategoryInitial extends CategoryState {}
+class GroupInitial extends GroupState {}
 
-class CategoryLoading extends CategoryState {}
+class GroupLoading extends GroupState {}
 
-class CategoryLoaded extends CategoryState {
-  final List<CategoryModel> categories;
+class GroupLoaded extends GroupState {
+  final List<GroupModel> groups;
   final int total;
   final int page;
   final int take;
@@ -54,8 +54,8 @@ class CategoryLoaded extends CategoryState {
   final String sortOrder;
   final Map<String, dynamic> filters;
 
-  CategoryLoaded({
-    required this.categories,
+  GroupLoaded({
+    required this.groups,
     required this.total,
     required this.page,
     required this.take,
@@ -66,8 +66,8 @@ class CategoryLoaded extends CategoryState {
     required this.filters,
   });
 
-  CategoryLoaded copyWith({
-    List<CategoryModel>? categories,
+  GroupLoaded copyWith({
+    List<GroupModel>? groups,
     int? total,
     int? page,
     int? take,
@@ -77,8 +77,8 @@ class CategoryLoaded extends CategoryState {
     String? sortOrder,
     Map<String, dynamic>? filters,
   }) {
-    return CategoryLoaded(
-      categories: categories ?? this.categories,
+    return GroupLoaded(
+      groups: groups ?? this.groups,
       total: total ?? this.total,
       page: page ?? this.page,
       take: take ?? this.take,
@@ -91,32 +91,32 @@ class CategoryLoaded extends CategoryState {
   }
 }
 
-class CategoryError extends CategoryState {
+class GroupError extends GroupState {
   final String message;
-  CategoryError(this.message);
+  GroupError(this.message);
 }
 
 // ============================================================================
 // BLoC - Simple approach: Every change triggers API call
 // ============================================================================
 
-class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
-  final CategoryService _categoryService = GetIt.I<CategoryService>();
+class GroupBloc extends Bloc<GroupEvent, GroupState> {
+  final GroupService _groupService = GetIt.I<GroupService>();
 
-  CategoryBloc() : super(CategoryInitial()) {
-    on<LoadCategories>(_onLoadCategories);
-    on<DeleteCategory>(_onDeleteCategory);
+  GroupBloc() : super(GroupInitial()) {
+    on<LoadGroups>(_onLoadGroups);
+    on<DeleteGroup>(_onDeleteGroup);
   }
 
-  /// Load categories from API with given parameters
-  Future<void> _onLoadCategories(
-    LoadCategories event,
-    Emitter<CategoryState> emit,
+  /// Load groups from API with given parameters
+  Future<void> _onLoadGroups(
+    LoadGroups event,
+    Emitter<GroupState> emit,
   ) async {
-    emit(CategoryLoading());
+    emit(GroupLoading());
 
     try {
-      final response = await _categoryService.getCategories(
+      final response = await _groupService.getGroups(
         page: event.page,
         take: event.take,
         search: event.search,
@@ -125,8 +125,8 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         filters: event.filters,
       );
 
-      emit(CategoryLoaded(
-        categories: response.records,
+      emit(GroupLoaded(
+        groups: response.records,
         total: response.total,
         page: response.page,
         take: response.take,
@@ -137,22 +137,22 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         filters: event.filters,
       ));
     } catch (e) {
-      emit(CategoryError(e.toString().replaceAll('Exception: ', '')));
+      emit(GroupError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  /// Delete category and reload current page
-  Future<void> _onDeleteCategory(
-    DeleteCategory event,
-    Emitter<CategoryState> emit,
+  /// Delete group and reload current page
+  Future<void> _onDeleteGroup(
+    DeleteGroup event,
+    Emitter<GroupState> emit,
   ) async {
     try {
-      await _categoryService.deleteCategory(event.id);
+      await _groupService.deleteGroup(event.id);
       
       // Reload with current parameters if we have a loaded state
-      if (state is CategoryLoaded) {
-        final currentState = state as CategoryLoaded;
-        add(LoadCategories(
+      if (state is GroupLoaded) {
+        final currentState = state as GroupLoaded;
+        add(LoadGroups(
           page: currentState.page,
           take: currentState.take,
           search: currentState.search,
@@ -162,10 +162,10 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
         ));
       } else {
         // Otherwise just reload with defaults
-        add(LoadCategories());
+        add(LoadGroups());
       }
     } catch (e) {
-      emit(CategoryError(e.toString().replaceAll('Exception: ', '')));
+      emit(GroupError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 }

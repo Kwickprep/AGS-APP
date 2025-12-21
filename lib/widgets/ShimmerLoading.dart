@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
 
 class ShimmerLoading extends StatefulWidget {
-  const ShimmerLoading({Key? key}) : super(key: key);
+  const ShimmerLoading({super.key});
 
   @override
   State<ShimmerLoading> createState() => _ShimmerLoadingState();
@@ -70,7 +70,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.lightGrey.withOpacity(_animation.value),
+                  color: AppColors.lightGrey.withValues(alpha: _animation.value),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -79,7 +79,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
             Container(
               width: 100,
               decoration: BoxDecoration(
-                color: AppColors.lightGrey.withOpacity(_animation.value),
+                color: AppColors.lightGrey.withValues(alpha: _animation.value),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -102,7 +102,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
             height: 50,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: AppColors.background.withOpacity(_animation.value),
+              color: AppColors.background.withValues(alpha: _animation.value),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -124,7 +124,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
                         child: Container(
                           height: 20,
                           decoration: BoxDecoration(
-                            color: AppColors.lightGrey.withOpacity(_animation.value),
+                            color: AppColors.lightGrey.withValues(alpha: _animation.value),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -135,7 +135,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
                         child: Container(
                           height: 20,
                           decoration: BoxDecoration(
-                            color: AppColors.lightGrey.withOpacity(_animation.value),
+                            color: AppColors.lightGrey.withValues(alpha: _animation.value),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -145,7 +145,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
                         width: 60,
                         height: 20,
                         decoration: BoxDecoration(
-                          color: AppColors.lightGrey.withOpacity(_animation.value),
+                          color: AppColors.lightGrey.withValues(alpha: _animation.value),
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
@@ -154,7 +154,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
                         child: Container(
                           height: 20,
                           decoration: BoxDecoration(
-                            color: AppColors.lightGrey.withOpacity(_animation.value),
+                            color: AppColors.lightGrey.withValues(alpha: _animation.value),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -164,7 +164,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
                         width: 80,
                         height: 20,
                         decoration: BoxDecoration(
-                          color: AppColors.lightGrey.withOpacity(_animation.value),
+                          color: AppColors.lightGrey.withValues(alpha: _animation.value),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

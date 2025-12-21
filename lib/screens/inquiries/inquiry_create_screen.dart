@@ -8,7 +8,7 @@ import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_toast.dart';
 
 class InquiryCreateScreen extends StatefulWidget {
-  const InquiryCreateScreen({Key? key}) : super(key: key);
+  const InquiryCreateScreen({super.key});
 
   @override
   State<InquiryCreateScreen> createState() => _InquiryCreateScreenState();
@@ -90,7 +90,8 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
   void _onCompanyChanged(String? companyId) {
     setState(() {
       _selectedCompanyId = companyId;
-      _selectedContactPersonId = null; // Reset contact person when company changes
+      _selectedContactPersonId =
+          null; // Reset contact person when company changes
 
       if (companyId != null) {
         // Filter contact persons by selected company
@@ -154,6 +155,7 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
@@ -187,169 +189,183 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    // Inquiry Name
-                    Row(
-                      children: [
+                        // Inquiry Name
+                        Row(
+                          children: [
+                            const Text(
+                              'Inquiry Name',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              '*',
+                              style: TextStyle(
+                                color: AppColors.error,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+
+                        const SizedBox(height: 8),
+                        CustomTextField(
+                          controller: _inquiryNameController,
+                          label: '',
+                          hint: 'Enter inquiry name',
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Inquiry name is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Company
+                        CustomDropdown<String>(
+                          label: 'Company',
+                          hint: 'Select Company',
+                          value: _selectedCompanyId,
+                          items: _companies.map((company) {
+                            return DropdownItem(
+                              value: company.id,
+                              label: company.name,
+                            );
+                          }).toList(),
+                          onChanged: _onCompanyChanged,
+                          isRequired: true,
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Company is required';
+                            }
+                            return null;
+                          },
+                          onClear: () {
+                            _onCompanyChanged(null);
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Contact Person
+                        CustomDropdown<String>(
+                          label: 'Contact Person',
+                          hint: 'Select Contact Person',
+                          value: _selectedContactPersonId,
+                          items: _filteredContactPersons.map((user) {
+                            return DropdownItem(
+                              value: user.id,
+                              label: user.fullName,
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedContactPersonId = value;
+                            });
+                          },
+                          isRequired: true,
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Contact person is required';
+                            }
+                            return null;
+                          },
+                          onClear: () {
+                            setState(() {
+                              _selectedContactPersonId = null;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Status
+                        CustomDropdown<String>(
+                          label: 'Status',
+                          hint: 'Select Status',
+                          value: _selectedStatus,
+                          items: _statusOptions
+                              .map((status) => DropdownItem(value: status, label: status))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedStatus = value;
+                            });
+                          },
+                          onClear: () {
+                            setState(() {
+                              _selectedStatus = null;
+                            });
+                          },
+                          isRequired: false,
+                          isEnabled: true,
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Note
                         const Text(
-                          'Inquiry Name',
+                          'Note',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Text('*', style: TextStyle(
-                          color: AppColors.error,
-                          fontSize: 14,
-                        ),)
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-
-                    const SizedBox(height: 8),
-                    CustomTextField(
-                      controller: _inquiryNameController,
-                      label: '',
-                      hint: 'Enter inquiry name',
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Inquiry name is required';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Company
-                    CustomDropdown<String>(
-                      label: 'Company',
-                      hint: 'Select Company',
-                      value: _selectedCompanyId,
-                      items: _companies.map((company) {
-                        return DropdownItem(
-                          value: company.id,
-                          label: company.name,
-                        );
-                      }).toList(),
-                      onChanged: _onCompanyChanged,
-                      isRequired: true,
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Company is required';
-                        }
-                        return null;
-                      },
-                      onClear: () {
-                        _onCompanyChanged(null);
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Contact Person
-                    CustomDropdown<String>(
-                      label: 'Contact Person',
-                      hint: 'Select Contact Person',
-                      value: _selectedContactPersonId,
-                      items: _filteredContactPersons.map((user) {
-                        return DropdownItem(
-                          value: user.id,
-                          label: user.fullName,
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedContactPersonId = value;
-                        });
-                      },
-                      isRequired: true,
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Contact person is required';
-                        }
-                        return null;
-                      },
-                      onClear: () {
-                        setState(() {
-                          _selectedContactPersonId = null;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Status
-                    CustomDropdown<String>(
-                      label: 'Status',
-                      hint: 'Select Status',
-                      value: _selectedStatus,
-                      items: _statusOptions.map((status) {
-                        return DropdownItem(
-                          value: status,
-                          label: status,
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedStatus = value;
-                        });
-                      },
-                      isRequired: false,
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Note
-                    const Text(
-                      'Note',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _noteController,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: 'Enter notes',
-                        hintStyle: const TextStyle(
-                          color: AppColors.grey,
-                          fontSize: 14,
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _noteController,
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            hintText: 'Enter notes',
+                            hintStyle: const TextStyle(
+                              color: AppColors.grey,
+                              fontSize: 14,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: AppColors.lightGrey,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: AppColors.lightGrey,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: AppColors.primary,
+                                width: 2,
+                              ),
+                            ),
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.lightGrey),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.lightGrey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                    // Buttons
-                    CustomButton(
-                      text: 'Submit',
-                      onPressed: _createInquiry,
-                      isLoading: _isLoading,
-                      icon: Icons.check,
-                    ),
-                    const SizedBox(height: 12),
-                    CustomButton(
-                      text: 'Cancel',
-                      onPressed: () => Navigator.pop(context),
-                      variant: ButtonVariant.outline,
-                      icon: Icons.close,
-                    ),
-                    const SizedBox(height: 24),
+                        // Buttons
+                        CustomButton(
+                          text: 'Submit',
+                          onPressed: _createInquiry,
+                          isLoading: _isLoading,
+                          icon: Icons.check,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomButton(
+                          text: 'Cancel',
+                          onPressed: () => Navigator.pop(context),
+                          variant: ButtonVariant.outline,
+                          icon: Icons.close,
+                        ),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),

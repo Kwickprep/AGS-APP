@@ -1,10 +1,9 @@
 import 'package:get_it/get_it.dart';
 import '../models/theme_model.dart';
 import '../widgets/generic/generic_model.dart';
-import '../widgets/generic/generic_list_bloc.dart';
 import 'api_service.dart';
 
-class ThemeService implements GenericListService<ThemeModel> {
+class ThemeService  {
   final ApiService _apiService = GetIt.I<ApiService>();
 
   Future<ThemeResponse> getThemes({

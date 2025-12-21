@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
 import '../../config/routes.dart';
-import '../../models/group_model.dart';
-import './group_bloc.dart';
+import '../../models/user_screen_model.dart';
+import './user_bloc.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -12,16 +12,16 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 
-/// Group list screen with full features: filter, sort, pagination, and details
-class GroupScreen extends StatefulWidget {
-  const GroupScreen({super.key});
+/// User list screen with full features: filter, sort, pagination, and details
+class UserScreen extends StatefulWidget {
+  const UserScreen({super.key});
 
   @override
-  State<GroupScreen> createState() => _GroupScreenState();
+  State<UserScreen> createState() => _UserScreenState();
 }
 
-class _GroupScreenState extends State<GroupScreen> {
-  late GroupBloc _bloc;
+class _UserScreenState extends State<UserScreen> {
+  late UserBloc _bloc;
   final TextEditingController _searchController = TextEditingController();
 
   // Current state parameters
@@ -35,8 +35,8 @@ class _GroupScreenState extends State<GroupScreen> {
   @override
   void initState() {
     super.initState();
-    _bloc = GroupBloc();
-    _loadGroups();
+    _bloc = UserBloc();
+    _loadUsers();
   }
 
   @override
@@ -46,15 +46,17 @@ class _GroupScreenState extends State<GroupScreen> {
     super.dispose();
   }
 
-  void _loadGroups() {
-    _bloc.add(LoadGroups(
-      page: _currentPage,
-      take: _itemsPerPage,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-      filters: _currentFilters,
-    ));
+  void _loadUsers() {
+    _bloc.add(
+      LoadUsers(
+        page: _currentPage,
+        take: _itemsPerPage,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+        filters: _currentFilters,
+      ),
+    );
   }
 
   void _showFilterSheet() {
@@ -81,7 +83,7 @@ class _GroupScreenState extends State<GroupScreen> {
                 !filter.selectedStatuses.contains('Inactive')) {
               _currentFilters['isActive'] = true;
             } else if (filter.selectedStatuses.contains('Inactive') &&
-                       !filter.selectedStatuses.contains('Active')) {
+                !filter.selectedStatuses.contains('Active')) {
               _currentFilters['isActive'] = false;
             }
           }
@@ -90,7 +92,7 @@ class _GroupScreenState extends State<GroupScreen> {
           }
           _currentPage = 1;
         });
-        _loadGroups();
+        _loadUsers();
       },
     );
   }
@@ -98,7 +100,10 @@ class _GroupScreenState extends State<GroupScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
+      initialSort: SortModel(
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
         SortOption(field: 'isActive', label: 'Status'),
@@ -111,7 +116,7 @@ class _GroupScreenState extends State<GroupScreen> {
           _currentSortOrder = sort.sortOrder;
           _currentPage = 1;
         });
-        _loadGroups();
+        _loadUsers();
       },
     );
   }
@@ -121,26 +126,38 @@ class _GroupScreenState extends State<GroupScreen> {
       _currentSearch = value;
       _currentPage = 1;
     });
-    _loadGroups();
+    _loadUsers();
   }
 
   void _onPageChanged(int page) {
     setState(() {
       _currentPage = page;
     });
-    _loadGroups();
+    _loadUsers();
   }
 
-  void _showGroupDetails(GroupModel group) {
+  void _showUserDetails(UserScreenModel user) {
     DetailsBottomSheet.show(
       context: context,
-      title: group.name,
-      isActive: group.isActive,
+      title: "${user.firstName} ${user.lastName}",
+      isActive: user.isActive == "true",
       fields: [
-        DetailField(label: 'Group Name', value: group.name),
-        DetailField(label: 'Status', value: group.isActive ? 'Active' : 'Inactive'),
-        DetailField(label: 'Created By', value: group.createdBy),
-        DetailField(label: 'Created Date', value: group.createdAt),
+        DetailField(
+          label: 'User Name',
+          value: "${user.firstName} ${user.lastName}",
+        ),
+        DetailField(
+          label: 'Status',
+          value: user.isActive == "true" ? 'Active' : 'Inactive',
+        ),
+        DetailField(
+          label: 'Created By',
+          value: (user as dynamic).createdBy ?? "",
+        ),
+        DetailField(
+          label: 'Created Date',
+          value: (user as dynamic).createdAt ?? "",
+        ),
       ],
     );
   }
@@ -155,7 +172,7 @@ class _GroupScreenState extends State<GroupScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createGroup);
+              Navigator.pushNamed(context, AppRoutes.createUser);
             },
             icon: const Icon(Icons.add),
           ),
@@ -168,11 +185,11 @@ class _GroupScreenState extends State<GroupScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Groups',
+          'Users',
           style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
         ),
       ),
-      body: BlocProvider<GroupBloc>(
+      body: BlocProvider<UserBloc>(
         create: (_) => _bloc,
         child: SafeArea(
           child: Column(
@@ -184,7 +201,7 @@ class _GroupScreenState extends State<GroupScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search groups...',
+                    hintText: 'Search users...',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -195,7 +212,7 @@ class _GroupScreenState extends State<GroupScreen> {
                                 _currentSearch = '';
                                 _currentPage = 1;
                               });
-                              _loadGroups();
+                              _loadUsers();
                             },
                           )
                         : null,
@@ -221,7 +238,10 @@ class _GroupScreenState extends State<GroupScreen> {
               // Filter and Sort bar
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: FilterSortBar(
                   onFilterTap: _showFilterSheet,
                   onSortTap: _showSortSheet,
@@ -230,37 +250,50 @@ class _GroupScreenState extends State<GroupScreen> {
 
               // Card list
               Expanded(
-                child: BlocBuilder<GroupBloc, GroupState>(
+                child: BlocBuilder<UserBloc, UserState>(
                   builder: (context, state) {
-                    if (state is GroupLoading) {
+                    if (state is UserLoading) {
                       return const Center(child: CircularProgressIndicator());
-                    } else if (state is GroupError) {
+                    } else if (state is UserError) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: AppColors.error,
+                            ),
                             const SizedBox(height: 16),
-                            Text(state.message, style: const TextStyle(fontSize: 16)),
+                            Text(
+                              state.message,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: _loadGroups,
+                              onPressed: _loadUsers,
                               child: const Text('Retry'),
                             ),
                           ],
                         ),
                       );
-                    } else if (state is GroupLoaded) {
-                      if (state.groups.isEmpty) {
+                    } else if (state is UserLoaded) {
+                      if (state.users.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.group_outlined, size: 64, color: AppColors.grey),
+                              const Icon(
+                                Icons.person_outline,
+                                size: 64,
+                                color: AppColors.grey,
+                              ),
                               const SizedBox(height: 16),
                               Text(
-                                'No groups found',
-                                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
+                                'No users found',
+                                style: AppTextStyles.bodyLarge.copyWith(
+                                  color: AppColors.textLight,
+                                ),
                               ),
                             ],
                           ),
@@ -272,16 +305,19 @@ class _GroupScreenState extends State<GroupScreen> {
                           Expanded(
                             child: RefreshIndicator(
                               onRefresh: () async {
-                                _loadGroups();
-                                await Future.delayed(const Duration(milliseconds: 500));
+                                _loadUsers();
+                                await Future.delayed(
+                                  const Duration(milliseconds: 500),
+                                );
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
-                                itemCount: state.groups.length,
+                                itemCount: state.users.length,
                                 itemBuilder: (context, index) {
-                                  final group = state.groups[index];
-                                  final serialNumber = (state.page - 1) * state.take + index + 1;
-                                  return _buildGroupCard(group, serialNumber);
+                                  final user = state.users[index];
+                                  final serialNumber =
+                                      (state.page - 1) * state.take + index + 1;
+                                  return _buildUserCard(user, serialNumber);
                                 },
                               ),
                             ),
@@ -310,36 +346,38 @@ class _GroupScreenState extends State<GroupScreen> {
     );
   }
 
-  Widget _buildGroupCard(GroupModel group, int serialNumber) {
+  Widget _buildUserCard(UserScreenModel user, int serialNumber) {
     return RecordCard(
       serialNumber: serialNumber,
-      isActive: group.isActive,
+      isActive: user.isActive == "true",
       fields: [
         CardField.title(
-          label: 'Group Name',
-          value: group.name,
+          label: 'User Name',
+          value: user.firstName + " " + user.lastName,
         ),
         CardField.regular(
           label: 'Created By',
-          value: group.createdBy,
+          value: (user as dynamic).createdBy ?? "",
         ),
         CardField.regular(
           label: 'Created Date',
-          value: group.createdAt,
+          value: (user as dynamic).createdAt ?? "",
         ),
       ],
-      onView: () => _showGroupDetails(group),
-      onDelete: () => _confirmDelete(group),
-      onTap: () => _showGroupDetails(group),
+      onView: () => _showUserDetails(user),
+      onDelete: () => _confirmDelete(user),
+      onTap: () => _showUserDetails(user),
     );
   }
 
-  void _confirmDelete(GroupModel group) {
+  void _confirmDelete(UserScreenModel user) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${group.name}"?'),
+        content: Text(
+          'Are you sure you want to delete "${user.firstName + " " + user.lastName}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -348,9 +386,9 @@ class _GroupScreenState extends State<GroupScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteGroup(group.id));
+              _bloc.add(DeleteUser(user.id));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Group deleted successfully')),
+                const SnackBar(content: Text('User deleted successfully')),
               );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
@@ -360,5 +398,4 @@ class _GroupScreenState extends State<GroupScreen> {
       ),
     );
   }
-
 }

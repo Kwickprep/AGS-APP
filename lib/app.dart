@@ -6,7 +6,7 @@ class MyApp extends StatelessWidget {
   final bool isLoggedIn;
   final GlobalKey<NavigatorState>? navigatorKey;
 
-  const MyApp({Key? key, required this.isLoggedIn, this.navigatorKey}) : super(key: key);
+  const MyApp({super.key, required this.isLoggedIn, this.navigatorKey});
 
   @override
   Widget build(BuildContext context) {

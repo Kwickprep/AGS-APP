@@ -93,7 +93,7 @@ class CommonListCard extends StatelessWidget {
   final bool showActionsDivider;
 
   const CommonListCard({
-    Key? key,
+    super.key,
     required this.title,
     this.statusBadge,
     required this.rows,
@@ -105,7 +105,7 @@ class CommonListCard extends StatelessWidget {
     this.showColumnLabels = false,
     this.cardHeaderBackgroundColor,
     this.showActionsDivider = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +114,7 @@ class CommonListCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.lightGrey.withOpacity(0.5), width: 1),
+        side: BorderSide(color: AppColors.lightGrey.withValues(alpha: 0.5), width: 1),
       ),
       child: InkWell(
         onTap: onTap,

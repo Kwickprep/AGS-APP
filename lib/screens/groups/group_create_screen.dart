@@ -10,7 +10,7 @@ import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_button.dart';
 
 class GroupCreateScreen extends StatefulWidget {
-  const GroupCreateScreen({Key? key}) : super(key: key);
+  const GroupCreateScreen({super.key});
 
   @override
   State<GroupCreateScreen> createState() => _GroupCreateScreenState();
@@ -22,7 +22,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   final _nameController = TextEditingController();
   final _noteController = TextEditingController();
 
-  bool _isActive = true;
+  bool? _isActive;
   bool _isLoading = false;
   bool _isLoadingContacts = true;
   List<ContactModel> _contacts = [];
@@ -67,6 +67,15 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
       return;
     }
 
+    if (_isActive == null) {
+      CustomToast.show(
+        context,
+        'Please select status',
+        type: ToastType.error,
+      );
+      return;
+    }
+
     if (_selectedContactIds.isEmpty) {
       CustomToast.show(
         context,
@@ -83,7 +92,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     try {
       await _groupService.createGroup(
         name: _nameController.text.trim(),
-        isActive: _isActive,
+        isActive: _isActive!,
         note: _noteController.text.trim(),
         userIds: _selectedContactIds,
       );
@@ -116,19 +125,21 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: BackButton(
-          color: Colors.white,
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        leading: const BackButton(color: Colors.white),
+        centerTitle: true,
         title: const Text(
           'Create Group',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       body: _isLoadingContacts
           ? const Center(child: CircularProgressIndicator())
@@ -195,6 +206,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                           label: 'Status',
                           hint: 'Select Status',
                           value: _isActive,
+                          isRequired: true,
                           items: [
                             DropdownItem(
                               value: true,
@@ -206,11 +218,15 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                             ),
                           ],
                           onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _isActive = value;
-                              });
+                            setState(() {
+                              _isActive = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Please select status';
                             }
+                            return null;
                           },
                         ),
                         const SizedBox(height: 24),
@@ -226,23 +242,31 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
 
                         // Contact Selection
                         const Text(
-                          'Select Contacts',
+                          'Select Contacts *',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        ContactSelectionTable(
-                          contacts: _contacts,
-                          selectedContactIds: _selectedContactIds,
-                          onSelectionChanged: (selectedIds) {
-                            setState(() {
-                              _selectedContactIds = selectedIds;
-                            });
-                          },
+                        Container(
+                          height: 400,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.border),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ContactSelectionTable(
+                            contacts: _contacts,
+                            selectedContactIds: _selectedContactIds,
+                            onSelectionChanged: (selectedIds) {
+                              setState(() {
+                                _selectedContactIds = selectedIds;
+                              });
+                            },
+                          ),
                         ),
-                        const SizedBox(height: 100),
+                        const SizedBox(height: 24),
                               ],
                             ),
                           ),
@@ -256,7 +280,7 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
                           color: AppColors.white,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               offset: const Offset(0, -2),
                               blurRadius: 8,
                             ),

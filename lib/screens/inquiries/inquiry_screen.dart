@@ -1,12 +1,10 @@
-import 'package:ags/screens/inquiries/inquiry_create_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
+import '../../config/routes.dart';
 import '../../models/inquiry_model.dart';
-import '../../services/inquiry_service.dart';
-import '../../widgets/generic/index.dart';
+import './inquiry_bloc.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -16,33 +14,29 @@ import '../../widgets/common/details_bottom_sheet.dart';
 
 /// Inquiry list screen with full features: filter, sort, pagination, and details
 class InquiryScreen extends StatefulWidget {
-  const InquiryScreen({Key? key}) : super(key: key);
+  const InquiryScreen({super.key});
 
   @override
   State<InquiryScreen> createState() => _InquiryScreenState();
 }
 
 class _InquiryScreenState extends State<InquiryScreen> {
-  late GenericListBloc<InquiryModel> _bloc;
+  late InquiryBloc _bloc;
   final TextEditingController _searchController = TextEditingController();
 
-  // Filter and sort state
-  FilterModel _filterModel = FilterModel();
-  SortModel _sortModel = SortModel(sortBy: 'name', sortOrder: 'asc');
-
-  // Pagination state
+  // Current state parameters
   int _currentPage = 1;
   final int _itemsPerPage = 20;
+  String _currentSearch = '';
+  String _currentSortBy = 'createdAt';
+  String _currentSortOrder = 'desc';
+  Map<String, dynamic> _currentFilters = {};
 
   @override
   void initState() {
     super.initState();
-    _bloc = GenericListBloc<InquiryModel>(
-      service: GetIt.I<InquiryService>(),
-      sortComparator: _inquirySortComparator,
-      filterPredicate: _inquiryFilterPredicate,
-    );
-    _bloc.add(LoadData());
+    _bloc = InquiryBloc();
+    _loadInquiries();
   }
 
   @override
@@ -52,44 +46,51 @@ class _InquiryScreenState extends State<InquiryScreen> {
     super.dispose();
   }
 
-  List<InquiryModel> _getPaginatedData(List<InquiryModel> allData) {
-    final startIndex = (_currentPage - 1) * _itemsPerPage;
-    final endIndex = startIndex + _itemsPerPage;
-
-    if (startIndex >= allData.length) {
-      return [];
-    }
-
-    return allData.sublist(
-      startIndex,
-      endIndex > allData.length ? allData.length : endIndex,
-    );
-  }
-
-  int _getTotalPages(int totalItems) {
-    return (totalItems / _itemsPerPage).ceil();
+  void _loadInquiries() {
+    _bloc.add(LoadInquiries(
+      page: _currentPage,
+      take: _itemsPerPage,
+      search: _currentSearch,
+      sortBy: _currentSortBy,
+      sortOrder: _currentSortOrder,
+      filters: _currentFilters,
+    ));
   }
 
   void _showFilterSheet() {
-    List<String> creators = [];
-    List<String> statuses = [];
-    final state = _bloc.state;
-    if (state is GenericListLoaded<InquiryModel>) {
-      creators = state.data.map((i) => i.createdBy).toSet().toList();
-      statuses = state.data.map((i) => i.status).toSet().toList();
+    List<String> selectedStatuses = [];
+    if (_currentFilters['isActive'] == true) {
+      selectedStatuses.add('Active');
+    } else if (_currentFilters['isActive'] == false) {
+      selectedStatuses.add('Inactive');
     }
 
     FilterBottomSheet.show(
       context: context,
-      initialFilter: _filterModel,
-      creatorOptions: creators,
-      statusOptions: statuses.isNotEmpty ? statuses : ['Open', 'Closed', 'Pending'],
+      initialFilter: FilterModel(
+        selectedStatuses: selectedStatuses.toSet(),
+        createdBy: _currentFilters['createdBy'],
+      ),
+      creatorOptions: const [],
+      statusOptions: const ['Active', 'Inactive'],
       onApplyFilters: (filter) {
         setState(() {
-          _filterModel = filter;
+          _currentFilters = {};
+          if (filter.selectedStatuses.isNotEmpty) {
+            if (filter.selectedStatuses.contains('Active') &&
+                !filter.selectedStatuses.contains('Inactive')) {
+              _currentFilters['isActive'] = true;
+            } else if (filter.selectedStatuses.contains('Inactive') &&
+                       !filter.selectedStatuses.contains('Active')) {
+              _currentFilters['isActive'] = false;
+            }
+          }
+          if (filter.createdBy != null) {
+            _currentFilters['createdBy'] = filter.createdBy;
+          }
           _currentPage = 1;
         });
-        _applyFiltersAndSort();
+        _loadInquiries();
       },
     );
   }
@@ -97,60 +98,50 @@ class _InquiryScreenState extends State<InquiryScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: _sortModel,
+      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
-        SortOption(field: 'company', label: 'Company'),
-        SortOption(field: 'contactUser', label: 'Contact User'),
-        SortOption(field: 'status', label: 'Status'),
+        SortOption(field: 'isActive', label: 'Status'),
         SortOption(field: 'createdAt', label: 'Created Date'),
         SortOption(field: 'createdBy', label: 'Created By'),
       ],
       onApplySort: (sort) {
         setState(() {
-          _sortModel = sort;
+          _currentSortBy = sort.sortBy;
+          _currentSortOrder = sort.sortOrder;
           _currentPage = 1;
         });
-        _applyFiltersAndSort();
+        _loadInquiries();
       },
     );
   }
 
-  void _applyFiltersAndSort() {
-    Map<String, dynamic> filters = {};
+  void _onSearchChanged(String value) {
+    setState(() {
+      _currentSearch = value;
+      _currentPage = 1;
+    });
+    _loadInquiries();
+  }
 
-    if (_filterModel.selectedStatuses.isNotEmpty) {
-      filters['status'] = _filterModel.selectedStatuses.first;
-    }
-
-    if (_filterModel.createdBy != null) {
-      filters['createdBy'] = _filterModel.createdBy;
-    }
-
-    _bloc.add(ApplyFilters(filters));
-    _bloc.add(SortData(_sortModel.sortBy, _sortModel.sortOrder));
+  void _onPageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+    _loadInquiries();
   }
 
   void _showInquiryDetails(InquiryModel inquiry) {
     DetailsBottomSheet.show(
       context: context,
       title: inquiry.name,
-      status: inquiry.status,
+      isActive: true,
       fields: [
-        DetailField(label: 'Name', value: inquiry.name),
-        DetailField(label: 'Company', value: inquiry.company),
-        DetailField(label: 'Contact User', value: inquiry.contactUser),
-        DetailField(label: 'Status', value: inquiry.status),
-        if (inquiry.note.isNotEmpty) DetailField(label: 'Note', value: inquiry.note),
+        DetailField(label: 'Inquiry Name', value: inquiry.name),
+        DetailField(label: 'Status', value: true ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: inquiry.createdBy),
         DetailField(label: 'Created Date', value: inquiry.createdAt),
       ],
-      onEdit: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Edit functionality coming soon')),
-        );
-      },
-      onDelete: () => _confirmDelete(inquiry),
     );
   }
 
@@ -161,26 +152,27 @@ class _InquiryScreenState extends State<InquiryScreen> {
       appBar: AppBar(
         leading: const BackButton(),
         centerTitle: true,
-        scrolledUnderElevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.createInquiry);
+            },
+            icon: const Icon(Icons.add),
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size(double.infinity, 1),
           child: Divider(height: 0.5, thickness: 1, color: AppColors.divider),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         title: Text(
           'Inquiries',
           style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: AppColors.iconPrimary),
-            onPressed: _navigateToCreate,
-            tooltip: 'Create Inquiry',
-          ),
-        ],
       ),
-      body: BlocProvider<GenericListBloc<InquiryModel>>(
+      body: BlocProvider<InquiryBloc>(
         create: (_) => _bloc,
         child: SafeArea(
           child: Column(
@@ -192,15 +184,18 @@ class _InquiryScreenState extends State<InquiryScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search inquiries...',
+                    hintText: 'Search inquirys...',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               _searchController.clear();
-                              _bloc.add(SearchData(''));
-                              setState(() {});
+                              setState(() {
+                                _currentSearch = '';
+                                _currentPage = 1;
+                              });
+                              _loadInquiries();
                             },
                           )
                         : null,
@@ -219,12 +214,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                       borderSide: const BorderSide(color: AppColors.primary),
                     ),
                   ),
-                  onChanged: (value) {
-                    _bloc.add(SearchData(value));
-                    setState(() {
-                      _currentPage = 1;
-                    });
-                  },
+                  onChanged: _onSearchChanged,
                 ),
               ),
 
@@ -240,11 +230,11 @@ class _InquiryScreenState extends State<InquiryScreen> {
 
               // Card list
               Expanded(
-                child: BlocBuilder<GenericListBloc<InquiryModel>, GenericListState>(
+                child: BlocBuilder<InquiryBloc, InquiryState>(
                   builder: (context, state) {
-                    if (state is GenericListLoading) {
+                    if (state is InquiryLoading) {
                       return const Center(child: CircularProgressIndicator());
-                    } else if (state is GenericListError) {
+                    } else if (state is InquiryError) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -254,51 +244,43 @@ class _InquiryScreenState extends State<InquiryScreen> {
                             Text(state.message, style: const TextStyle(fontSize: 16)),
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: () => _bloc.add(LoadData()),
+                              onPressed: _loadInquiries,
                               child: const Text('Retry'),
                             ),
                           ],
                         ),
                       );
-                    } else if (state is GenericListLoaded<InquiryModel>) {
-                      if (state.data.isEmpty) {
+                    } else if (state is InquiryLoaded) {
+                      if (state.inquiries.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.assignment_outlined, size: 64, color: AppColors.grey),
+                              const Icon(Icons.question_answer_outlined, size: 64, color: AppColors.grey),
                               const SizedBox(height: 16),
                               Text(
-                                'No inquiries found',
+                                'No inquirys found',
                                 style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _navigateToCreate,
-                                child: const Text('Create Inquiry'),
                               ),
                             ],
                           ),
                         );
                       }
 
-                      final paginatedData = _getPaginatedData(state.data);
-                      final totalPages = _getTotalPages(state.data.length);
-
                       return Column(
                         children: [
                           Expanded(
                             child: RefreshIndicator(
                               onRefresh: () async {
-                                _bloc.add(LoadData());
+                                _loadInquiries();
                                 await Future.delayed(const Duration(milliseconds: 500));
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
-                                itemCount: paginatedData.length,
+                                itemCount: state.inquiries.length,
                                 itemBuilder: (context, index) {
-                                  final inquiry = paginatedData[index];
-                                  final serialNumber = (_currentPage - 1) * _itemsPerPage + index + 1;
+                                  final inquiry = state.inquiries[index];
+                                  final serialNumber = (state.page - 1) * state.take + index + 1;
                                   return _buildInquiryCard(inquiry, serialNumber);
                                 },
                               ),
@@ -306,33 +288,13 @@ class _InquiryScreenState extends State<InquiryScreen> {
                           ),
 
                           // Pagination controls
-                          if (totalPages > 1)
-                            PaginationControls(
-                              currentPage: _currentPage,
-                              totalPages: totalPages,
-                              totalItems: state.data.length,
-                              itemsPerPage: _itemsPerPage,
-                              onFirst: () {
-                                setState(() {
-                                  _currentPage = 1;
-                                });
-                              },
-                              onPrevious: () {
-                                setState(() {
-                                  _currentPage--;
-                                });
-                              },
-                              onNext: () {
-                                setState(() {
-                                  _currentPage++;
-                                });
-                              },
-                              onLast: () {
-                                setState(() {
-                                  _currentPage = totalPages;
-                                });
-                              },
-                            ),
+                          PaginationControls(
+                            currentPage: state.page,
+                            totalPages: state.totalPages,
+                            totalItems: state.total,
+                            itemsPerPage: state.take,
+                            onPageChanged: _onPageChanged,
+                          ),
                         ],
                       );
                     }
@@ -351,19 +313,15 @@ class _InquiryScreenState extends State<InquiryScreen> {
   Widget _buildInquiryCard(InquiryModel inquiry, int serialNumber) {
     return RecordCard(
       serialNumber: serialNumber,
-      status: inquiry.status,
+      isActive: true,
       fields: [
         CardField.title(
-          label: 'Name',
+          label: 'Inquiry Name',
           value: inquiry.name,
         ),
         CardField.regular(
-          label: 'Company',
-          value: inquiry.company,
-        ),
-        CardField.regular(
-          label: 'Contact User',
-          value: inquiry.contactUser,
+          label: 'Created By',
+          value: inquiry.createdBy,
         ),
         CardField.regular(
           label: 'Created Date',
@@ -390,7 +348,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteData(inquiry.id));
+              _bloc.add(DeleteInquiry(inquiry.id));
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Inquiry deleted successfully')),
               );
@@ -403,73 +361,4 @@ class _InquiryScreenState extends State<InquiryScreen> {
     );
   }
 
-  Future<void> _navigateToCreate() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const InquiryCreateScreen()),
-    );
-    if (result == true && mounted) {
-      _bloc.add(LoadData());
-    }
-  }
-
-  /// Sort comparator for inquiries
-  int _inquirySortComparator(InquiryModel a, InquiryModel b, String sortBy, String sortOrder) {
-    int comparison = 0;
-
-    switch (sortBy) {
-      case 'name':
-        comparison = a.name.compareTo(b.name);
-        break;
-      case 'company':
-        comparison = a.company.compareTo(b.company);
-        break;
-      case 'contactUser':
-        comparison = a.contactUser.compareTo(b.contactUser);
-        break;
-      case 'status':
-        comparison = a.status.compareTo(b.status);
-        break;
-      case 'createdAt':
-        comparison = _parseDate(a.createdAt).compareTo(_parseDate(b.createdAt));
-        break;
-      case 'createdBy':
-        comparison = a.createdBy.compareTo(b.createdBy);
-        break;
-      default:
-        comparison = 0;
-    }
-
-    return sortOrder == 'asc' ? comparison : -comparison;
-  }
-
-  /// Filter predicate for inquiries
-  bool _inquiryFilterPredicate(InquiryModel inquiry, Map<String, dynamic> filters) {
-    if (filters.containsKey('status') && filters['status'] != null) {
-      if (inquiry.status != filters['status']) return false;
-    }
-
-    if (filters.containsKey('createdBy') && filters['createdBy'] != null) {
-      if (inquiry.createdBy != filters['createdBy']) return false;
-    }
-
-    return true;
-  }
-
-  /// Parse date string in format "DD-MM-YYYY"
-  DateTime _parseDate(String dateStr) {
-    try {
-      final parts = dateStr.split('-');
-      if (parts.length == 3) {
-        return DateTime(
-          int.parse(parts[2]), // year
-          int.parse(parts[1]), // month
-          int.parse(parts[0]), // day
-        );
-      }
-    } catch (e) {
-      // Return current date if parsing fails
-    }
-    return DateTime.now();
-  }
 }

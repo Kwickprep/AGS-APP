@@ -62,8 +62,8 @@ class GenericColumnConfig<T extends GenericModel> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: isActive
-            ? const Color(0xFF4CAF50).withOpacity(0.1)
-            : const Color(0xFFF44336).withOpacity(0.1),
+            ? const Color(0xFF4CAF50).withValues(alpha: 0.1)
+            : const Color(0xFFF44336).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isActive ? const Color(0xFF4CAF50) : const Color(0xFFF44336),

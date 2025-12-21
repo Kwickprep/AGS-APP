@@ -11,13 +11,13 @@ class CategorySearchBar extends StatefulWidget {
   final String? initialSearchQuery;
 
   const CategorySearchBar({
-    Key? key,
+    super.key,
     required this.onSearch,
     required this.onApplyFilters,
     required this.currentFilters,
     required this.totalCount,
     this.initialSearchQuery,
-  }) : super(key: key);
+  });
 
   @override
   State<CategorySearchBar> createState() => _CategorySearchBarState();
@@ -124,7 +124,7 @@ class _CategorySearchBarState extends State<CategorySearchBar> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -185,7 +185,7 @@ class _CategorySearchBarState extends State<CategorySearchBar> {
                 Container(
                   decoration: BoxDecoration(
                     color: hasActiveFilters
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : AppColors.background,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
@@ -213,7 +213,7 @@ class _CategorySearchBarState extends State<CategorySearchBar> {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.error),
                     ),
@@ -309,7 +309,7 @@ class _CategorySearchBarState extends State<CategorySearchBar> {
         });
       },
       backgroundColor: AppColors.white,
-      selectedColor: AppColors.primary.withOpacity(0.1),
+      selectedColor: AppColors.primary.withValues(alpha: 0.1),
       checkmarkColor: AppColors.primary,
       side: BorderSide(
         color: isSelected ? AppColors.primary : AppColors.lightGrey,

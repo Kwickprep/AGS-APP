@@ -1,10 +1,9 @@
 import 'package:get_it/get_it.dart';
 import '../models/category_model.dart';
 import '../widgets/generic/generic_model.dart';
-import '../widgets/generic/generic_list_bloc.dart';
 import 'api_service.dart';
 
-class CategoryService implements GenericListService<CategoryModel> {
+class CategoryService {
   final ApiService _apiService = GetIt.I<ApiService>();
 
   Future<CategoryResponse> getCategories({

@@ -24,7 +24,7 @@ class GenericDataTable<T extends GenericModel> extends StatefulWidget {
   final bool showSerialNumber;
 
   const GenericDataTable({
-    Key? key,
+    super.key,
     required this.data,
     required this.columns,
     required this.total,
@@ -41,7 +41,7 @@ class GenericDataTable<T extends GenericModel> extends StatefulWidget {
     this.emptyIcon = Icons.inbox_outlined,
     this.emptyMessage = 'No data found',
     this.showSerialNumber = true,
-  }) : super(key: key);
+  });
 
   @override
   State<GenericDataTable<T>> createState() => _GenericDataTableState<T>();
@@ -109,7 +109,7 @@ class _GenericDataTableState<T extends GenericModel>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 3),
@@ -125,7 +125,7 @@ class _GenericDataTableState<T extends GenericModel>
                     scrollDirection: Axis.horizontal,
                     child: SingleChildScrollView(
                       child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(
+                        headingRowColor: WidgetStateProperty.all(
                           AppColors.background,
                         ),
                         columns: _buildColumns(),
@@ -271,7 +271,7 @@ class _GenericDataTableState<T extends GenericModel>
           Icon(
             widget.emptyIcon,
             size: 80,
-            color: AppColors.grey.withOpacity(0.5),
+            color: AppColors.grey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(

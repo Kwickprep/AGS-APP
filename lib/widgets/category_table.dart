@@ -18,7 +18,7 @@ class CategoryTable extends StatefulWidget {
   final Function(String, String) onSort;
 
   const CategoryTable({
-    Key? key,
+    super.key,
     required this.categories,
     required this.total,
     required this.currentPage,
@@ -31,7 +31,7 @@ class CategoryTable extends StatefulWidget {
     required this.onDelete,
     required this.onEdit,
     required this.onSort,
-  }) : super(key: key);
+  });
 
   @override
   State<CategoryTable> createState() => _CategoryTableState();
@@ -100,7 +100,7 @@ class _CategoryTableState extends State<CategoryTable> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 3),
@@ -117,7 +117,7 @@ class _CategoryTableState extends State<CategoryTable> {
                     child: SingleChildScrollView(
                       child: DataTable(
                         dataRowMaxHeight: double.infinity,
-                        headingRowColor: MaterialStateProperty.all(
+                        headingRowColor: WidgetStateProperty.all(
                           AppColors.background,
                         ),
                         columns: [
@@ -253,8 +253,8 @@ class _CategoryTableState extends State<CategoryTable> {
                 ),
                 decoration: BoxDecoration(
                   color: category.isActive
-                      ? AppColors.success.withOpacity(0.1)
-                      : AppColors.error.withOpacity(0.1),
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: category.isActive
@@ -339,7 +339,7 @@ class _CategoryTableState extends State<CategoryTable> {
           Icon(
             Icons.category_outlined,
             size: 80,
-            color: AppColors.grey.withOpacity(0.5),
+            color: AppColors.grey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           const Text(

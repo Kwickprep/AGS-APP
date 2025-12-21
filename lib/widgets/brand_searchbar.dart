@@ -10,12 +10,12 @@ class BrandSearchBar extends StatefulWidget {
   final String? initialSearchQuery;
 
   const BrandSearchBar({
-    Key? key,
+    super.key,
     required this.onSearch,
     required this.onApplyFilters,
     required this.currentFilters,
     this.initialSearchQuery,
-  }) : super(key: key);
+  });
 
   @override
   State<BrandSearchBar> createState() => _BrandSearchBarState();
@@ -77,7 +77,7 @@ class _BrandSearchBarState extends State<BrandSearchBar> {
 
     // Set up debounced search with 500ms delay
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (value.length >= 1 || value.isEmpty) {
+      if (value.isNotEmpty || value.isEmpty) {
         widget.onSearch(value);
       }
     });
@@ -120,7 +120,7 @@ class _BrandSearchBarState extends State<BrandSearchBar> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -181,7 +181,7 @@ class _BrandSearchBarState extends State<BrandSearchBar> {
                 Container(
                   decoration: BoxDecoration(
                     color: hasActiveFilters
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : AppColors.background,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
@@ -209,7 +209,7 @@ class _BrandSearchBarState extends State<BrandSearchBar> {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.error),
                     ),
@@ -305,7 +305,7 @@ class _BrandSearchBarState extends State<BrandSearchBar> {
         });
       },
       backgroundColor: AppColors.white,
-      selectedColor: AppColors.primary.withOpacity(0.1),
+      selectedColor: AppColors.primary.withValues(alpha: 0.1),
       checkmarkColor: AppColors.primary,
       side: BorderSide(
         color: isSelected ? AppColors.primary : AppColors.lightGrey,

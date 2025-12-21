@@ -13,6 +13,7 @@ import 'services/inquiry_service.dart';
 import 'services/group_service.dart';
 import 'services/product_service.dart';
 import 'services/file_upload_service.dart';
+import 'services/user_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -30,6 +31,7 @@ void setupDependencies() {
   getIt.registerSingleton<GroupService>(GroupService());
   getIt.registerSingleton<ProductService>(ProductService());
   getIt.registerSingleton<FileUploadService>(FileUploadService());
+  getIt.registerSingleton<UserService>(UserService());
 }
 
 void main() async {

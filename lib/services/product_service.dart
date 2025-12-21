@@ -1,13 +1,11 @@
 import 'package:get_it/get_it.dart';
 import '../models/product_model.dart';
-import '../widgets/generic/generic_list_bloc.dart';
 import '../widgets/generic/generic_model.dart';
 import 'api_service.dart';
 
-class ProductService implements GenericListService<ProductModel> {
+class ProductService  {
   final ApiService _apiService = GetIt.I<ApiService>();
 
-  @override
   Future<GenericResponse<ProductModel>> getData({
     required int page,
     required int take,

@@ -1,10 +1,9 @@
 import 'package:get_it/get_it.dart';
 import '../models/activity_model.dart';
 import '../widgets/generic/generic_model.dart';
-import '../widgets/generic/generic_list_bloc.dart';
 import 'api_service.dart';
 
-class ActivityService implements GenericListService<ActivityModel> {
+class ActivityService {
   final ApiService _apiService = GetIt.I<ApiService>();
 
   Future<ActivityResponse> getActivities({
@@ -26,16 +25,13 @@ class ActivityService implements GenericListService<ActivityModel> {
         'isPageLayout': 'true',
       };
 
-      print('ActivityService: Calling GET /api/activities with params: $queryParams');
       final response = await _apiService.get(
         '/api/activities',
         params: queryParams,
       );
 
-      print('ActivityService: Response received: ${response.data}');
       return ActivityResponse.fromJson(response.data);
     } catch (e) {
-      print('ActivityService: Error - $e');
       throw Exception('Failed to load activities: ${e.toString()}');
     }
   }

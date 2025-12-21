@@ -1,18 +1,17 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
 
-/// Reusable pagination controls widget
-/// Can be used in any paginated list screen
 class PaginationControls extends StatelessWidget {
   final int currentPage;
   final int totalPages;
   final int? totalItems;
   final int? itemsPerPage;
+  final Function(int)? onPageChanged;
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
-  final VoidCallback? onFirst;
-  final VoidCallback? onLast;
+  final int maxVisiblePages;
 
   const PaginationControls({
     super.key,
@@ -20,236 +19,183 @@ class PaginationControls extends StatelessWidget {
     required this.totalPages,
     this.totalItems,
     this.itemsPerPage,
+    this.onPageChanged,
     this.onPrevious,
     this.onNext,
-    this.onFirst,
-    this.onLast,
+    this.maxVisiblePages = 6,
   });
+
+  List<int> _getVisiblePages() {
+    if (totalPages <= maxVisiblePages) {
+      return List.generate(totalPages, (i) => i + 1);
+    }
+
+    int start = max(1, currentPage - (maxVisiblePages ~/ 2));
+    int end = min(totalPages, start + maxVisiblePages - 1);
+
+    if (end - start < maxVisiblePages - 1) {
+      start = max(1, end - maxVisiblePages + 1);
+    }
+
+    return List.generate(end - start + 1, (i) => start + i);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool canGoPrevious = currentPage > 1;
-    final bool canGoNext = currentPage < totalPages;
-
-    // Calculate item range
-    String itemRangeText = '';
-    if (totalItems != null && itemsPerPage != null) {
-      final startItem = ((currentPage - 1) * itemsPerPage!) + 1;
-      final endItem = (currentPage * itemsPerPage! > totalItems!)
-          ? totalItems!
-          : currentPage * itemsPerPage!;
-      itemRangeText = 'Showing $startItem-$endItem of $totalItems items';
-    }
+    final canGoPrevious = currentPage > 1;
+    final canGoNext = currentPage < totalPages;
+    final visiblePages = _getVisiblePages();
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: AppColors.border, width: 1),
-        ),
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
-      child: Column(
-        children: [
-          // Item count info
-          if (itemRangeText.isNotEmpty) ...[
-            Text(
-              itemRangeText,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textLight,
-                fontSize: 13,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final pageButtonsWidth = visiblePages.length * 48;
+          final navButtonsWidth = 40 * 2 + 16;
+          final totalWidth = pageButtonsWidth + navButtonsWidth;
+
+          final shouldScroll = totalWidth > constraints.maxWidth;
+
+          Widget pageButtons = Row(
+            mainAxisSize: MainAxisSize.min,
+            children: visiblePages.map((pageNum) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: _PageNumberButton(
+                  pageNumber: pageNum,
+                  isActive: pageNum == currentPage,
+                  onTap: () => onPageChanged?.call(pageNum),
+                ),
+              );
+            }).toList(),
+          );
+
+          if (shouldScroll) {
+            pageButtons = SizedBox(
+              width: constraints.maxWidth - navButtonsWidth,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: pageButtons,
               ),
+            );
+          }
+
+          return Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _NavigationButton(
+                  onTap: canGoPrevious
+                      ? () {
+                    onPrevious?.call();
+                    onPageChanged?.call(currentPage - 1);
+                  }
+                      : null,
+                  icon: Icons.chevron_left,
+                ),
+
+                const SizedBox(width: 8),
+
+                pageButtons,
+
+                const SizedBox(width: 8),
+
+                _NavigationButton(
+                  onTap: canGoNext
+                      ? () {
+                    onNext?.call();
+                    onPageChanged?.call(currentPage + 1);
+                  }
+                      : null,
+                  icon: Icons.chevron_right,
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-          ],
-
-          // Pagination controls
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // First page button
-              _PaginationButton(
-                onTap: canGoPrevious && currentPage > 1 ? onFirst : null,
-                icon: Icons.first_page,
-                tooltip: 'First page',
-              ),
-              const SizedBox(width: 8),
-
-              // Previous button
-              _PaginationButton(
-                onTap: canGoPrevious ? onPrevious : null,
-                icon: Icons.chevron_left,
-                label: 'Previous',
-                tooltip: 'Previous page',
-              ),
-              const SizedBox(width: 16),
-
-              // Page indicator with modern design
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Page',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$currentPage',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.primary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'of',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$totalPages',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 16),
-
-              // Next button
-              _PaginationButton(
-                onTap: canGoNext ? onNext : null,
-                icon: Icons.chevron_right,
-                label: 'Next',
-                iconRight: true,
-                tooltip: 'Next page',
-              ),
-              const SizedBox(width: 8),
-
-              // Last page button
-              _PaginationButton(
-                onTap: canGoNext && currentPage < totalPages ? onLast : null,
-                icon: Icons.last_page,
-                tooltip: 'Last page',
-              ),
-            ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
-/// Custom pagination button widget
-class _PaginationButton extends StatelessWidget {
-  final VoidCallback? onTap;
-  final IconData icon;
-  final String? label;
-  final bool iconRight;
-  final String? tooltip;
+/// PAGE NUMBER BUTTON
+class _PageNumberButton extends StatelessWidget {
+  final int pageNumber;
+  final bool isActive;
+  final VoidCallback onTap;
 
-  const _PaginationButton({
+  const _PageNumberButton({
+    required this.pageNumber,
+    required this.isActive,
     required this.onTap,
-    required this.icon,
-    this.label,
-    this.iconRight = false,
-    this.tooltip,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isEnabled = onTap != null;
-
-    final button = Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: label != null ? 12 : 10,
-            vertical: 10,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF81C784) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isActive ? const Color(0xFF81C784) : const Color(0xFFE0E0E0),
           ),
-          decoration: BoxDecoration(
-            color: isEnabled
-                ? Colors.white
-                : AppColors.background,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isEnabled
-                  ? AppColors.border
-                  : AppColors.lightGrey,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!iconRight) ...[
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isEnabled
-                      ? AppColors.textPrimary
-                      : AppColors.textLight,
-                ),
-                if (label != null) const SizedBox(width: 6),
-              ],
-              if (label != null)
-                Text(
-                  label!,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isEnabled
-                        ? AppColors.textPrimary
-                        : AppColors.textLight,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              if (iconRight) ...[
-                if (label != null) const SizedBox(width: 6),
-                Icon(
-                  icon,
-                  size: 18,
-                  color: isEnabled
-                      ? AppColors.textPrimary
-                      : AppColors.textLight,
-                ),
-              ],
-            ],
+        ),
+        child: Text(
+          '$pageNumber',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            color: isActive ? Colors.white : const Color(0xFF757575),
           ),
         ),
       ),
     );
+  }
+}
 
-    if (tooltip != null) {
-      return Tooltip(
-        message: tooltip!,
-        child: button,
-      );
-    }
+/// NAV BUTTON
+class _NavigationButton extends StatelessWidget {
+  final VoidCallback? onTap;
+  final IconData icon;
 
-    return button;
+  const _NavigationButton({
+    required this.onTap,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: enabled ? const Color(0xFF757575) : const Color(0xFFBDBDBD),
+        ),
+      ),
+    );
   }
 }

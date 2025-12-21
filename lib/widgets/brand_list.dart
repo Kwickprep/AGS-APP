@@ -18,7 +18,7 @@ class BrandList extends StatefulWidget {
   final Function(String, String) onSort;
 
   const BrandList({
-    Key? key,
+    super.key,
     required this.brands,
     required this.total,
     required this.currentPage,
@@ -31,7 +31,7 @@ class BrandList extends StatefulWidget {
     required this.onDelete,
     required this.onEdit,
     required this.onSort,
-  }) : super(key: key);
+  });
 
   @override
   State<BrandList> createState() => _BrandListState();
@@ -98,7 +98,7 @@ class _BrandListState extends State<BrandList> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 3),
@@ -114,7 +114,7 @@ class _BrandListState extends State<BrandList> {
                     scrollDirection: Axis.horizontal,
                     child: SingleChildScrollView(
                       child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(
+                        headingRowColor: WidgetStateProperty.all(
                           AppColors.background,
                         ),
                         columns: [
@@ -187,7 +187,7 @@ class _BrandListState extends State<BrandList> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
@@ -214,8 +214,8 @@ class _BrandListState extends State<BrandList> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: brand.isActive
-                    ? AppColors.success.withOpacity(0.1)
-                    : AppColors.error.withOpacity(0.1),
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: brand.isActive ? AppColors.success : AppColors.error,
@@ -266,7 +266,7 @@ class _BrandListState extends State<BrandList> {
           Icon(
             Icons.branding_watermark_outlined,
             size: 80,
-            color: AppColors.grey.withOpacity(0.5),
+            color: AppColors.grey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           const Text(

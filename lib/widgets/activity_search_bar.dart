@@ -11,13 +11,13 @@ class ActivitySearchBar extends StatefulWidget {
   final String? initialSearchQuery;
 
   const ActivitySearchBar({
-    Key? key,
+    super.key,
     required this.onSearch,
     required this.onApplyFilters,
     required this.currentFilters,
     required this.totalCount,
     this.initialSearchQuery,
-  }) : super(key: key);
+  });
 
   @override
   State<ActivitySearchBar> createState() => _ActivitySearchBarState();
@@ -72,7 +72,7 @@ class _ActivitySearchBarState extends State<ActivitySearchBar> {
 
     // Set up debounced search with 500ms delay
     _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      if (value.length >= 1 || value.isEmpty) {
+      if (value.isNotEmpty || value.isEmpty) {
         widget.onSearch(value);
       }
     });
@@ -111,7 +111,7 @@ class _ActivitySearchBarState extends State<ActivitySearchBar> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -172,7 +172,7 @@ class _ActivitySearchBarState extends State<ActivitySearchBar> {
                 Container(
                   decoration: BoxDecoration(
                     color: hasActiveFilters
-                        ? AppColors.primary.withOpacity(0.1)
+                        ? AppColors.primary.withValues(alpha: 0.1)
                         : AppColors.background,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
@@ -200,7 +200,7 @@ class _ActivitySearchBarState extends State<ActivitySearchBar> {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.error),
                     ),
