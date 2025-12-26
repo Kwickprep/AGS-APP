@@ -127,19 +127,25 @@ class _GroupCreateScreenState extends State<GroupCreateScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: const BackButton(color: Colors.white),
-        centerTitle: true,
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Create Group',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        scrolledUnderElevation: 0,
+        bottom: const PreferredSize(
+          preferredSize: Size(double.infinity, 1),
+          child: Divider(height: 0.5, thickness: 1, color: AppColors.divider),
+        ),
       ),
       body: _isLoadingContacts
           ? const Center(child: CircularProgressIndicator())

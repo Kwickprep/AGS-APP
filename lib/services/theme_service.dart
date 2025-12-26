@@ -74,4 +74,24 @@ class ThemeService  {
   Future<void> deleteData(String id) async {
     await deleteTheme(id);
   }
+
+  // TODO: Update this method with the actual API endpoint once provided
+  Future<void> createTheme({
+    required String name,
+    required bool isActive,
+    String? description,
+  }) async {
+    try {
+      final data = {
+        'name': name,
+        'isActive': isActive,
+        if (description != null && description.isNotEmpty) 'description': description,
+      };
+
+      // TODO: Replace with actual endpoint (e.g., POST /api/themes)
+      await _apiService.post('/api/themes', data: data);
+    } catch (e) {
+      throw Exception('Failed to create theme: ${e.toString()}');
+    }
+  }
 }

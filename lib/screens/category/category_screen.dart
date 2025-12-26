@@ -151,7 +151,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
       appBar: AppBar(
         leading: const BackButton(),
         centerTitle: true,
-       
+        actions: [
+          IconButton(
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/categories/create');
+              // Refresh the list if a category was created
+              if (result == true) {
+                _loadCategories();
+              }
+            },
+            icon: const Icon(Icons.add),
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size(double.infinity, 1),
           child: Divider(height: 0.5, thickness: 1, color: AppColors.divider),
@@ -160,7 +171,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Categorys',
+          'Categories',
           style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
         ),
       ),

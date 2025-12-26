@@ -73,4 +73,22 @@ class TagService  {
   Future<void> deleteData(String id) async {
     await deleteTag(id);
   }
+
+  // TODO: Update this method with the actual API endpoint once provided
+  Future<void> createTag({
+    required String name,
+    required bool isActive,
+  }) async {
+    try {
+      final data = {
+        'name': name,
+        'isActive': isActive,
+      };
+
+      // TODO: Replace with actual endpoint (e.g., POST /api/tags)
+      await _apiService.post('/api/tags', data: data);
+    } catch (e) {
+      throw Exception('Failed to create tag: ${e.toString()}');
+    }
+  }
 }

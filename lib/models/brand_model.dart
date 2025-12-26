@@ -10,6 +10,8 @@ class BrandModel implements GenericModel {
   @override
   final String createdAt;
   final List<BrandAction> actions;
+  final double? aop;
+  final double? discount;
 
   BrandModel({
     required this.id,
@@ -18,6 +20,8 @@ class BrandModel implements GenericModel {
     required this.createdBy,
     required this.createdAt,
     required this.actions,
+    this.aop,
+    this.discount,
   });
 
   @override
@@ -28,6 +32,8 @@ class BrandModel implements GenericModel {
       'isActive': isActive,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (aop != null) 'aop': aop,
+      if (discount != null) 'discount': discount,
       'actions': actions.map((a) => {
         'icon': a.icon,
         'type': a.type,
@@ -52,6 +58,10 @@ class BrandModel implements GenericModel {
         return createdBy;
       case 'createdAt':
         return createdAt;
+      case 'aop':
+        return aop != null ? '${aop!.toStringAsFixed(2)}%' : 'N/A';
+      case 'discount':
+        return discount != null ? '${discount!.toStringAsFixed(2)}%' : 'N/A';
       default:
         return null;
     }
@@ -77,6 +87,8 @@ class BrandModel implements GenericModel {
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
       createdBy: json['createdBy'] ?? '',
       createdAt: json['createdAt'] ?? '',
+      aop: json['aop'] != null ? (json['aop'] as num).toDouble() : null,
+      discount: json['discount'] != null ? (json['discount'] as num).toDouble() : null,
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => BrandAction.fromJson(e))
           .toList() ?? [],

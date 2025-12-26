@@ -160,7 +160,18 @@ class _ThemeScreenState extends State<ThemeScreen> {
       appBar: AppBar(
         leading: const BackButton(),
         centerTitle: true,
-
+        actions: [
+          IconButton(
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/themes/create');
+              // Refresh the list if a theme was created
+              if (result == true) {
+                _loadThemes();
+              }
+            },
+            icon: const Icon(Icons.add),
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size(double.infinity, 1),
           child: Divider(height: 0.5, thickness: 1, color: AppColors.divider),

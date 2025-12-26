@@ -74,4 +74,26 @@ class BrandService {
   Future<void> deleteData(String id) async {
     await deleteBrand(id);
   }
+
+  // TODO: Update this method with the actual API endpoint once provided
+  Future<void> createBrand({
+    required String name,
+    required bool isActive,
+    double? aop,
+    double? discount,
+  }) async {
+    try {
+      final data = {
+        'name': name,
+        'isActive': isActive,
+        if (aop != null) 'aop': aop,
+        if (discount != null) 'discount': discount,
+      };
+
+      // TODO: Replace with actual endpoint (e.g., POST /api/brands)
+      await _apiService.post('/api/brands', data: data);
+    } catch (e) {
+      throw Exception('Failed to create brand: ${e.toString()}');
+    }
+  }
 }

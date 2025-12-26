@@ -74,4 +74,24 @@ class CategoryService {
   Future<void> deleteData(String id) async {
     await deleteCategory(id);
   }
+
+  // TODO: Update this method with the actual API endpoint once provided
+  Future<void> createCategory({
+    required String name,
+    required bool isActive,
+    String? description,
+  }) async {
+    try {
+      final data = {
+        'name': name,
+        'isActive': isActive,
+        if (description != null && description.isNotEmpty) 'description': description,
+      };
+
+      // TODO: Replace with actual endpoint (e.g., POST /api/categories)
+      await _apiService.post('/api/categories', data: data);
+    } catch (e) {
+      throw Exception('Failed to create category: ${e.toString()}');
+    }
+  }
 }

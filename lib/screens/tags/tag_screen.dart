@@ -151,7 +151,18 @@ class _TagScreenState extends State<TagScreen> {
       appBar: AppBar(
         leading: const BackButton(),
         centerTitle: true,
-
+        actions: [
+          IconButton(
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/tags/create');
+              // Refresh the list if a tag was created
+              if (result == true) {
+                _loadTags();
+              }
+            },
+            icon: const Icon(Icons.add),
+          ),
+        ],
         bottom: const PreferredSize(
           preferredSize: Size(double.infinity, 1),
           child: Divider(height: 0.5, thickness: 1, color: AppColors.divider),
