@@ -8,10 +8,9 @@ class ThemeModel implements GenericModel {
   final int productCount;
   final bool isActive;
   final bool isActiveRaw;
-  @override
   final String createdBy;
-  @override
   final String createdAt;
+  final String? updatedBy;
   final String updatedAt;
   final User? creator;
   final User? updater;
@@ -27,6 +26,7 @@ class ThemeModel implements GenericModel {
     required this.isActiveRaw,
     required this.createdBy,
     required this.createdAt,
+    this.updatedBy,
     required this.updatedAt,
     this.creator,
     this.updater,
@@ -45,6 +45,7 @@ class ThemeModel implements GenericModel {
       'isActiveRaw': isActiveRaw,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (updatedBy != null) 'updatedBy': updatedBy,
       'updatedAt': updatedAt,
       'creator': creator?.toJson(),
       'updater': updater?.toJson(),
@@ -91,6 +92,16 @@ class ThemeModel implements GenericModel {
       }
     }
 
+    // Helper function to extract string value from either string or object
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return value['name']?.toString() ?? value['fullName']?.toString() ?? value['id']?.toString() ?? '';
+      }
+      return value.toString();
+    }
+
     return ThemeModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
@@ -98,17 +109,14 @@ class ThemeModel implements GenericModel {
       productCount: json['productCount'] ?? 0,
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
       isActiveRaw: json['isActiveRaw'] ?? (json['isActive'] == 'Active' || json['isActive'] == true),
-      createdBy: json['createdBy'] ?? '',
+      createdBy: extractString(json['createdBy']),
       createdAt: json['createdAt'] ?? '',
+      updatedBy: extractString(json['updatedBy']),
       updatedAt: json['updatedAt'] ?? '',
       creator: json['creator'] != null ? User.fromJson(json['creator']) : null,
       updater: json['updater'] != null ? User.fromJson(json['updater']) : null,
-      products: (json['products'] as List<dynamic>?)
-          ?.map((e) => Product.fromJson(e))
-          .toList() ?? [],
-      actions: (json['actions'] as List<dynamic>?)
-          ?.map((e) => ThemeAction.fromJson(e))
-          .toList() ?? [],
+      products: (json['products'] as List<dynamic>?)?.map((e) => Product.fromJson(e)).toList() ?? [],
+      actions: (json['actions'] as List<dynamic>?)?.map((e) => ThemeAction.fromJson(e)).toList() ?? [],
     );
   }
 }
@@ -119,22 +127,12 @@ class User {
   final String lastName;
   final String role;
 
-  User({
-    required this.id,
-    required this.firstName,
-    required this.lastName,
-    required this.role,
-  });
+  User({required this.id, required this.firstName, required this.lastName, required this.role});
 
   String get fullName => '$firstName $lastName';
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'firstName': firstName,
-      'lastName': lastName,
-      'role': role,
-    };
+    return {'id': id, 'firstName': firstName, 'lastName': lastName, 'role': role};
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -190,9 +188,7 @@ class Product {
       image: json['image'] ?? '',
       relevanceScore: json['relevanceScore'] ?? 0,
       reason: json['reason'],
-      otherThemes: (json['otherThemes'] as List<dynamic>?)
-          ?.map((e) => OtherTheme.fromJson(e))
-          .toList() ?? [],
+      otherThemes: (json['otherThemes'] as List<dynamic>?)?.map((e) => OtherTheme.fromJson(e)).toList() ?? [],
     );
   }
 }
@@ -213,13 +209,7 @@ class OtherTheme {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'relevanceScore': relevanceScore,
-      'reason': reason,
-      'description': description,
-    };
+    return {'id': id, 'name': name, 'relevanceScore': relevanceScore, 'reason': reason, 'description': description};
   }
 
   factory OtherTheme.fromJson(Map<String, dynamic> json) {
@@ -297,12 +287,8 @@ class ThemeResponse {
       page: data['page'] ?? 1,
       take: data['take'] ?? 20,
       totalPages: data['totalPages'] ?? 1,
-      records: (data['records'] as List<dynamic>?)
-          ?.map((e) => ThemeModel.fromJson(e))
-          .toList() ?? [],
-      context: data['context'] != null
-          ? PageLayoutContext.fromJson(data['context'])
-          : null,
+      records: (data['records'] as List<dynamic>?)?.map((e) => ThemeModel.fromJson(e)).toList() ?? [],
+      context: data['context'] != null ? PageLayoutContext.fromJson(data['context']) : null,
     );
   }
 }
@@ -313,9 +299,7 @@ class PageLayoutContext {
   PageLayoutContext({required this.pageLayout});
 
   factory PageLayoutContext.fromJson(Map<String, dynamic> json) {
-    return PageLayoutContext(
-      pageLayout: PageLayout.fromJson(json['pageLayout'] ?? {}),
-    );
+    return PageLayoutContext(pageLayout: PageLayout.fromJson(json['pageLayout'] ?? {}));
   }
 }
 
@@ -324,11 +308,7 @@ class PageLayout {
   final PageHeader header;
   final PageBody body;
 
-  PageLayout({
-    required this.type,
-    required this.header,
-    required this.body,
-  });
+  PageLayout({required this.type, required this.header, required this.body});
 
   factory PageLayout.fromJson(Map<String, dynamic> json) {
     return PageLayout(
@@ -366,9 +346,7 @@ class PageHeader {
       isCreate: json['isCreate'] ?? false,
       createButtonLabel: json['createButtonLabel'],
       createButtonIcon: json['createButtonIcon'],
-      createButtonLink: (json['createButtonLink'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList(),
+      createButtonLink: (json['createButtonLink'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
     );
   }
 }
@@ -377,16 +355,10 @@ class PageBody {
   final String styleClass;
   final TableConfig table;
 
-  PageBody({
-    required this.styleClass,
-    required this.table,
-  });
+  PageBody({required this.styleClass, required this.table});
 
   factory PageBody.fromJson(Map<String, dynamic> json) {
-    return PageBody(
-      styleClass: json['styleClass'] ?? '',
-      table: TableConfig.fromJson(json['table'] ?? {}),
-    );
+    return PageBody(styleClass: json['styleClass'] ?? '', table: TableConfig.fromJson(json['table'] ?? {}));
   }
 }
 
@@ -411,9 +383,7 @@ class TableConfig {
 
   factory TableConfig.fromJson(Map<String, dynamic> json) {
     return TableConfig(
-      columns: (json['columns'] as List<dynamic>?)
-          ?.map((e) => TableColumn.fromJson(e))
-          .toList() ?? [],
+      columns: (json['columns'] as List<dynamic>?)?.map((e) => TableColumn.fromJson(e)).toList() ?? [],
       paginationType: json['paginationType'] ?? 'server',
       defaultPageSize: json['defaultPageSize'] ?? 20,
       pageSizeOptions: json['pageSizeOptions'] ?? [],
@@ -475,9 +445,7 @@ class TableColumn {
       alignFrozen: json['alignFrozen'],
       filterType: json['filterType'],
       filterMatchMode: json['filterMatchMode'],
-      filterOptions: (json['filterOptions'] as List<dynamic>?)
-          ?.map((e) => FilterOption.fromJson(e))
-          .toList(),
+      filterOptions: (json['filterOptions'] as List<dynamic>?)?.map((e) => FilterOption.fromJson(e)).toList(),
     );
   }
 }
@@ -486,15 +454,9 @@ class FilterOption {
   final String label;
   final dynamic value;
 
-  FilterOption({
-    required this.label,
-    required this.value,
-  });
+  FilterOption({required this.label, required this.value});
 
   factory FilterOption.fromJson(Map<String, dynamic> json) {
-    return FilterOption(
-      label: json['label'] ?? '',
-      value: json['value'],
-    );
+    return FilterOption(label: json['label'] ?? '', value: json['value']);
   }
 }

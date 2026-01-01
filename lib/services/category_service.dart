@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/category_model.dart';
 import '../widgets/generic/generic_model.dart';
@@ -21,7 +22,7 @@ class CategoryService {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': '{}',
+        'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 
@@ -75,7 +76,6 @@ class CategoryService {
     await deleteCategory(id);
   }
 
-  // TODO: Update this method with the actual API endpoint once provided
   Future<void> createCategory({
     required String name,
     required bool isActive,
@@ -88,10 +88,37 @@ class CategoryService {
         if (description != null && description.isNotEmpty) 'description': description,
       };
 
-      // TODO: Replace with actual endpoint (e.g., POST /api/categories)
       await _apiService.post('/api/categories', data: data);
     } catch (e) {
       throw Exception('Failed to create category: ${e.toString()}');
+    }
+  }
+
+  Future<void> updateCategory({
+    required String id,
+    required String name,
+    required bool isActive,
+    required String createdBy,
+    required String createdAt,
+    required String updatedBy,
+    required String updatedAt,
+    String? description,
+  }) async {
+    try {
+      final data = {
+        'id': id,
+        'name': name,
+        'isActive': isActive,
+        'createdBy': createdBy,
+        'createdAt': createdAt,
+        'updatedBy': updatedBy,
+        'updatedAt': updatedAt,
+        if (description != null && description.isNotEmpty) 'description': description,
+      };
+
+      await _apiService.put('/api/categories/$id', data: data);
+    } catch (e) {
+      throw Exception('Failed to update category: ${e.toString()}');
     }
   }
 }

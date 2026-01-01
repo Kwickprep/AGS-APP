@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/group_model.dart';
 import '../models/contact_model.dart';
@@ -22,7 +23,7 @@ class GroupService {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': '{}',
+        'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
+import '../../models/theme_model.dart';
 import '../../services/theme_service.dart';
+import '../../services/storage_service.dart';
 import '../../widgets/custom_toast.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_button.dart';
 
 class ThemeCreateScreen extends StatefulWidget {
-  const ThemeCreateScreen({super.key});
+  final bool isEdit;
+  final ThemeModel? themeData;
+
+  const ThemeCreateScreen({super.key, this.isEdit = false, this.themeData});
 
   @override
   State<ThemeCreateScreen> createState() => _ThemeCreateScreenState();
@@ -16,6 +21,7 @@ class ThemeCreateScreen extends StatefulWidget {
 
 class _ThemeCreateScreenState extends State<ThemeCreateScreen> {
   final ThemeService _themeService = GetIt.I<ThemeService>();
+  final StorageService _storageService = GetIt.I<StorageService>();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -28,8 +34,15 @@ class _ThemeCreateScreenState extends State<ThemeCreateScreen> {
   @override
   void initState() {
     super.initState();
-    // Set default value for status as per API response
-    _isActive = true;
+
+    if (widget.isEdit && widget.themeData != null) {
+      _nameController.text = widget.themeData!.name;
+      _descriptionController.text = widget.themeData!.description;
+      _isActive = widget.themeData!.isActive;
+      _nameCharCount = widget.themeData!.name.length;
+    } else {
+      _isActive = true;
+    }
 
     // Listen to name field changes for character count
     _nameController.addListener(() {
@@ -65,16 +78,33 @@ class _ThemeCreateScreenState extends State<ThemeCreateScreen> {
     });
 
     try {
-      await _themeService.createTheme(
-        name: _nameController.text.trim(),
-        isActive: _isActive!,
-        description: _descriptionController.text.trim(),
-      );
+      if (widget.isEdit && widget.themeData != null) {
+        final currentUser = await _storageService.getUser();
+        final currentUserId = currentUser?.id ?? widget.themeData!.createdBy;
+        final currentTimestamp = DateTime.now().toUtc().toString();
+
+        await _themeService.updateTheme(
+          id: widget.themeData!.id,
+          name: _nameController.text.trim(),
+          isActive: _isActive!,
+          createdBy: widget.themeData!.createdBy,
+          createdAt: widget.themeData!.createdAt,
+          updatedBy: currentUserId,
+          updatedAt: currentTimestamp,
+          description: _descriptionController.text.trim(),
+        );
+      } else {
+        await _themeService.createTheme(
+          name: _nameController.text.trim(),
+          isActive: _isActive!,
+          description: _descriptionController.text.trim(),
+        );
+      }
 
       if (mounted) {
         CustomToast.show(
           context,
-          'Theme created successfully',
+          widget.isEdit ? 'Theme updated successfully' : 'Theme created successfully',
           type: ToastType.success,
         );
         Navigator.pop(context, true); // Return true to indicate success
@@ -83,11 +113,11 @@ class _ThemeCreateScreenState extends State<ThemeCreateScreen> {
       if (mounted) {
         CustomToast.show(
           context,
-          'Failed to create theme: ${e.toString()}',
+          widget.isEdit ? 'Failed to update theme' : 'Failed to create theme: ${e.toString()}',
           type: ToastType.error,
         );
       }
-    } finally {
+    } finally{
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -108,9 +138,9 @@ class _ThemeCreateScreenState extends State<ThemeCreateScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Create Theme',
-          style: TextStyle(
+        title: Text(
+          widget.isEdit ? 'Edit Theme' : 'Create Theme',
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -242,7 +272,7 @@ class _ThemeCreateScreenState extends State<ThemeCreateScreen> {
                 child: SafeArea(
                   top: false,
                   child: CustomButton(
-                    text: 'Submit',
+                    text: widget.isEdit ? 'Update' : 'Submit',
                     onPressed: _handleSubmit,
                     isLoading: _isLoading,
                     icon: Icons.check,

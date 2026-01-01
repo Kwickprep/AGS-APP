@@ -6,10 +6,13 @@ class CategoryModel implements GenericModel {
   final String name;
   final String description;
   final bool isActive;
+  final int? productCount;
   @override
   final String createdBy;
   @override
   final String createdAt;
+  final String? updatedBy;
+  final String? updatedAt;
   final List<CategoryAction> actions;
 
   CategoryModel({
@@ -17,8 +20,11 @@ class CategoryModel implements GenericModel {
     required this.name,
     required this.description,
     required this.isActive,
+    this.productCount,
     required this.createdBy,
     required this.createdAt,
+    this.updatedBy,
+    this.updatedAt,
     required this.actions,
   });
 
@@ -29,8 +35,11 @@ class CategoryModel implements GenericModel {
       'name': name,
       'description': description,
       'isActive': isActive,
+      if (productCount != null) 'productCount': productCount,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (updatedBy != null) 'updatedBy': updatedBy,
+      if (updatedAt != null) 'updatedAt': updatedAt,
       'actions': actions.map((a) => {
         'icon': a.icon,
         'type': a.type,
@@ -76,13 +85,26 @@ class CategoryModel implements GenericModel {
       }
     }
 
+    // Helper function to extract string value from either string or object
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return value['name']?.toString() ?? value['fullName']?.toString() ?? value['id']?.toString() ?? '';
+      }
+      return value.toString();
+    }
+
     return CategoryModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
-      createdBy: json['createdBy'] ?? '',
+      productCount: json['productCount'],
+      createdBy: extractString(json['createdBy']),
       createdAt: json['createdAt'] ?? '',
+      updatedBy: extractString(json['updatedBy']),
+      updatedAt: json['updatedAt'],
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => CategoryAction.fromJson(e))
           .toList() ?? [],

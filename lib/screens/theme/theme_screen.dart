@@ -69,21 +69,16 @@ class _ThemeScreenState extends State<ThemeScreen> {
 
     FilterBottomSheet.show(
       context: context,
-      initialFilter: FilterModel(
-        selectedStatuses: selectedStatuses.toSet(),
-        createdBy: _currentFilters['createdBy'],
-      ),
+      initialFilter: FilterModel(selectedStatuses: selectedStatuses.toSet(), createdBy: _currentFilters['createdBy']),
       creatorOptions: const [],
       statusOptions: const ['Active', 'Inactive'],
       onApplyFilters: (filter) {
         setState(() {
           _currentFilters = {};
           if (filter.selectedStatuses.isNotEmpty) {
-            if (filter.selectedStatuses.contains('Active') &&
-                !filter.selectedStatuses.contains('Inactive')) {
+            if (filter.selectedStatuses.contains('Active') && !filter.selectedStatuses.contains('Inactive')) {
               _currentFilters['isActive'] = true;
-            } else if (filter.selectedStatuses.contains('Inactive') &&
-                !filter.selectedStatuses.contains('Active')) {
+            } else if (filter.selectedStatuses.contains('Inactive') && !filter.selectedStatuses.contains('Active')) {
               _currentFilters['isActive'] = false;
             }
           }
@@ -100,10 +95,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: SortModel(
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ),
+      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
         SortOption(field: 'isActive', label: 'Status'),
@@ -114,7 +106,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
         setState(() {
           _currentSortBy = sort.sortBy;
           _currentSortOrder = sort.sortOrder;
-          _currentPage = 1;
+          _currentPage =  1;
         });
         _loadThemes();
       },
@@ -143,12 +135,16 @@ class _ThemeScreenState extends State<ThemeScreen> {
       isActive: theme.isActive,
       fields: [
         DetailField(label: 'Theme Name', value: theme.name),
-        DetailField(
-          label: 'Status',
-          value: theme.isActive ? 'Active' : 'Inactive',
-        ),
+        DetailField(label: 'Status', value: theme.isActive ? 'Active' : 'Inactive'),
+        DetailField(label: 'Description', value: theme.description.isNotEmpty ? theme.description : 'N/A'),
         DetailField(label: 'Created By', value: theme.createdBy),
+        DetailField(label: 'Product Count', value: theme.productCount.toString()),
         DetailField(label: 'Created Date', value: theme.createdAt),
+        DetailField(label: 'Updated Date', value: theme.updatedAt),
+        if (theme.creator != null) DetailField(label: 'Creator Name', value: theme.creator!.fullName),
+        if (theme.creator != null) DetailField(label: 'Creator Role', value: theme.creator!.role),
+        if (theme.updater != null) DetailField(label: 'Updater Name', value: theme.updater!.fullName),
+        if (theme.updater != null) DetailField(label: 'Updater Role', value: theme.updater!.role),
       ],
     );
   }
@@ -179,10 +175,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Text(
-          'Themes',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
-        ),
+        title: Text('Themes', style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary)),
       ),
       body: BlocProvider<ThemeBloc>(
         create: (_) => _bloc,
@@ -233,14 +226,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
               // Filter and Sort bar
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: FilterSortBar(
-                  onFilterTap: _showFilterSheet,
-                  onSortTap: _showSortSheet,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: FilterSortBar(onFilterTap: _showFilterSheet, onSortTap: _showSortSheet),
               ),
 
               // Card list
@@ -254,21 +241,11 @@ class _ThemeScreenState extends State<ThemeScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: AppColors.error,
-                            ),
+                            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                             const SizedBox(height: 16),
-                            Text(
-                              state.message,
-                              style: const TextStyle(fontSize: 16),
-                            ),
+                            Text(state.message, style: const TextStyle(fontSize: 16)),
                             const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadThemes,
-                              child: const Text('Retry'),
-                            ),
+                            ElevatedButton(onPressed: _loadThemes, child: const Text('Retry')),
                           ],
                         ),
                       );
@@ -278,17 +255,11 @@ class _ThemeScreenState extends State<ThemeScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
-                                Icons.palette_outlined,
-                                size: 64,
-                                color: AppColors.grey,
-                              ),
+                              const Icon(Icons.palette_outlined, size: 64, color: AppColors.grey),
                               const SizedBox(height: 16),
                               Text(
                                 'No themes found',
-                                style: AppTextStyles.bodyLarge.copyWith(
-                                  color: AppColors.textLight,
-                                ),
+                                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
                               ),
                             ],
                           ),
@@ -301,17 +272,14 @@ class _ThemeScreenState extends State<ThemeScreen> {
                             child: RefreshIndicator(
                               onRefresh: () async {
                                 _loadThemes();
-                                await Future.delayed(
-                                  const Duration(milliseconds: 500),
-                                );
+                                await Future.delayed(const Duration(milliseconds: 500));
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
                                 itemCount: state.themes.length,
                                 itemBuilder: (context, index) {
                                   final theme = state.themes[index];
-                                  final serialNumber =
-                                      (state.page - 1) * state.take + index + 1;
+                                  final serialNumber = (state.page - 1) * state.take + index + 1;
                                   return _buildThemeCard(theme, serialNumber);
                                 },
                               ),
@@ -348,9 +316,19 @@ class _ThemeScreenState extends State<ThemeScreen> {
       fields: [
         CardField.title(label: 'Theme Name', value: theme.name),
         CardField.regular(label: 'Created By', value: theme.createdBy),
+        CardField.regular(label: 'Description', value: theme.description.isNotEmpty ? theme.description : 'N/A'),
         CardField.regular(label: 'Created Date', value: theme.createdAt),
       ],
-      onView: () => _showThemeDetails(theme),
+      onEdit: () async {
+        final result = await Navigator.pushNamed(
+          context,
+          '/themes/create',
+          arguments: {'isEdit': true, 'themeData': theme},
+        );
+        if (result == true) {
+          _loadThemes();
+        }
+      },
       onDelete: () => _confirmDelete(theme),
       onTap: () => _showThemeDetails(theme),
     );
@@ -363,17 +341,12 @@ class _ThemeScreenState extends State<ThemeScreen> {
         title: const Text('Confirm Delete'),
         content: Text('Are you sure you want to delete "${theme.name}"?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _bloc.add(DeleteTheme(theme.id));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Theme deleted successfully')),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Theme deleted successfully')));
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),

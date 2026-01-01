@@ -52,17 +52,53 @@ class AppRoutes {
       signup: (context) => const SignupScreen(),
       home: (context) => const HomeScreen(),
       themes: (context) => const ThemeScreen(),
-      createTheme: (context) => const ThemeCreateScreen(),
+      createTheme: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return ThemeCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          themeData: args?['themeData'],
+        );
+      },
       categories: (context) => const CategoryScreen(),
-      createCategory: (context) => const CategoryCreateScreen(),
+      createCategory: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return CategoryCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          categoryData: args?['categoryData'],
+        );
+      },
       brands: (context) => const BrandScreen(),
-      createBrand: (context) => const BrandCreateScreen(),
+      createBrand: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return BrandCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          brandData: args?['brandData'],
+        );
+      },
       tags: (context) => const TagScreen(),
-      createTag: (context) => const TagCreateScreen(),
+      createTag: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return TagCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          tagData: args?['tagData'],
+        );
+      },
       activities: (context) => const ActivityScreen(),
-      createActivity: (context) => const ActivityCreateScreen(),
+      createActivity: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return ActivityCreateScreen(
+          // isEdit: args?['isEdit'] ?? false,
+          // activityData: args?['activityData'],
+        );
+      },
       inquiries: (context) => const InquiryScreen(),
-      createInquiry: (context) => const InquiryCreateScreen(),
+      createInquiry: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return InquiryCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          inquiryData: args?['inquiryData'],
+        );
+      },
       groups: (context) => const GroupScreen(),
       createGroup: (context) => const GroupCreateScreen(),
       products: (context) => const ProductScreen(),

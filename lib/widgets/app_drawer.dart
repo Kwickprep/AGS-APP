@@ -34,150 +34,138 @@ class _AppDrawerState extends State<AppDrawer> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Container(
-            margin: EdgeInsets.zero,
-            padding: EdgeInsets.all(20),
-            decoration: const BoxDecoration(color: AppColors.primary),
-            child: SizedBox(
-              width: double.infinity,
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Profile Section
+            Padding(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  SizedBox(height: MediaQuery.of(context).viewPadding.top),
                   const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: AppColors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: 35,
-                      color: AppColors.primary,
-                    ),
+                    radius: 40,
+                    backgroundColor: AppColors.primary,
+                    child: Icon(Icons.person, size: 45, color: AppColors.white),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Text(
-                    '${_user?.fullName} (${_user?.email})' ?? 'User',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    _user?.fullName ?? 'User',
                     style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 4),
                   Text(
-                    _user?.role.toLowerCase() ?? '',
-                    style: const TextStyle(
-                      color: AppColors.white,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _user?.phone ?? '',
-                    style: const TextStyle(
-                      color: AppColors.white,
+                    _user?.email ?? '',
+                    style: TextStyle(
                       fontSize: 14,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.branding_watermark),
-            title: const Text('Brands'),
-            onTap: () {
+
+            const SizedBox(height: 8),
+
+            // Menu Items
+            _buildMenuItem(Icons.branding_watermark, 'Brands', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.brands);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.category),
-            title: const Text('Categories'),
-            onTap: () {
+            }),
+            _buildMenuItem(Icons.category, 'Categories', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.categories);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.palette),
-            title: const Text('Themes'),
-            onTap: () {
+            }),
+            _buildMenuItem(Icons.palette, 'Themes', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.themes);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.tag),
-            title: const Text('Tags'),
-            onTap: () {
+            }),
+            _buildMenuItem(Icons.tag, 'Tags', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.tags);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.inventory_2_outlined),
-            title: const Text('Products'),
-            onTap: () {
+            }),
+            _buildMenuItem(Icons.inventory_2_outlined, 'Products', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.products);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.event_note),
-            title: const Text('Activities'),
-            onTap: () {
+            }),
+            _buildMenuItem(Icons.event_note, 'Activities', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.activities);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.assignment_outlined),
-            title: const Text('Inquiries'),
-            onTap: () {
+            }),
+            _buildMenuItem(Icons.assignment_outlined, 'Inquiries', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.inquiries);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.group_outlined),
-            title: const Text('Groups'),
-            onTap: () {
+            }),
+            _buildMenuItem(Icons.group_outlined, 'Groups', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.groups);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Users'),
-            onTap: () {
+            }),
+            _buildMenuItem(Icons.person, 'Users', () {
               Navigator.pop(context);
               Navigator.pushNamed(context, AppRoutes.users);
-            },
-          ),
-          const Spacer(),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text(
-              'Logout',
-              style: TextStyle(color: AppColors.error),
+            }),
+
+            const Spacer(),
+
+            // Logout Button
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: InkWell(
+                onTap: () async {
+                  await _authService.logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushReplacementNamed('/login');
+                  }
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Sign out',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-            onTap: () async {
-              await _authService.logout();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
-              }
-            },
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(IconData icon, String title, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 24, color: Colors.black87),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

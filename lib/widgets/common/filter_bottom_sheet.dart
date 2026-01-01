@@ -168,6 +168,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           ),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
@@ -200,6 +202,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Status section

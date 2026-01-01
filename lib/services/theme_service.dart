@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/theme_model.dart';
 import '../widgets/generic/generic_model.dart';
 import 'api_service.dart';
 
-class ThemeService  {
+class ThemeService {
   final ApiService _apiService = GetIt.I<ApiService>();
 
   Future<ThemeResponse> getThemes({
@@ -21,14 +22,11 @@ class ThemeService  {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': '{}',
+        'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 
-      final response = await _apiService.get(
-        '/api/themes',
-        params: queryParams,
-      );
+      final response = await _apiService.get('/api/themes', params: queryParams);
 
       return ThemeResponse.fromJson(response.data);
     } catch (e) {
@@ -44,13 +42,7 @@ class ThemeService  {
     required String sortBy,
     required String sortOrder,
   }) async {
-    final response = await getThemes(
-      page: page,
-      take: take,
-      search: search,
-      sortBy: sortBy,
-      sortOrder: sortOrder,
-    );
+    final response = await getThemes(page: page, take: take, search: search, sortBy: sortBy, sortOrder: sortOrder);
 
     return GenericResponse<ThemeModel>(
       total: response.total,
@@ -75,12 +67,7 @@ class ThemeService  {
     await deleteTheme(id);
   }
 
-  // TODO: Update this method with the actual API endpoint once provided
-  Future<void> createTheme({
-    required String name,
-    required bool isActive,
-    String? description,
-  }) async {
+  Future<void> createTheme({required String name, required bool isActive, String? description}) async {
     try {
       final data = {
         'name': name,
@@ -88,10 +75,37 @@ class ThemeService  {
         if (description != null && description.isNotEmpty) 'description': description,
       };
 
-      // TODO: Replace with actual endpoint (e.g., POST /api/themes)
       await _apiService.post('/api/themes', data: data);
     } catch (e) {
       throw Exception('Failed to create theme: ${e.toString()}');
+    }
+  }
+
+  Future<void> updateTheme({
+    required String id,
+    required String name,
+    required bool isActive,
+    required String createdBy,
+    required String createdAt,
+    required String updatedBy,
+    required String updatedAt,
+    String? description,
+  }) async {
+    try {
+      final data = {
+        'id': id,
+        'name': name,
+        'isActive': isActive,
+        'createdBy': createdBy,
+        'createdAt': createdAt,
+        'updatedBy': updatedBy,
+        'updatedAt': updatedAt,
+        if (description != null && description.isNotEmpty) 'description': description,
+      };
+
+      await _apiService.put('/api/themes/$id', data: data);
+    } catch (e) {
+      throw Exception('Failed to update theme: ${e.toString()}');
     }
   }
 }

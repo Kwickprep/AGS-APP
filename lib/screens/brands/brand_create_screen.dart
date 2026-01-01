@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
+import '../../models/brand_model.dart';
 import '../../services/brand_service.dart';
+import '../../services/storage_service.dart';
 import '../../widgets/custom_toast.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_button.dart';
 
 class BrandCreateScreen extends StatefulWidget {
-  const BrandCreateScreen({super.key});
+  final bool isEdit;
+  final BrandModel? brandData;
+
+  const BrandCreateScreen({super.key, this.isEdit = false, this.brandData});
 
   @override
   State<BrandCreateScreen> createState() => _BrandCreateScreenState();
@@ -17,6 +22,7 @@ class BrandCreateScreen extends StatefulWidget {
 
 class _BrandCreateScreenState extends State<BrandCreateScreen> {
   final BrandService _brandService = GetIt.I<BrandService>();
+  final StorageService _storageService = GetIt.I<StorageService>();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _aopController = TextEditingController();
@@ -28,8 +34,18 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
   @override
   void initState() {
     super.initState();
-    // Set default value for status as per API response
-    _isActive = true;
+    if (widget.isEdit && widget.brandData != null) {
+      _nameController.text = widget.brandData!.name;
+      _isActive = widget.brandData!.isActive;
+      if (widget.brandData!.aop != null) {
+        _aopController.text = widget.brandData!.aop!.toString();
+      }
+      if (widget.brandData!.discount != null) {
+        _discountController.text = widget.brandData!.discount!.toString();
+      }
+    } else {
+      _isActive = true;
+    }
   }
 
   @override
@@ -46,11 +62,7 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
     }
 
     if (_isActive == null) {
-      CustomToast.show(
-        context,
-        'Please select status',
-        type: ToastType.error,
-      );
+      CustomToast.show(context, 'Please select status', type: ToastType.error);
       return;
     }
 
@@ -71,17 +83,36 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
         discount = double.tryParse(_discountController.text.trim());
       }
 
-      await _brandService.createBrand(
-        name: _nameController.text.trim(),
-        isActive: _isActive!,
-        aop: aop,
-        discount: discount,
-      );
+      if (widget.isEdit && widget.brandData != null) {
+        // Get current user for updatedBy
+        final currentUser = await _storageService.getUser();
+        final currentUserId = currentUser?.id ?? widget.brandData!.createdBy;
+        final currentTimestamp = DateTime.now().toUtc().toString();
+
+        await _brandService.updateBrand(
+          id: widget.brandData!.id,
+          name: _nameController.text.trim(),
+          isActive: _isActive!,
+          createdBy: widget.brandData!.createdBy,
+          createdAt: widget.brandData!.createdAt,
+          updatedBy: currentUserId,
+          updatedAt: currentTimestamp,
+          aop: aop,
+          discount: discount,
+        );
+      } else {
+        await _brandService.createBrand(
+          name: _nameController.text.trim(),
+          isActive: _isActive!,
+          aop: aop,
+          discount: discount,
+        );
+      }
 
       if (mounted) {
         CustomToast.show(
           context,
-          'Brand created successfully',
+          widget.isEdit ? 'Brand updated successfully' : 'Brand created successfully',
           type: ToastType.success,
         );
         Navigator.pop(context, true); // Return true to indicate success
@@ -90,7 +121,7 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
       if (mounted) {
         CustomToast.show(
           context,
-          'Failed to create brand: ${e.toString()}',
+          widget.isEdit ? 'Failed to update brand:' : 'Failed to create brand: ${e.toString()}',
           type: ToastType.error,
         );
       }
@@ -115,13 +146,9 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Create Brand',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+        title: Text(
+          widget.isEdit ? 'Edit Brand' : 'Create Brand',
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
         ),
         bottom: const PreferredSize(
           preferredSize: Size(double.infinity, 1),
@@ -167,14 +194,8 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
                           value: _isActive,
                           isRequired: true,
                           items: [
-                            DropdownItem(
-                              value: true,
-                              label: 'Active',
-                            ),
-                            DropdownItem(
-                              value: false,
-                              label: 'Inactive',
-                            ),
+                            DropdownItem(value: true, label: 'Active'),
+                            DropdownItem(value: false, label: 'Inactive'),
                           ],
                           onChanged: (value) {
                             setState(() {
@@ -197,9 +218,7 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
                           hint: 'Enter AOP percentage (0-100)',
                           isRequired: false,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                          ],
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
                           validator: (value) {
                             if (value != null && value.trim().isNotEmpty) {
                               final number = double.tryParse(value.trim());
@@ -222,9 +241,7 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
                           hint: 'Enter Discount percentage (0-100)',
                           isRequired: false,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                          ],
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
                           validator: (value) {
                             if (value != null && value.trim().isNotEmpty) {
                               final number = double.tryParse(value.trim());
@@ -251,17 +268,13 @@ class _BrandCreateScreenState extends State<BrandCreateScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      offset: const Offset(0, -2),
-                      blurRadius: 8,
-                    ),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.1), offset: const Offset(0, -2), blurRadius: 8),
                   ],
                 ),
                 child: SafeArea(
                   top: false,
                   child: CustomButton(
-                    text: 'Submit',
+                    text: widget.isEdit ? 'Update' : 'Submit',
                     onPressed: _handleSubmit,
                     isLoading: _isLoading,
                     icon: Icons.check,

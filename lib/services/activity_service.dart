@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/activity_model.dart';
 import '../widgets/generic/generic_model.dart';
@@ -21,7 +22,7 @@ class ActivityService {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': '{}',
+        'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 

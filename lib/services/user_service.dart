@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/user_screen_model.dart';
 import '../widgets/generic/generic_model.dart';
@@ -21,7 +22,7 @@ class UserService {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': '{}',
+        'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 
@@ -97,16 +98,15 @@ class UserService {
   // Get users by company IDs (for Select Users section in Admin/Employee role)
   Future<List<Map<String, dynamic>>> getUsersByCompanies(
       List<String> companyIds) async {
+
     try {
       if (companyIds.isEmpty) return [];
 
       final queryParams = {
         'page': '1',
-        'take': '1000', // Get all users for the selected companies
         'search': '',
         'sortBy': 'firstName',
         'sortOrder': 'asc',
-        'filters': '{}',
         'isPageLayout': 'true',
       };
 

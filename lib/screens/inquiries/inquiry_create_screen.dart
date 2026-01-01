@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
+import '../../models/inquiry_model.dart';
 import '../../services/inquiry_service.dart';
+import '../../services/storage_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_toast.dart';
 
 class InquiryCreateScreen extends StatefulWidget {
-  const InquiryCreateScreen({super.key});
+  final bool isEdit;
+  final InquiryModel? inquiryData;
+
+  const InquiryCreateScreen({super.key, this.isEdit = false, this.inquiryData});
 
   @override
   State<InquiryCreateScreen> createState() => _InquiryCreateScreenState();
@@ -17,6 +22,7 @@ class InquiryCreateScreen extends StatefulWidget {
 class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
   final _formKey = GlobalKey<FormState>();
   final InquiryService _inquiryService = GetIt.I<InquiryService>();
+  final StorageService _storageService = GetIt.I<StorageService>();
 
   // Form controllers
   final _inquiryNameController = TextEditingController();
@@ -72,6 +78,15 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
         _contactPersons = users;
         _filteredContactPersons = users;
         _isLoadingData = false;
+
+        // Populate fields if editing
+        if (widget.isEdit && widget.inquiryData != null) {
+          _inquiryNameController.text = widget.inquiryData!.name;
+          _noteController.text = widget.inquiryData!.note;
+          _selectedStatus = widget.inquiryData!.status;
+          _selectedCompanyId = widget.inquiryData!.company;
+          _selectedContactPersonId = widget.inquiryData!.contactUser;
+        }
       });
     } catch (e) {
       setState(() {
@@ -113,20 +128,41 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
     });
 
     try {
-      final data = {
-        'name': _inquiryNameController.text.trim(),
-        'companyId': _selectedCompanyId,
-        'contactUserId': _selectedContactPersonId,
-        'status': _selectedStatus,
-        'note': _noteController.text.trim(),
-      };
+      if (widget.isEdit && widget.inquiryData != null) {
+        final currentUser = await _storageService.getUser();
+        final currentUserId = currentUser?.id ?? widget.inquiryData!.createdBy;
+        final currentTimestamp = DateTime.now().toUtc().toString();
 
-      await _inquiryService.createInquiry(data);
+        final data = {
+          'id': widget.inquiryData!.id,
+          'name': _inquiryNameController.text.trim(),
+          'companyId': _selectedCompanyId,
+          'contactUserId': _selectedContactPersonId,
+          'status': _selectedStatus,
+          'note': _noteController.text.trim(),
+          'createdBy': widget.inquiryData!.createdBy,
+          'createdAt': widget.inquiryData!.createdAt,
+          'updatedBy': currentUserId,
+          'updatedAt': currentTimestamp,
+        };
+
+        await _inquiryService.updateInquiry(widget.inquiryData!.id, data);
+      } else {
+        final data = {
+          'name': _inquiryNameController.text.trim(),
+          'companyId': _selectedCompanyId,
+          'contactUserId': _selectedContactPersonId,
+          'status': _selectedStatus,
+          'note': _noteController.text.trim(),
+        };
+
+        await _inquiryService.createInquiry(data);
+      }
 
       if (mounted) {
         CustomToast.show(
           context,
-          'Inquiry created successfully',
+          widget.isEdit ? 'Inquiry updated successfully' : 'Inquiry created successfully',
           type: ToastType.success,
         );
         Navigator.pop(context, true); // Return true to indicate success
@@ -160,9 +196,9 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Create Inquiry',
-          style: TextStyle(
+        title: Text(
+          widget.isEdit ? 'Edit Inquiry' : 'Create Inquiry',
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -353,7 +389,7 @@ class _InquiryCreateScreenState extends State<InquiryCreateScreen> {
 
                         // Buttons
                         CustomButton(
-                          text: 'Submit',
+                          text: widget.isEdit ? 'Update' : 'Submit',
                           onPressed: _createInquiry,
                           isLoading: _isLoading,
                           icon: Icons.check,

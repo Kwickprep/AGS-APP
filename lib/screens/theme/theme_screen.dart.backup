@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
-import '../../config/routes.dart';
-import '../../models/inquiry_model.dart';
-import './inquiry_bloc.dart';
+import '../../models/theme_model.dart';
+import '../category/category_bloc.dart';
+import './theme_bloc.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -12,16 +12,16 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 
-/// Inquiry list screen with full features: filter, sort, pagination, and details
-class InquiryScreen extends StatefulWidget {
-  const InquiryScreen({super.key});
+/// Theme list screen with full features: filter, sort, pagination, and details
+class ThemeScreen extends StatefulWidget {
+  const ThemeScreen({super.key});
 
   @override
-  State<InquiryScreen> createState() => _InquiryScreenState();
+  State<ThemeScreen> createState() => _ThemeScreenState();
 }
 
-class _InquiryScreenState extends State<InquiryScreen> {
-  late InquiryBloc _bloc;
+class _ThemeScreenState extends State<ThemeScreen> {
+  late ThemeBloc _bloc;
   final TextEditingController _searchController = TextEditingController();
 
   // Current state parameters
@@ -35,8 +35,8 @@ class _InquiryScreenState extends State<InquiryScreen> {
   @override
   void initState() {
     super.initState();
-    _bloc = InquiryBloc();
-    _loadInquiries();
+    _bloc = ThemeBloc();
+    _loadThemes();
   }
 
   @override
@@ -46,15 +46,17 @@ class _InquiryScreenState extends State<InquiryScreen> {
     super.dispose();
   }
 
-  void _loadInquiries() {
-    _bloc.add(LoadInquiries(
-      page: _currentPage,
-      take: _itemsPerPage,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-      filters: _currentFilters,
-    ));
+  void _loadThemes() {
+    _bloc.add(
+      LoadThemes(
+        page: _currentPage,
+        take: _itemsPerPage,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+        filters: _currentFilters,
+      ),
+    );
   }
 
   void _showFilterSheet() {
@@ -67,21 +69,16 @@ class _InquiryScreenState extends State<InquiryScreen> {
 
     FilterBottomSheet.show(
       context: context,
-      initialFilter: FilterModel(
-        selectedStatuses: selectedStatuses.toSet(),
-        createdBy: _currentFilters['createdBy'],
-      ),
+      initialFilter: FilterModel(selectedStatuses: selectedStatuses.toSet(), createdBy: _currentFilters['createdBy']),
       creatorOptions: const [],
       statusOptions: const ['Active', 'Inactive'],
       onApplyFilters: (filter) {
         setState(() {
           _currentFilters = {};
           if (filter.selectedStatuses.isNotEmpty) {
-            if (filter.selectedStatuses.contains('Active') &&
-                !filter.selectedStatuses.contains('Inactive')) {
+            if (filter.selectedStatuses.contains('Active') && !filter.selectedStatuses.contains('Inactive')) {
               _currentFilters['isActive'] = true;
-            } else if (filter.selectedStatuses.contains('Inactive') &&
-                       !filter.selectedStatuses.contains('Active')) {
+            } else if (filter.selectedStatuses.contains('Inactive') && !filter.selectedStatuses.contains('Active')) {
               _currentFilters['isActive'] = false;
             }
           }
@@ -90,7 +87,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
           }
           _currentPage = 1;
         });
-        _loadInquiries();
+        _loadThemes();
       },
     );
   }
@@ -109,9 +106,9 @@ class _InquiryScreenState extends State<InquiryScreen> {
         setState(() {
           _currentSortBy = sort.sortBy;
           _currentSortOrder = sort.sortOrder;
-          _currentPage = 1;
+          _currentPage =  1;
         });
-        _loadInquiries();
+        _loadThemes();
       },
     );
   }
@@ -121,26 +118,26 @@ class _InquiryScreenState extends State<InquiryScreen> {
       _currentSearch = value;
       _currentPage = 1;
     });
-    _loadInquiries();
+    _loadThemes();
   }
 
   void _onPageChanged(int page) {
     setState(() {
       _currentPage = page;
     });
-    _loadInquiries();
+    _loadThemes();
   }
 
-  void _showInquiryDetails(InquiryModel inquiry) {
+  void _showThemeDetails(ThemeModel theme) {
     DetailsBottomSheet.show(
       context: context,
-      title: inquiry.name,
-      isActive: true,
+      title: theme.name,
+      isActive: theme.isActive,
       fields: [
-        DetailField(label: 'Inquiry Name', value: inquiry.name),
-        DetailField(label: 'Status', value: true ? 'Active' : 'Inactive'),
-        DetailField(label: 'Created By', value: inquiry.createdBy),
-        DetailField(label: 'Created Date', value: inquiry.createdAt),
+        DetailField(label: 'Theme Name', value: theme.name),
+        DetailField(label: 'Status', value: theme.isActive ? 'Active' : 'Inactive'),
+        DetailField(label: 'Created By', value: theme.createdBy),
+        DetailField(label: 'Created Date', value: theme.createdAt),
       ],
     );
   }
@@ -154,8 +151,12 @@ class _InquiryScreenState extends State<InquiryScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createInquiry);
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/themes/create');
+              // Refresh the list if a theme was created
+              if (result == true) {
+                _loadThemes();
+              }
             },
             icon: const Icon(Icons.add),
           ),
@@ -167,12 +168,9 @@ class _InquiryScreenState extends State<InquiryScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Text(
-          'Inquiries',
-          style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
-        ),
+        title: Text('Themes', style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary)),
       ),
-      body: BlocProvider<InquiryBloc>(
+      body: BlocProvider<ThemeBloc>(
         create: (_) => _bloc,
         child: SafeArea(
           child: Column(
@@ -184,7 +182,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search inquirys...',
+                    hintText: 'Search themes...',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -195,7 +193,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                                 _currentSearch = '';
                                 _currentPage = 1;
                               });
-                              _loadInquiries();
+                              _loadThemes();
                             },
                           )
                         : null,
@@ -222,19 +220,16 @@ class _InquiryScreenState extends State<InquiryScreen> {
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: FilterSortBar(
-                  onFilterTap: _showFilterSheet,
-                  onSortTap: _showSortSheet,
-                ),
+                child: FilterSortBar(onFilterTap: _showFilterSheet, onSortTap: _showSortSheet),
               ),
 
               // Card list
               Expanded(
-                child: BlocBuilder<InquiryBloc, InquiryState>(
+                child: BlocBuilder<ThemeBloc, ThemeState>(
                   builder: (context, state) {
-                    if (state is InquiryLoading) {
+                    if (state is ThemeLoading) {
                       return const Center(child: CircularProgressIndicator());
-                    } else if (state is InquiryError) {
+                    } else if (state is ThemeError) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -243,23 +238,20 @@ class _InquiryScreenState extends State<InquiryScreen> {
                             const SizedBox(height: 16),
                             Text(state.message, style: const TextStyle(fontSize: 16)),
                             const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadInquiries,
-                              child: const Text('Retry'),
-                            ),
+                            ElevatedButton(onPressed: _loadThemes, child: const Text('Retry')),
                           ],
                         ),
                       );
-                    } else if (state is InquiryLoaded) {
-                      if (state.inquiries.isEmpty) {
+                    } else if (state is ThemeLoaded) {
+                      if (state.themes.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.question_answer_outlined, size: 64, color: AppColors.grey),
+                              const Icon(Icons.palette_outlined, size: 64, color: AppColors.grey),
                               const SizedBox(height: 16),
                               Text(
-                                'No inquirys found',
+                                'No themes found',
                                 style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
                               ),
                             ],
@@ -272,16 +264,16 @@ class _InquiryScreenState extends State<InquiryScreen> {
                           Expanded(
                             child: RefreshIndicator(
                               onRefresh: () async {
-                                _loadInquiries();
+                                _loadThemes();
                                 await Future.delayed(const Duration(milliseconds: 500));
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
-                                itemCount: state.inquiries.length,
+                                itemCount: state.themes.length,
                                 itemBuilder: (context, index) {
-                                  final inquiry = state.inquiries[index];
+                                  final theme = state.themes[index];
                                   final serialNumber = (state.page - 1) * state.take + index + 1;
-                                  return _buildInquiryCard(inquiry, serialNumber);
+                                  return _buildThemeCard(theme, serialNumber);
                                 },
                               ),
                             ),
@@ -310,57 +302,34 @@ class _InquiryScreenState extends State<InquiryScreen> {
     );
   }
 
-  Widget _buildInquiryCard(InquiryModel inquiry, int serialNumber) {
+  Widget _buildThemeCard(ThemeModel theme, int serialNumber) {
     return RecordCard(
       serialNumber: serialNumber,
-      isActive: true,
+      isActive: theme.isActive,
       fields: [
-        CardField.title(
-          label: 'Inquiry Name',
-          value: inquiry.name,
-        ),
-        CardField.regular(
-          label: 'Created By',
-          value: inquiry.createdBy,
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: inquiry.createdAt,
-        ),
+        CardField.title(label: 'Theme Name', value: theme.name),
+        CardField.regular(label: 'Created By', value: theme.createdBy),
+        CardField.regular(label: 'Created Date', value: theme.createdAt),
       ],
-      onEdit: () async {
-        final result = await Navigator.pushNamed(
-          context,
-          '/inquiries/create',
-          arguments: {'isEdit': true, 'inquiryData': inquiry},
-        );
-        if (result == true) {
-          _loadInquiries();
-        }
-      },
-      onDelete: () => _confirmDelete(inquiry),
-      onTap: () => _showInquiryDetails(inquiry),
+      onView: () => _showThemeDetails(theme),
+      onDelete: () => _confirmDelete(theme),
+      onTap: () => _showThemeDetails(theme),
     );
   }
 
-  void _confirmDelete(InquiryModel inquiry) {
+  void _confirmDelete(ThemeModel theme) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${inquiry.name}"?'),
+        content: Text('Are you sure you want to delete "${theme.name}"?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteInquiry(inquiry.id));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Inquiry deleted successfully')),
-              );
+              _bloc.add(DeleteTheme(theme.id));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Theme deleted successfully')));
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),
@@ -369,5 +338,4 @@ class _InquiryScreenState extends State<InquiryScreen> {
       ),
     );
   }
-
 }

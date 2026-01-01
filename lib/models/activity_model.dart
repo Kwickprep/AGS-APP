@@ -20,6 +20,8 @@ class ActivityModel implements GenericModel {
   final String createdBy;
   @override
   final String createdAt;
+  final String? updatedBy;
+  final String? updatedAt;
   final List<ActivityAction> actions;
   final ActivityBody? body; // New field for complete body data
 
@@ -40,6 +42,8 @@ class ActivityModel implements GenericModel {
     required this.note,
     required this.createdBy,
     required this.createdAt,
+    this.updatedBy,
+    this.updatedAt,
     required this.actions,
     this.body,
   });
@@ -131,6 +135,8 @@ class ActivityModel implements GenericModel {
       note: extractString(json['note']),
       createdBy: extractString(json['createdBy']),
       createdAt: extractString(json['createdAt']),
+      updatedBy: json['updatedBy'],
+      updatedAt: json['updatedAt'],
       actions: (json['actions'] as List<dynamic>?)
               ?.map((e) => ActivityAction.fromJson(e))
               .toList() ??
@@ -158,6 +164,8 @@ class ActivityModel implements GenericModel {
       'note': note,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (updatedBy != null) 'updatedBy': updatedBy,
+      if (updatedAt != null) 'updatedAt': updatedAt,
     };
   }
 }

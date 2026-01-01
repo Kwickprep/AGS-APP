@@ -258,6 +258,12 @@ class _LoginViewState extends State<LoginView>
                           _phoneController.text = '9586829533';
                         });
                       },
+                onLongPress: () {
+                  setState(() {
+                    _phoneController.text = '9426920533';
+                  });
+                },
+
                       child: const Text(
                         'Welcome Back',
                         style: TextStyle(

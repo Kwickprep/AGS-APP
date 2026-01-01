@@ -139,8 +139,12 @@ class _BrandScreenState extends State<BrandScreen> {
       fields: [
         DetailField(label: 'Brand Name', value: brand.name),
         DetailField(label: 'Status', value: brand.isActive ? 'Active' : 'Inactive'),
+        DetailField(label: 'AOP %', value: brand.aop != null ? '${brand.aop!.toStringAsFixed(2)}%' : 'N/A'),
+        DetailField(label: 'Discount %', value: brand.discount != null ? '${brand.discount!.toStringAsFixed(2)}%' : 'N/A'),
         DetailField(label: 'Created By', value: brand.createdBy),
         DetailField(label: 'Created Date', value: brand.createdAt),
+        if (brand.updatedBy != null) DetailField(label: 'Updated By', value: brand.updatedBy!),
+        if (brand.updatedAt != null) DetailField(label: 'Updated Date', value: brand.updatedAt!),
       ],
     );
   }
@@ -324,6 +328,14 @@ class _BrandScreenState extends State<BrandScreen> {
           value: brand.name,
         ),
         CardField.regular(
+          label: 'AOP %',
+          value: brand.aop != null ? '${brand.aop!.toStringAsFixed(2)}%' : 'N/A',
+        ),
+        CardField.regular(
+          label: 'Discount %',
+          value: brand.discount != null ? '${brand.discount!.toStringAsFixed(2)}%' : 'N/A',
+        ),
+        CardField.regular(
           label: 'Created By',
           value: brand.createdBy,
         ),
@@ -332,7 +344,16 @@ class _BrandScreenState extends State<BrandScreen> {
           value: brand.createdAt,
         ),
       ],
-      onView: () => _showBrandDetails(brand),
+      onEdit: () async {
+        final result = await Navigator.pushNamed(
+          context,
+          '/brands/create',
+          arguments: {'isEdit': true, 'brandData': brand},
+        );
+        if (result == true) {
+          _loadBrands();
+        }
+      },
       onDelete: () => _confirmDelete(brand),
       onTap: () => _showBrandDetails(brand),
     );

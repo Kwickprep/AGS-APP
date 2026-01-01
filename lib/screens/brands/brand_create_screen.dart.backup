@@ -1,30 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import '../../config/app_colors.dart';
-import '../../models/category_model.dart';
-import '../../services/category_service.dart';
-import '../../services/storage_service.dart';
+import '../../services/brand_service.dart';
 import '../../widgets/custom_toast.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_button.dart';
 
-class CategoryCreateScreen extends StatefulWidget {
-  final bool isEdit;
-  final CategoryModel? categoryData;
-
-  const CategoryCreateScreen({super.key, this.isEdit = false, this.categoryData});
+class BrandCreateScreen extends StatefulWidget {
+  const BrandCreateScreen({super.key});
 
   @override
-  State<CategoryCreateScreen> createState() => _CategoryCreateScreenState();
+  State<BrandCreateScreen> createState() => _BrandCreateScreenState();
 }
 
-class _CategoryCreateScreenState extends State<CategoryCreateScreen> {
-  final CategoryService _categoryService = GetIt.I<CategoryService>();
-  final StorageService _storageService = GetIt.I<StorageService>();
+class _BrandCreateScreenState extends State<BrandCreateScreen> {
+  final BrandService _brandService = GetIt.I<BrandService>();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  final _aopController = TextEditingController();
+  final _discountController = TextEditingController();
 
   bool? _isActive;
   bool _isLoading = false;
@@ -32,19 +28,15 @@ class _CategoryCreateScreenState extends State<CategoryCreateScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.isEdit && widget.categoryData != null) {
-      _nameController.text = widget.categoryData!.name;
-      _descriptionController.text = widget.categoryData!.description;
-      _isActive = widget.categoryData!.isActive;
-    } else {
-      _isActive = true;
-    }
+    // Set default value for status as per API response
+    _isActive = true;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _descriptionController.dispose();
+    _aopController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -67,34 +59,29 @@ class _CategoryCreateScreenState extends State<CategoryCreateScreen> {
     });
 
     try {
-      if (widget.isEdit && widget.categoryData != null) {
-        // Get current user for updatedBy
-        final currentUser = await _storageService.getUser();
-        final currentUserId = currentUser?.id ?? widget.categoryData!.createdBy;
-        final currentTimestamp = DateTime.now().toUtc().toString();
+      // Parse optional number fields
+      double? aop;
+      double? discount;
 
-        await _categoryService.updateCategory(
-          id: widget.categoryData!.id,
-          name: _nameController.text.trim(),
-          isActive: _isActive!,
-          createdBy: widget.categoryData!.createdBy,
-          createdAt: widget.categoryData!.createdAt,
-          updatedBy: currentUserId,
-          updatedAt: currentTimestamp,
-          description: _descriptionController.text.trim(),
-        );
-      } else {
-        await _categoryService.createCategory(
-          name: _nameController.text.trim(),
-          isActive: _isActive!,
-          description: _descriptionController.text.trim(),
-        );
+      if (_aopController.text.trim().isNotEmpty) {
+        aop = double.tryParse(_aopController.text.trim());
       }
+
+      if (_discountController.text.trim().isNotEmpty) {
+        discount = double.tryParse(_discountController.text.trim());
+      }
+
+      await _brandService.createBrand(
+        name: _nameController.text.trim(),
+        isActive: _isActive!,
+        aop: aop,
+        discount: discount,
+      );
 
       if (mounted) {
         CustomToast.show(
           context,
-          widget.isEdit ? 'Category updated successfully' : 'Category created successfully',
+          'Brand created successfully',
           type: ToastType.success,
         );
         Navigator.pop(context, true); // Return true to indicate success
@@ -103,7 +90,7 @@ class _CategoryCreateScreenState extends State<CategoryCreateScreen> {
       if (mounted) {
         CustomToast.show(
           context,
-          widget.isEdit ? 'Failed to update category' : 'Failed to create category: ${e.toString()}',
+          'Failed to create brand: ${e.toString()}',
           type: ToastType.error,
         );
       }
@@ -128,9 +115,9 @@ class _CategoryCreateScreenState extends State<CategoryCreateScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          widget.isEdit ? 'Edit Category' : 'Create Category',
-          style: const TextStyle(
+        title: const Text(
+          'Create Brand',
+          style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -158,15 +145,15 @@ class _CategoryCreateScreenState extends State<CategoryCreateScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Category Name
+                        // Brand Name
                         CustomTextField(
                           controller: _nameController,
                           label: 'Name',
-                          hint: 'Enter name',
+                          hint: 'Enter brand name',
                           isRequired: true,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Please enter category name';
+                              return 'Please enter brand name';
                             }
                             return null;
                           },
@@ -203,13 +190,53 @@ class _CategoryCreateScreenState extends State<CategoryCreateScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Description (Optional)
+                        // AOP % (Optional)
                         CustomTextField(
-                          controller: _descriptionController,
-                          label: 'Description',
-                          hint: 'Enter description',
+                          controller: _aopController,
+                          label: 'AOP %',
+                          hint: 'Enter AOP percentage (0-100)',
                           isRequired: false,
-                          maxLines: 3,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                          ],
+                          validator: (value) {
+                            if (value != null && value.trim().isNotEmpty) {
+                              final number = double.tryParse(value.trim());
+                              if (number == null) {
+                                return 'Please enter a valid number';
+                              }
+                              if (number < 0 || number > 100) {
+                                return 'AOP % must be between 0 and 100';
+                              }
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Discount (Optional)
+                        CustomTextField(
+                          controller: _discountController,
+                          label: 'Discount to AGS from Brand',
+                          hint: 'Enter Discount percentage (0-100)',
+                          isRequired: false,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                          ],
+                          validator: (value) {
+                            if (value != null && value.trim().isNotEmpty) {
+                              final number = double.tryParse(value.trim());
+                              if (number == null) {
+                                return 'Please enter a valid number';
+                              }
+                              if (number < 0 || number > 100) {
+                                return 'Discount must be between 0 and 100';
+                              }
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -234,7 +261,7 @@ class _CategoryCreateScreenState extends State<CategoryCreateScreen> {
                 child: SafeArea(
                   top: false,
                   child: CustomButton(
-                    text: widget.isEdit ? 'Update' : 'Submit',
+                    text: 'Submit',
                     onPressed: _handleSubmit,
                     isLoading: _isLoading,
                     icon: Icons.check,

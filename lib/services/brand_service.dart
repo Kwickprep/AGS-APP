@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/brand_model.dart';
 import '../widgets/generic/generic_model.dart';
@@ -21,7 +22,7 @@ class BrandService {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': '{}',
+        'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 
@@ -36,7 +37,6 @@ class BrandService {
     }
   }
 
-  @override
   Future<GenericResponse<BrandModel>> getData({
     required int page,
     required int take,
@@ -75,7 +75,6 @@ class BrandService {
     await deleteBrand(id);
   }
 
-  // TODO: Update this method with the actual API endpoint once provided
   Future<void> createBrand({
     required String name,
     required bool isActive,
@@ -90,10 +89,39 @@ class BrandService {
         if (discount != null) 'discount': discount,
       };
 
-      // TODO: Replace with actual endpoint (e.g., POST /api/brands)
       await _apiService.post('/api/brands', data: data);
     } catch (e) {
       throw Exception('Failed to create brand: ${e.toString()}');
+    }
+  }
+
+  Future<void> updateBrand({
+    required String id,
+    required String name,
+    required bool isActive,
+    required String createdBy,
+    required String createdAt,
+    required String updatedBy,
+    required String updatedAt,
+    double? aop,
+    double? discount,
+  }) async {
+    try {
+      final data = {
+        'id': id,
+        'name': name,
+        'isActive': isActive,
+        'createdBy': createdBy,
+        'createdAt': createdAt,
+        'updatedBy': updatedBy,
+        'updatedAt': updatedAt,
+        if (aop != null) 'aop': aop,
+        if (discount != null) 'discount': discount,
+      };
+
+      await _apiService.put('/api/brands/$id', data: data);
+    } catch (e) {
+      throw Exception('Failed to update brand: ${e.toString()}');
     }
   }
 }

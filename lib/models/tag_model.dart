@@ -5,10 +5,10 @@ class TagModel implements GenericModel {
   final String id;
   final String name;
   final bool isActive;
-  @override
   final String createdBy;
-  @override
   final String createdAt;
+  final String? updatedBy;
+  final String? updatedAt;
   final List<TagAction> actions;
 
   TagModel({
@@ -17,6 +17,8 @@ class TagModel implements GenericModel {
     required this.isActive,
     required this.createdBy,
     required this.createdAt,
+    this.updatedBy,
+    this.updatedAt,
     required this.actions,
   });
 
@@ -27,8 +29,9 @@ class TagModel implements GenericModel {
       'name': name,
       'isActive': isActive,
       'createdBy': createdBy,
-
       'createdAt': createdAt,
+      if (updatedBy != null) 'updatedBy': updatedBy,
+      if (updatedAt != null) 'updatedAt': updatedAt,
       'actions': actions.map((a) => {
         'icon': a.icon,
         'type': a.type,
@@ -72,12 +75,24 @@ class TagModel implements GenericModel {
       }
     }
 
+    // Helper function to extract string value from either string or object
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return value['name']?.toString() ?? value['fullName']?.toString() ?? value['id']?.toString() ?? '';
+      }
+      return value.toString();
+    }
+
     return TagModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
-      createdBy: json['createdBy'] ?? '',
+      createdBy: extractString(json['createdBy']),
       createdAt: json['createdAt'] ?? '',
+      updatedBy: extractString(json['updatedBy']),
+      updatedAt: json['updatedAt'],
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => TagAction.fromJson(e))
           .toList() ?? [],

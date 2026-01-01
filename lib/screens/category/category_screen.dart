@@ -137,9 +137,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
       isActive: category.isActive,
       fields: [
         DetailField(label: 'Category Name', value: category.name),
+        DetailField(label: 'Description', value: category.description.isNotEmpty ? category.description : 'N/A'),
         DetailField(label: 'Status', value: category.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: category.createdBy),
         DetailField(label: 'Created Date', value: category.createdAt),
+        if (category.updatedBy != null) DetailField(label: 'Updated By', value: category.updatedBy!),
+        if (category.updatedAt != null) DetailField(label: 'Updated Date', value: category.updatedAt!),
       ],
     );
   }
@@ -323,6 +326,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
           value: category.name,
         ),
         CardField.regular(
+          label: 'Description',
+          value: category.description.isNotEmpty ? category.description : 'N/A',
+        ),
+        CardField.regular(
+          label: 'Product Count',
+          value: category.productCount?.toString() ?? '0',
+        ),
+        CardField.regular(
           label: 'Created By',
           value: category.createdBy,
         ),
@@ -331,7 +342,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
           value: category.createdAt,
         ),
       ],
-      onView: () => _showCategoryDetails(category),
+      onEdit: () async {
+        final result = await Navigator.pushNamed(
+          context,
+          '/categories/create',
+          arguments: {'isEdit': true, 'categoryData': category},
+        );
+        if (result == true) {
+          _loadCategories();
+        }
+      },
       onDelete: () => _confirmDelete(category),
       onTap: () => _showCategoryDetails(category),
     );

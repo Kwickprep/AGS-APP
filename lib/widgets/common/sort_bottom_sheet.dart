@@ -149,6 +149,8 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Sort by field options
                     ...widget.sortOptions.map((option) {
@@ -182,6 +184,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(

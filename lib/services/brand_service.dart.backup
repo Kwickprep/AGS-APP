@@ -1,13 +1,12 @@
-import 'dart:convert';
 import 'package:get_it/get_it.dart';
-import '../models/tag_model.dart';
+import '../models/brand_model.dart';
 import '../widgets/generic/generic_model.dart';
 import 'api_service.dart';
 
-class TagService  {
+class BrandService {
   final ApiService _apiService = GetIt.I<ApiService>();
 
-  Future<TagResponse> getTags({
+  Future<BrandResponse> getBrands({
     int page = 1,
     int take = 20,
     String search = '',
@@ -22,29 +21,30 @@ class TagService  {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': jsonEncode(filters),
+        'filters': '{}',
+        'isPageLayout': 'true',
       };
 
       final response = await _apiService.get(
-        '/api/tags',
+        '/api/brands',
         params: queryParams,
       );
 
-      return TagResponse.fromJson(response.data);
+      return BrandResponse.fromJson(response.data);
     } catch (e) {
-      throw Exception('Failed to load tags: ${e.toString()}');
+      throw Exception('Failed to load brands: ${e.toString()}');
     }
   }
 
   @override
-  Future<GenericResponse<TagModel>> getData({
+  Future<GenericResponse<BrandModel>> getData({
     required int page,
     required int take,
     required String search,
     required String sortBy,
     required String sortOrder,
   }) async {
-    final response = await getTags(
+    final response = await getBrands(
       page: page,
       take: take,
       search: search,
@@ -52,7 +52,7 @@ class TagService  {
       sortOrder: sortOrder,
     );
 
-    return GenericResponse<TagModel>(
+    return GenericResponse<BrandModel>(
       total: response.total,
       page: response.page,
       take: response.take,
@@ -61,59 +61,39 @@ class TagService  {
     );
   }
 
-  Future<bool> deleteTag(String id) async {
+  Future<bool> deleteBrand(String id) async {
     try {
-      await _apiService.delete('/api/tags/$id');
+      await _apiService.delete('/api/brands/$id');
       return true;
     } catch (e) {
-      throw Exception('Failed to delete tag: ${e.toString()}');
+      throw Exception('Failed to delete brand: ${e.toString()}');
     }
   }
 
   @override
   Future<void> deleteData(String id) async {
-    await deleteTag(id);
+    await deleteBrand(id);
   }
 
-  Future<void> createTag({
+  // TODO: Update this method with the actual API endpoint once provided
+  Future<void> createBrand({
     required String name,
     required bool isActive,
+    double? aop,
+    double? discount,
   }) async {
     try {
       final data = {
         'name': name,
         'isActive': isActive,
+        if (aop != null) 'aop': aop,
+        if (discount != null) 'discount': discount,
       };
 
-      await _apiService.post('/api/tags', data: data);
+      // TODO: Replace with actual endpoint (e.g., POST /api/brands)
+      await _apiService.post('/api/brands', data: data);
     } catch (e) {
-      throw Exception('Failed to create tag: ${e.toString()}');
-    }
-  }
-
-  Future<void> updateTag({
-    required String id,
-    required String name,
-    required bool isActive,
-    required String createdBy,
-    required String createdAt,
-    required String updatedBy,
-    required String updatedAt,
-  }) async {
-    try {
-      final data = {
-        'id': id,
-        'name': name,
-        'isActive': isActive,
-        'createdBy': createdBy,
-        'createdAt': createdAt,
-        'updatedBy': updatedBy,
-        'updatedAt': updatedAt,
-      };
-
-      await _apiService.put('/api/tags/$id', data: data);
-    } catch (e) {
-      throw Exception('Failed to update tag: ${e.toString()}');
+      throw Exception('Failed to create brand: ${e.toString()}');
     }
   }
 }

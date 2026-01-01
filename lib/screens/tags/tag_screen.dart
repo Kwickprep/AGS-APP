@@ -333,7 +333,16 @@ class _TagScreenState extends State<TagScreen> {
           value: tag.createdAt,
         ),
       ],
-      onView: () => _showTagDetails(tag),
+      onEdit: () async {
+        final result = await Navigator.pushNamed(
+          context,
+          '/tags/create',
+          arguments: {'isEdit': true, 'tagData': tag},
+        );
+        if (result == true) {
+          _loadTags();
+        }
+      },
       onDelete: () => _confirmDelete(tag),
       onTap: () => _showTagDetails(tag),
     );

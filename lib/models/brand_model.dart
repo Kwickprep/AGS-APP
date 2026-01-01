@@ -9,6 +9,8 @@ class BrandModel implements GenericModel {
   final String createdBy;
   @override
   final String createdAt;
+  final String? updatedBy;
+  final String? updatedAt;
   final List<BrandAction> actions;
   final double? aop;
   final double? discount;
@@ -19,6 +21,8 @@ class BrandModel implements GenericModel {
     required this.isActive,
     required this.createdBy,
     required this.createdAt,
+    this.updatedBy,
+    this.updatedAt,
     required this.actions,
     this.aop,
     this.discount,
@@ -32,6 +36,8 @@ class BrandModel implements GenericModel {
       'isActive': isActive,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (updatedBy != null) 'updatedBy': updatedBy,
+      if (updatedAt != null) 'updatedAt': updatedAt,
       if (aop != null) 'aop': aop,
       if (discount != null) 'discount': discount,
       'actions': actions.map((a) => {
@@ -81,14 +87,36 @@ class BrandModel implements GenericModel {
       }
     }
 
+    // Helper function to parse numeric values that might be strings or numbers
+    double? parseDouble(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        return double.tryParse(value);
+      }
+      return null;
+    }
+
+    // Helper function to extract string value from either string or object
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return value['name']?.toString() ?? value['fullName']?.toString() ?? value['id']?.toString() ?? '';
+      }
+      return value.toString();
+    }
+
     return BrandModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
-      createdBy: json['createdBy'] ?? '',
+      createdBy: extractString(json['createdBy']),
       createdAt: json['createdAt'] ?? '',
-      aop: json['aop'] != null ? (json['aop'] as num).toDouble() : null,
-      discount: json['discount'] != null ? (json['discount'] as num).toDouble() : null,
+      updatedBy: extractString(json['updatedBy']),
+      updatedAt: json['updatedAt'],
+      aop: parseDouble(json['aop']),
+      discount: parseDouble(json['discount']),
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => BrandAction.fromJson(e))
           .toList() ?? [],

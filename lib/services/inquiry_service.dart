@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/inquiry_model.dart';
 import '../widgets/generic/generic_model.dart';
@@ -21,7 +22,7 @@ class InquiryService{
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': '{}',
+        'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 
@@ -139,6 +140,16 @@ class InquiryService{
       return InquiryModel.fromJson(response.data['data']);
     } catch (e) {
       throw Exception('Failed to create inquiry: ${e.toString()}');
+    }
+  }
+
+  // Update inquiry
+  Future<InquiryModel> updateInquiry(String id, Map<String, dynamic> data) async {
+    try {
+      final response = await _apiService.put('/api/inquiries/$id', data: data);
+      return InquiryModel.fromJson(response.data['data']);
+    } catch (e) {
+      throw Exception('Failed to update inquiry: ${e.toString()}');
     }
   }
 }

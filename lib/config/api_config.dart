@@ -5,6 +5,6 @@ class ApiConfig {
   static const String requestOtpEndpoint = '/api/auth/request-otp';
   static const String verifyOtpEndpoint = '/api/auth/verify-otp';
 
-  static const Duration connectionTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration connectionTimeout = Duration(seconds: 15);
+  static const Duration receiveTimeout = Duration(seconds: 20);
 }

@@ -12,6 +12,8 @@ class InquiryModel implements GenericModel {
   final String createdBy;
   @override
   final String createdAt;
+  final String? updatedBy;
+  final String? updatedAt;
   final List<InquiryAction> actions;
 
   InquiryModel({
@@ -23,6 +25,8 @@ class InquiryModel implements GenericModel {
     required this.note,
     required this.createdBy,
     required this.createdAt,
+    this.updatedBy,
+    this.updatedAt,
     required this.actions,
   });
 
@@ -37,6 +41,8 @@ class InquiryModel implements GenericModel {
       'note': note,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (updatedBy != null) 'updatedBy': updatedBy,
+      if (updatedAt != null) 'updatedAt': updatedAt,
       'actions': actions.map((a) => {
         'icon': a.icon,
         'type': a.type,
@@ -86,15 +92,27 @@ class InquiryModel implements GenericModel {
       }
     }
 
+    // Helper function to extract string value from either string or object
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return value['name']?.toString() ?? value['fullName']?.toString() ?? value['id']?.toString() ?? '';
+      }
+      return value.toString();
+    }
+
     return InquiryModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
-      company: json['company'] ?? '',
-      contactUser: json['contactUser'] ?? '',
+      company: extractString(json['company']),
+      contactUser: extractString(json['contactUser']),
       status: json['status'] ?? '',
       note: json['note'] ?? '',
-      createdBy: json['createdBy'] ?? '',
+      createdBy: extractString(json['createdBy']),
       createdAt: json['createdAt'] ?? '',
+      updatedBy: extractString(json['updatedBy']),
+      updatedAt: json['updatedAt'],
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => InquiryAction.fromJson(e))
           .toList() ?? [],

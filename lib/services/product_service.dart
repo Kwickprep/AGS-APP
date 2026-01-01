@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/product_model.dart';
 import '../widgets/generic/generic_model.dart';
@@ -45,7 +46,7 @@ class ProductService  {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'filters': filters != null ? filters.toString() : '{}',
+        'filters': filters != null ? jsonEncode(filters) : '{}',
         'isPageLayout': isPageLayout.toString(),
       };
 
