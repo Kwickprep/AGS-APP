@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
-import '../../models/tag_model.dart';
-import './tag_bloc.dart';
+import '../../config/routes.dart';
+import '../../models/company_model.dart';
+import './company_bloc.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -11,17 +12,18 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 
-/// Tag list screen with full features: filter, sort, pagination, and details
-class TagScreen extends StatefulWidget {
-  const TagScreen({super.key});
+/// Company list screen with full features: filter, sort, pagination, and details
+class CompanyScreen extends StatefulWidget {
+  const CompanyScreen({super.key});
 
   @override
-  State<TagScreen> createState() => _TagScreenState();
+  State<CompanyScreen> createState() => _CompanyScreenState();
 }
 
-class _TagScreenState extends State<TagScreen> {
-  late TagBloc _bloc;
+class _CompanyScreenState extends State<CompanyScreen> {
+  late CompanyBloc _bloc;
   final TextEditingController _searchController = TextEditingController();
+
   // Current state parameters
   int _currentPage = 1;
   final int _itemsPerPage = 20;
@@ -33,8 +35,8 @@ class _TagScreenState extends State<TagScreen> {
   @override
   void initState() {
     super.initState();
-    _bloc = TagBloc();
-    _loadTags();
+    _bloc = CompanyBloc();
+    _loadCompanies();
   }
 
   @override
@@ -44,9 +46,9 @@ class _TagScreenState extends State<TagScreen> {
     super.dispose();
   }
 
-  void _loadTags() {
+  void _loadCompanies() {
     _bloc.add(
-      LoadTags(
+      LoadCompanies(
         page: _currentPage,
         take: _itemsPerPage,
         search: _currentSearch,
@@ -55,21 +57,6 @@ class _TagScreenState extends State<TagScreen> {
         filters: _currentFilters,
       ),
     );
-  }
-
-  void _onSearchChanged(String value) {
-    setState(() {
-      _currentSearch = value;
-      _currentPage = 1;
-    });
-    _loadTags();
-  }
-
-  void _onPageChanged(int page) {
-    setState(() {
-      _currentPage = page;
-    });
-    _loadTags();
   }
 
   void _showFilterSheet() {
@@ -82,16 +69,21 @@ class _TagScreenState extends State<TagScreen> {
 
     FilterBottomSheet.show(
       context: context,
-      initialFilter: FilterModel(selectedStatuses: selectedStatuses.toSet(), createdBy: _currentFilters['createdBy']),
+      initialFilter: FilterModel(
+        selectedStatuses: selectedStatuses.toSet(),
+        createdBy: _currentFilters['createdBy'],
+      ),
       creatorOptions: const [],
       statusOptions: const ['Active', 'Inactive'],
       onApplyFilters: (filter) {
         setState(() {
           _currentFilters = {};
           if (filter.selectedStatuses.isNotEmpty) {
-            if (filter.selectedStatuses.contains('Active') && !filter.selectedStatuses.contains('Inactive')) {
+            if (filter.selectedStatuses.contains('Active') &&
+                !filter.selectedStatuses.contains('Inactive')) {
               _currentFilters['isActive'] = true;
-            } else if (filter.selectedStatuses.contains('Inactive') && !filter.selectedStatuses.contains('Active')) {
+            } else if (filter.selectedStatuses.contains('Inactive') &&
+                !filter.selectedStatuses.contains('Active')) {
               _currentFilters['isActive'] = false;
             }
           }
@@ -100,7 +92,7 @@ class _TagScreenState extends State<TagScreen> {
           }
           _currentPage = 1;
         });
-        _loadTags();
+        _loadCompanies();
       },
     );
   }
@@ -108,7 +100,10 @@ class _TagScreenState extends State<TagScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
+      initialSort: SortModel(
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
         SortOption(field: 'isActive', label: 'Status'),
@@ -121,23 +116,101 @@ class _TagScreenState extends State<TagScreen> {
           _currentSortOrder = sort.sortOrder;
           _currentPage = 1;
         });
-        _loadTags();
+        _loadCompanies();
       },
     );
   }
 
-  void _showTagDetails(TagModel tag) {
+  void _onSearchChanged(String value) {
+    setState(() {
+      _currentSearch = value;
+      _currentPage = 1;
+    });
+    _loadCompanies();
+  }
+
+  void _onPageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+    _loadCompanies();
+  }
+
+  void _showCompanyDetails(CompanyModel company) {
     DetailsBottomSheet.show(
       context: context,
-      title: tag.name,
-      isActive: tag.isActive,
+      title: company.name,
+      isActive: company.isActive == "Active",
       fields: [
-        DetailField(label: 'Tag Name', value: tag.name),
-        DetailField(label: 'Status', value: tag.isActive ? 'Active' : 'Inactive'),
-        DetailField(label: 'Created By', value: tag.createdBy),
-        DetailField(label: 'Created Date', value: tag.createdAt),
+        DetailField(
+          label: 'Company Name',
+          value: company.name,
+        ),
+        DetailField(
+          label: 'Email',
+          value: company.email,
+        ),
+        DetailField(
+          label: 'Website',
+          value: company.website,
+        ),
+        DetailField(
+          label: 'Industry',
+          value: company.industry,
+        ),
+        DetailField(
+          label: 'Employees',
+          value: company.employees,
+        ),
+        DetailField(
+          label: 'Turnover',
+          value: company.turnover,
+        ),
+        DetailField(
+          label: 'GST Number',
+          value: company.gstNumber,
+        ),
+        DetailField(
+          label: 'Country',
+          value: company.country,
+        ),
+        DetailField(
+          label: 'State',
+          value: company.state,
+        ),
+        DetailField(
+          label: 'City',
+          value: company.city,
+        ),
+        DetailField(
+          label: 'Status',
+          value: company.isActive == "Active" ? 'Active' : 'Inactive',
+        ),
+        DetailField(
+          label: 'Created By',
+          value: company.createdBy,
+        ),
+        DetailField(
+          label: 'Created Date',
+          value: company.createdAt,
+        ),
       ],
     );
+  }
+
+  void _navigateToEditCompany(CompanyModel company) async {
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.createCompany,
+      arguments: {
+        'isEdit': true,
+        'companyData': company,
+      },
+    );
+
+    if (result == true) {
+      _loadCompanies();
+    }
   }
 
   @override
@@ -150,10 +223,12 @@ class _TagScreenState extends State<TagScreen> {
         actions: [
           IconButton(
             onPressed: () async {
-              final result = await Navigator.pushNamed(context, '/tags/create');
-              // Refresh the list if a tag was created
+              final result = await Navigator.pushNamed(
+                context,
+                AppRoutes.createCompany,
+              );
               if (result == true) {
-                _loadTags();
+                _loadCompanies();
               }
             },
             icon: const Icon(Icons.add),
@@ -166,9 +241,12 @@ class _TagScreenState extends State<TagScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Text('Tags', style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary)),
+        title: Text(
+          'Companies',
+          style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
+        ),
       ),
-      body: BlocProvider<TagBloc>(
+      body: BlocProvider<CompanyBloc>(
         create: (_) => _bloc,
         child: SafeArea(
           child: Column(
@@ -180,15 +258,18 @@ class _TagScreenState extends State<TagScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search tags...',
+                    hintText: 'Search companies...',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               _searchController.clear();
-                              _onSearchChanged((''));
-                              setState(() {});
+                              setState(() {
+                                _currentSearch = '';
+                                _currentPage = 1;
+                              });
+                              _loadCompanies();
                             },
                           )
                         : null,
@@ -207,49 +288,69 @@ class _TagScreenState extends State<TagScreen> {
                       borderSide: const BorderSide(color: AppColors.primary),
                     ),
                   ),
-                  onChanged: (value) {
-                    _onSearchChanged((value));
-                  },
+                  onChanged: _onSearchChanged,
                 ),
               ),
 
               // Filter and Sort bar
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: FilterSortBar(onFilterTap: _showFilterSheet, onSortTap: _showSortSheet),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: FilterSortBar(
+                  onFilterTap: _showFilterSheet,
+                  onSortTap: _showSortSheet,
+                ),
               ),
 
               // Card list
               Expanded(
-                child: BlocBuilder<TagBloc, TagState>(
+                child: BlocBuilder<CompanyBloc, CompanyState>(
                   builder: (context, state) {
-                    if (state is TagLoading) {
+                    if (state is CompanyLoading) {
                       return const Center(child: CircularProgressIndicator());
-                    } else if (state is TagError) {
+                    } else if (state is CompanyError) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: AppColors.error,
+                            ),
                             const SizedBox(height: 16),
-                            Text(state.message, style: const TextStyle(fontSize: 16)),
+                            Text(
+                              state.message,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                             const SizedBox(height: 16),
-                            ElevatedButton(child: const Text('Retry'), onPressed: () => _loadTags()),
+                            ElevatedButton(
+                              onPressed: _loadCompanies,
+                              child: const Text('Retry'),
+                            ),
                           ],
                         ),
                       );
-                    } else if (state is TagLoaded) {
-                      if (state.tags.isEmpty) {
+                    } else if (state is CompanyLoaded) {
+                      if (state.companies.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.label_outlined, size: 64, color: AppColors.grey),
+                              const Icon(
+                                Icons.business_outlined,
+                                size: 64,
+                                color: AppColors.grey,
+                              ),
                               const SizedBox(height: 16),
                               Text(
-                                'No tags found',
-                                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
+                                'No companies found',
+                                style: AppTextStyles.bodyLarge.copyWith(
+                                  color: AppColors.textLight,
+                                ),
                               ),
                             ],
                           ),
@@ -261,16 +362,20 @@ class _TagScreenState extends State<TagScreen> {
                           Expanded(
                             child: RefreshIndicator(
                               onRefresh: () async {
-                                _loadTags();
-                                await Future.delayed(const Duration(milliseconds: 500));
+                                _loadCompanies();
+                                await Future.delayed(
+                                  const Duration(milliseconds: 500),
+                                );
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
-                                itemCount: state.tags.length,
+                                itemCount: state.companies.length,
                                 itemBuilder: (context, index) {
-                                  final tag = state.tags[index];
-                                  final serialNumber = (state.page - 1) * state.take + index + 1;
-                                  return _buildTagCard(tag, serialNumber);
+                                  final company = state.companies[index];
+                                  final serialNumber =
+                                      (state.page - 1) * state.take + index + 1;
+                                  return _buildCompanyCard(
+                                      company, serialNumber);
                                 },
                               ),
                             ),
@@ -282,9 +387,7 @@ class _TagScreenState extends State<TagScreen> {
                             totalPages: state.totalPages,
                             totalItems: state.total,
                             itemsPerPage: state.take,
-                            onPageChanged: (page) {
-                              _onPageChanged(page);
-                            },
+                            onPageChanged: _onPageChanged,
                           ),
                         ],
                       );
@@ -301,39 +404,58 @@ class _TagScreenState extends State<TagScreen> {
     );
   }
 
-  Widget _buildTagCard(TagModel tag, int serialNumber) {
+  Widget _buildCompanyCard(CompanyModel company, int serialNumber) {
     return RecordCard(
       serialNumber: serialNumber,
-      isActive: tag.isActive,
+      isActive: company.isActive == "Active",
       fields: [
-        CardField.title(label: 'Tag Name', value: tag.name),
-        CardField.regular(label: 'Created By', value: tag.createdBy),
-        CardField.regular(label: 'Created Date', value: tag.createdAt),
+        CardField.title(
+          label: 'Company Name',
+          value: company.name,
+        ),
+        CardField.regular(
+          label: 'Email',
+          value: company.email,
+        ),
+        CardField.regular(
+          label: 'Industry',
+          value: company.industry,
+        ),
+        CardField.regular(
+          label: 'Created By',
+          value: company.createdBy,
+        ),
+        CardField.regular(
+          label: 'Created Date',
+          value: company.createdAt,
+        ),
       ],
-      onEdit: () async {
-        final result = await Navigator.pushNamed(context, '/tags/create', arguments: {'isEdit': true, 'tagData': tag});
-        if (result == true) {
-          _loadTags();
-        }
-      },
-      onDelete: () => _confirmDelete(tag),
-      onTap: () => _showTagDetails(tag),
+      onEdit: () => _navigateToEditCompany(company),
+      onDelete: () => _confirmDelete(company),
+      onTap: () => _showCompanyDetails(company),
     );
   }
 
-  void _confirmDelete(TagModel tag) {
+  void _confirmDelete(CompanyModel company) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text('Are you sure you want to delete "${tag.name}"?'),
+        content: Text(
+          'Are you sure you want to delete "${company.name}"?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteTag(tag.id));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tag deleted successfully')));
+              _bloc.add(DeleteCompany(company.id));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Company deleted successfully')),
+              );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),

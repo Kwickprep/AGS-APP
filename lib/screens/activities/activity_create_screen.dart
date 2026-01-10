@@ -15,11 +15,7 @@ class ActivityCreateScreen extends StatefulWidget {
   final ActivityModel? activity;
   final bool isEdit;
 
-  const ActivityCreateScreen({
-    super.key,
-    this.activity,
-    this.isEdit = false,
-  });
+  const ActivityCreateScreen({super.key, this.activity, this.isEdit = false});
 
   @override
   State<ActivityCreateScreen> createState() => _ActivityCreateScreenState();
@@ -64,12 +60,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
     if (_selectedActivityTypeId == null) return false;
     final selectedType = _activityTypes.firstWhere(
       (type) => type.id == _selectedActivityTypeId,
-      orElse: () => ActivityTypeModel(
-        id: '',
-        name: '',
-        isActive: false,
-        isDefault: false,
-      ),
+      orElse: () => ActivityTypeModel(id: '', name: '', isActive: false, isDefault: false),
     );
     return selectedType.name.toLowerCase().contains('product search');
   }
@@ -207,11 +198,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         _isLoadingData = false;
       });
       if (mounted) {
-        CustomToast.show(
-          context,
-          e.toString().replaceAll('Exception: ', ''),
-          type: ToastType.error,
-        );
+        CustomToast.show(context, e.toString().replaceAll('Exception: ', ''), type: ToastType.error);
       }
     }
   }
@@ -296,9 +283,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
 
       if (images.isNotEmpty) {
         setState(() {
-          _selectedImages.addAll(
-            images.map((xFile) => File(xFile.path)).toList(),
-          );
+          _selectedImages.addAll(images.map((xFile) => File(xFile.path)).toList());
         });
 
         // Upload images immediately to get document IDs
@@ -306,11 +291,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
       }
     } catch (e) {
       if (mounted) {
-        CustomToast.show(
-          context,
-          'Failed to pick images: ${e.toString()}',
-          type: ToastType.error,
-        );
+        CustomToast.show(context, 'Failed to pick images: ${e.toString()}', type: ToastType.error);
       }
     }
   }
@@ -323,9 +304,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
     });
 
     try {
-      final documentIds = await _fileUploadService.uploadMultipleFiles(
-        _selectedImages,
-      );
+      final documentIds = await _fileUploadService.uploadMultipleFiles(_selectedImages);
       setState(() {
         _uploadedDocumentIds = documentIds;
         _isUploadingImages = false;
@@ -335,11 +314,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         _isUploadingImages = false;
       });
       if (mounted) {
-        CustomToast.show(
-          context,
-          'Failed to upload images: ${e.toString()}',
-          type: ToastType.error,
-        );
+        CustomToast.show(context, 'Failed to upload images: ${e.toString()}', type: ToastType.error);
       }
     }
   }
@@ -364,11 +339,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
       final hasImages = _uploadedDocumentIds.isNotEmpty;
 
       if (!hasText && !hasImages) {
-        CustomToast.show(
-          context,
-          'Please provide either text requirements or upload images',
-          type: ToastType.error,
-        );
+        CustomToast.show(context, 'Please provide either text requirements or upload images', type: ToastType.error);
         return;
       }
     }
@@ -428,11 +399,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         await _activityService.updateActivity(widget.activity!.id, data);
 
         if (mounted) {
-          CustomToast.show(
-            context,
-            'Activity updated successfully',
-            type: ToastType.success,
-          );
+          CustomToast.show(context, 'Activity updated successfully', type: ToastType.success);
           Navigator.pop(context, true);
         }
       } else {
@@ -445,9 +412,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
             final body = createdActivityRecord['body'] as Map<String, dynamic>?;
             final aiSuggestedThemes = body?['aiSuggestedThemes'];
 
-            if (aiSuggestedThemes != null &&
-                aiSuggestedThemes is List &&
-                aiSuggestedThemes.isNotEmpty) {
+            if (aiSuggestedThemes != null && aiSuggestedThemes is List && aiSuggestedThemes.isNotEmpty) {
               // Navigate to theme selection screen
               final result = await Navigator.push(
                 context,
@@ -464,20 +429,12 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                 Navigator.pop(context, true);
               }
             } else {
-              CustomToast.show(
-                context,
-                'Activity created successfully',
-                type: ToastType.success,
-              );
+              CustomToast.show(context, 'Activity created successfully', type: ToastType.success);
               Navigator.pop(context, true);
             }
           } else {
             // For standard activities, just show success and pop
-            CustomToast.show(
-              context,
-              'Activity created successfully',
-              type: ToastType.success,
-            );
+            CustomToast.show(context, 'Activity created successfully', type: ToastType.success);
             Navigator.pop(context, true);
           }
         }
@@ -518,39 +475,24 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
             Container(
               width: 32,
               height: 32,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
+              decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
               child: const Center(
                 child: Text(
                   '1',
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: AppColors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
             const SizedBox(width: 12),
             Text(
               widget.isEdit ? 'Edit Activity' : 'Activity Details',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ],
         ),
       ),
       body: _isLoadingData
-          ? const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              ),
-            )
+          ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)))
           : GestureDetector(
               onTap: () {
                 // Unfocus any focused widget when tapping outside
@@ -569,14 +511,9 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                         CustomDropdown<String>(
                           label: 'Activity Type',
                           hint: 'Select Activity Type',
-                          value: _activityTypes.isEmpty
-                              ? null
-                              : _selectedActivityTypeId,
+                          value: _activityTypes.isEmpty ? null : _selectedActivityTypeId,
                           items: _activityTypes.map((type) {
-                            return DropdownItem(
-                              value: type.id,
-                              label: type.name,
-                            );
+                            return DropdownItem(value: type.id, label: type.name);
                           }).toList(),
                           onChanged: (value) {
                             setState(() {
@@ -712,10 +649,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
             });
           },
           isRequired: false,
-          isEnabled:
-              isActivityTypeSelected &&
-              isCompanySelected &&
-              _filteredUsers.isNotEmpty,
+          isEnabled: isActivityTypeSelected && isCompanySelected && _filteredUsers.isNotEmpty,
           onClear: () {
             setState(() {
               _selectedUserId = null;
@@ -733,11 +667,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         // Activity Note
         const Text(
           'Activity Note',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -746,10 +676,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           decoration: InputDecoration(
             hintText: 'Enter activity notes',
             hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: AppColors.lightGrey),
@@ -769,11 +696,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         // Next Schedule Note
         const Text(
           'Next Schedule Note',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -782,10 +705,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           decoration: InputDecoration(
             hintText: 'Enter note',
             hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: AppColors.lightGrey),
@@ -805,11 +725,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         // Next Schedule Date & Time
         const Text(
           'Next Schedule Date & Time',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -828,10 +744,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                 SizedBox(width: 8),
               ],
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: AppColors.lightGrey),
@@ -863,11 +776,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
             const SizedBox(width: 12),
             const Text(
               'Scheduled Call Completed',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ],
         ),
@@ -882,11 +791,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         RichText(
           text: const TextSpan(
             text: 'Describe your requirements',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500),
             children: [
               TextSpan(
                 text: ' *',
@@ -900,17 +805,13 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           controller: _requirementsController,
           maxLines: 4,
           decoration: InputDecoration(
-            hintText:
-                'E.g., Looking for corporate gifts for 100 employees, budget around 500 per piece...',
+            hintText: 'E.g., Looking for corporate gifts for 100 employees, budget around 500 per piece...',
             hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
             suffixIcon: IconButton(
               icon: const Icon(Icons.attach_file, color: AppColors.grey),
               onPressed: _pickImages,
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: AppColors.lightGrey),
@@ -946,16 +847,11 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                   ),
                 ),
                 SizedBox(width: 12),
-                Text(
-                  'Uploading images...',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                ),
+                Text('Uploading images...', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
               ],
             ),
           ),
@@ -978,10 +874,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.lightGrey),
-                      image: DecorationImage(
-                        image: FileImage(image),
-                        fit: BoxFit.cover,
-                      ),
+                      image: DecorationImage(image: FileImage(image), fit: BoxFit.cover),
                     ),
                   ),
                   Positioned(
@@ -991,15 +884,8 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
                       onTap: () => _removeImage(index),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: AppColors.error,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          size: 16,
-                          color: AppColors.white,
-                        ),
+                        decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                        child: const Icon(Icons.close, size: 16, color: AppColors.white),
                       ),
                     ),
                   ),

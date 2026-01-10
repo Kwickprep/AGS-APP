@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../config/app_colors.dart';
 import '../config/routes.dart';
+import '../config/huge_icons.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -47,54 +48,59 @@ class _AppDrawerState extends State<AppDrawer> {
               physics: const BouncingScrollPhysics(),
               children: [
                 _buildMenuItem(
-                  icon: Icons.branding_watermark,
+                  icon: HugeIcons.award03,
                   title: 'Brands',
                   route: AppRoutes.brands,
                 ),
                 _buildMenuItem(
-                  icon: Icons.category,
+                  icon: HugeIcons.orthogonalEdge,
                   title: 'Categories',
                   route: AppRoutes.categories,
                 ),
                 _buildMenuItem(
-                  icon: Icons.palette,
+                  icon: HugeIcons.colors,
                   title: 'Themes',
                   route: AppRoutes.themes,
                 ),
                 _buildMenuItem(
-                  icon: Icons.local_offer,
+                  icon: HugeIcons.tag01,
                   title: 'Tags',
                   route: AppRoutes.tags,
                 ),
                 _buildMenuItem(
-                  icon: Icons.inventory_2,
+                  icon: HugeIcons.package,
                   title: 'Products',
                   route: AppRoutes.products,
                 ),
                 _buildMenuItem(
-                  icon: Icons.event_note,
+                  icon: HugeIcons.chartColumn,
                   title: 'Activities',
                   route: AppRoutes.activities,
                 ),
                 _buildMenuItem(
-                  icon: Icons.assignment,
+                  icon: HugeIcons.share07,
                   title: 'Activity Types',
                   route: AppRoutes.activityTypes,
                 ),
                 _buildMenuItem(
-                  icon: Icons.assignment_outlined,
+                  icon: HugeIcons.messageQuestion,
                   title: 'Inquiries',
                   route: AppRoutes.inquiries,
                 ),
                 _buildMenuItem(
-                  icon: Icons.group,
+                  icon: HugeIcons.userGroup,
                   title: 'Groups',
                   route: AppRoutes.groups,
                 ),
                 _buildMenuItem(
-                  icon: Icons.people,
+                  icon: HugeIcons.userMultiple02,
                   title: 'Users',
                   route: AppRoutes.users,
+                ),
+                _buildMenuItem(
+                  icon: HugeIcons.bandage,
+                  title: 'Companies',
+                  route: AppRoutes.companies,
                 ),
               ],
             ),

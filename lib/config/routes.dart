@@ -23,6 +23,8 @@ import '../screens/users/user_screen.dart';
 import '../screens/users/user_create_screen.dart';
 import '../screens/activity_types/activity_type_screen.dart';
 import '../screens/activity_types/activity_type_create_screen.dart';
+import '../screens/companies/company_screen.dart';
+import '../screens/companies/company_create_screen.dart';
 
 class AppRoutes {
   static const String startup = '/startup';
@@ -48,6 +50,8 @@ class AppRoutes {
   static const String createUser = '/users/create';
   static const String activityTypes = '/activity-types';
   static const String createActivityType = '/activity-types/create';
+  static const String companies = '/companies';
+  static const String createCompany = '/companies/create';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -120,6 +124,14 @@ class AppRoutes {
         return ActivityTypeCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           activityTypeData: args?['activityTypeData'],
+        );
+      },
+      companies: (context) => const CompanyScreen(),
+      createCompany: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return CompanyCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          companyData: args?['companyData'],
         );
       },
     };

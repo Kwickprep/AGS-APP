@@ -15,6 +15,7 @@ import 'services/product_service.dart';
 import 'services/file_upload_service.dart';
 import 'services/user_service.dart';
 import 'services/activity_type_service.dart';
+import 'services/company_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -34,6 +35,7 @@ void setupDependencies() {
   getIt.registerSingleton<FileUploadService>(FileUploadService());
   getIt.registerSingleton<UserService>(UserService());
   getIt.registerSingleton<ActivityTypeService>(ActivityTypeService());
+  getIt.registerSingleton<CompanyService>(CompanyService());
 }
 
 void main() async {
