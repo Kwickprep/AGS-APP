@@ -108,7 +108,7 @@ class ProductService  {
   /// Update existing product
   Future<ProductModel> updateProduct(String id, Map<String, dynamic> data) async {
     try {
-      final response = await _apiService.post('/api/products/$id', data: data);
+      final response = await _apiService.put('/api/products/$id', data: data);
 
       if (response.statusCode == 200) {
         final responseData = response.data['data'];

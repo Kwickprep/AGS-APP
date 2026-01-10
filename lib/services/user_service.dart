@@ -19,17 +19,14 @@ class UserService {
       final queryParams = {
         'page': page.toString(),
         'take': take.toString(),
-        'search': search,
+        'search': search.trim().isNotEmpty ? search.trim() : null,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
         'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 
-      final response = await _apiService.get(
-        '/api/users',
-        params: queryParams,
-      );
+      final response = await _apiService.get('/api/users', params: queryParams);
 
       return UserScreenResponse.fromJson(response.data);
     } catch (e) {
@@ -85,8 +82,19 @@ class UserService {
     }
   }
 
+  Future<Map<String, dynamic>> getUserById(String id) async {
+    try {
+      final response = await _apiService.get('/api/users/$id');
+      return response.data['data'] as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Failed to fetch user: ${e.toString()}');
+    }
+  }
+
   Future<Map<String, dynamic>> updateUser(
-      String id, Map<String, dynamic> data) async {
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final response = await _apiService.put('/api/users/$id', data: data);
       return response.data['data']['record'] as Map<String, dynamic>;
@@ -97,36 +105,32 @@ class UserService {
 
   // Get users by company IDs (for Select Users section in Admin/Employee role)
   Future<List<Map<String, dynamic>>> getUsersByCompanies(
-      List<String> companyIds) async {
-
+    List<String> companyIds,
+  ) async {
     try {
       if (companyIds.isEmpty) return [];
 
+      // Add company filter to fetch only users from selected companies
+      final filters = {
+        'companyIds': companyIds,
+      };
+
       final queryParams = {
         'page': '1',
+        'take': '1000', // Fetch up to 1000 users to avoid pagination issues
         'search': '',
         'sortBy': 'firstName',
         'sortOrder': 'asc',
+        'filters': jsonEncode(filters),
         'isPageLayout': 'true',
       };
 
-      final response = await _apiService.get(
-        '/api/users',
-        params: queryParams,
-      );
+      final response = await _apiService.get('/api/users', params: queryParams);
 
       final records = response.data['data']['records'] as List<dynamic>;
 
-      // Filter users by company IDs
-      return records
-          .where((user) {
-            final userCompanyIds = user['companyIds'] as List<dynamic>?;
-            if (userCompanyIds == null) return false;
-            return userCompanyIds
-                .any((companyId) => companyIds.contains(companyId));
-          })
-          .map((e) => e as Map<String, dynamic>)
-          .toList();
+      // Return all users (already filtered by API)
+      return records.map((e) => e as Map<String, dynamic>).toList();
     } catch (e) {
       throw Exception('Failed to load users by companies: ${e.toString()}');
     }

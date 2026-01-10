@@ -35,136 +35,223 @@ class _AppDrawerState extends State<AppDrawer> {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.white,
+      child: Column(
+        children: [
+          // Simple Profile Header
+          _buildProfileHeader(),
+
+          // Scrollable Menu Items
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              physics: const BouncingScrollPhysics(),
+              children: [
+                _buildMenuItem(
+                  icon: Icons.branding_watermark,
+                  title: 'Brands',
+                  route: AppRoutes.brands,
+                ),
+                _buildMenuItem(
+                  icon: Icons.category,
+                  title: 'Categories',
+                  route: AppRoutes.categories,
+                ),
+                _buildMenuItem(
+                  icon: Icons.palette,
+                  title: 'Themes',
+                  route: AppRoutes.themes,
+                ),
+                _buildMenuItem(
+                  icon: Icons.local_offer,
+                  title: 'Tags',
+                  route: AppRoutes.tags,
+                ),
+                _buildMenuItem(
+                  icon: Icons.inventory_2,
+                  title: 'Products',
+                  route: AppRoutes.products,
+                ),
+                _buildMenuItem(
+                  icon: Icons.event_note,
+                  title: 'Activities',
+                  route: AppRoutes.activities,
+                ),
+                _buildMenuItem(
+                  icon: Icons.assignment,
+                  title: 'Activity Types',
+                  route: AppRoutes.activityTypes,
+                ),
+                _buildMenuItem(
+                  icon: Icons.assignment_outlined,
+                  title: 'Inquiries',
+                  route: AppRoutes.inquiries,
+                ),
+                _buildMenuItem(
+                  icon: Icons.group,
+                  title: 'Groups',
+                  route: AppRoutes.groups,
+                ),
+                _buildMenuItem(
+                  icon: Icons.people,
+                  title: 'Users',
+                  route: AppRoutes.users,
+                ),
+              ],
+            ),
+          ),
+
+          // Divider
+          const Divider(height: 1),
+
+          // Logout Button
+          _buildLogoutButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Container(
+      color: AppColors.primary,
       child: SafeArea(
-        child: Column(
-          children: [
-            // Profile Section
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppColors.primary,
-                    child: Icon(Icons.person, size: 45, color: AppColors.white),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _user?.fullName ?? 'User',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.white,
+                    child: Text(
+                      _user?.firstName.substring(0, 1).toUpperCase() ?? 'U',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _user?.email ?? '',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _user?.fullName ?? 'User',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _user?.role ?? '',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Menu Items
-            _buildMenuItem(Icons.branding_watermark, 'Brands', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.brands);
-            }),
-            _buildMenuItem(Icons.category, 'Categories', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.categories);
-            }),
-            _buildMenuItem(Icons.palette, 'Themes', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.themes);
-            }),
-            _buildMenuItem(Icons.tag, 'Tags', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.tags);
-            }),
-            _buildMenuItem(Icons.inventory_2_outlined, 'Products', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.products);
-            }),
-            _buildMenuItem(Icons.event_note, 'Activities', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.activities);
-            }),
-            _buildMenuItem(Icons.assignment_outlined, 'Inquiries', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.inquiries);
-            }),
-            _buildMenuItem(Icons.group_outlined, 'Groups', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.groups);
-            }),
-            _buildMenuItem(Icons.person, 'Users', () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.users);
-            }),
-
-            const Spacer(),
-
-            // Logout Button
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: InkWell(
-                onTap: () async {
-                  await _authService.logout();
-                  if (context.mounted) {
-                    Navigator.of(context).pushReplacementNamed('/login');
-                  }
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Sign out',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required String route,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: Colors.grey[700],
+        size: 24,
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: Colors.grey[400],
+        size: 20,
+      ),
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.pushNamed(context, route);
+      },
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      dense: true,
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return SafeArea(
+      top: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, size: 24, color: Colors.black87),
-            const SizedBox(width: 16),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Sign Out'),
+                  content: const Text('Are you sure you want to sign out?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                      ),
+                      child: const Text('Sign Out'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true && mounted) {
+                await _authService.logout();
+                if (mounted) {
+                  Navigator.of(context).pushReplacementNamed('/login');
+                }
+              }
+            },
+            icon: const Icon(Icons.logout, size: 20),
+            label: const Text(
+              'Sign Out',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.grey[700],
+              side: BorderSide(color: Colors.grey[300]!),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

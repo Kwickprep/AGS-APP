@@ -22,6 +22,7 @@ class ProductModel implements GenericModel {
   final List<CategoryObject> categories;
   final List<TagObject> tags;
   final List<ThemeObject> themes;
+  final List<SimpleTheme> themesSimple;
   final Creator? creator;
   final Creator? updater;
   final String updatedAt;
@@ -53,6 +54,7 @@ class ProductModel implements GenericModel {
     required this.categories,
     required this.tags,
     required this.themes,
+    required this.themesSimple,
     this.creator,
     this.updater,
     required this.updatedAt,
@@ -124,12 +126,12 @@ class ProductModel implements GenericModel {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       image: json['image'] ?? '',
-      price: json['price'] ?? '',
-      priceRange: json['priceRange'] ?? '',
+      price: json['price']?.toString() ?? '',
+      priceRange: json['priceRange']?.toString() ?? '',
       category: json['category'] ?? '',
       brand: json['brand'] ?? '',
-      aop: json['aop'] ?? '-',
-      landed: json['landed'] ?? '-',
+      aop: json['aop']?.toString() ?? '-',
+      landed: json['landed']?.toString() ?? '-',
       tagCount: json['tagCount'] ?? 0,
       description: json['description'] ?? '',
       themeCount: json['themeCount'] ?? 0,
@@ -151,8 +153,12 @@ class ProductModel implements GenericModel {
               ?.map((e) => TagObject.fromJson(e))
               .toList() ??
           [],
-      themes: (json['themes'] as List<dynamic>?)
+      themes: (json['themesFull'] as List<dynamic>?)
               ?.map((e) => ThemeObject.fromJson(e))
+              .toList() ??
+          [],
+      themesSimple: (json['themes'] as List<dynamic>?)
+              ?.map((e) => SimpleTheme.fromJson(e))
               .toList() ??
           [],
       creator:
@@ -259,6 +265,20 @@ class TagObject {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       isActive: json['isActive'] ?? false,
+    );
+  }
+}
+
+class SimpleTheme {
+  final String name;
+
+  SimpleTheme({
+    required this.name,
+  });
+
+  factory SimpleTheme.fromJson(Map<String, dynamic> json) {
+    return SimpleTheme(
+      name: json['name'] ?? '',
     );
   }
 }

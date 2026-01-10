@@ -2,26 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
-import '../../config/routes.dart';
-import '../../models/user_screen_model.dart';
-import './user_bloc.dart';
+import '../../models/activity_type_model.dart';
+import './activity_type_bloc.dart';
 import '../../widgets/common/record_card.dart';
-import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../widgets/common/filter_sort_bar.dart';
 
-/// User list screen with full features: filter, sort, pagination, and details
-class UserScreen extends StatefulWidget {
-  const UserScreen({super.key});
+/// Activity Type list screen with full features: filter, sort, pagination, and details
+class ActivityTypeScreen extends StatefulWidget {
+  const ActivityTypeScreen({super.key});
 
   @override
-  State<UserScreen> createState() => _UserScreenState();
+  State<ActivityTypeScreen> createState() => _ActivityTypeScreenState();
 }
 
-class _UserScreenState extends State<UserScreen> {
-  late UserBloc _bloc;
+class _ActivityTypeScreenState extends State<ActivityTypeScreen> {
+  late ActivityTypeBloc _bloc;
   final TextEditingController _searchController = TextEditingController();
 
   // Current state parameters
@@ -35,8 +34,8 @@ class _UserScreenState extends State<UserScreen> {
   @override
   void initState() {
     super.initState();
-    _bloc = UserBloc();
-    _loadUsers();
+    _bloc = ActivityTypeBloc();
+    _loadActivityTypes();
   }
 
   @override
@@ -46,20 +45,19 @@ class _UserScreenState extends State<UserScreen> {
     super.dispose();
   }
 
-  void _loadUsers() {
-    _bloc.add(
-      LoadUsers(
-        page: _currentPage,
-        take: _itemsPerPage,
-        search: _currentSearch,
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-        filters: _currentFilters,
-      ),
-    );
+  void _loadActivityTypes() {
+    _bloc.add(LoadActivityTypes(
+      page: _currentPage,
+      take: _itemsPerPage,
+      search: _currentSearch,
+      sortBy: _currentSortBy,
+      sortOrder: _currentSortOrder,
+      filters: _currentFilters,
+    ));
   }
 
   void _showFilterSheet() {
+    // Determine current selected statuses
     List<String> selectedStatuses = [];
     if (_currentFilters['isActive'] == true) {
       selectedStatuses.add('Active');
@@ -83,7 +81,7 @@ class _UserScreenState extends State<UserScreen> {
                 !filter.selectedStatuses.contains('Inactive')) {
               _currentFilters['isActive'] = true;
             } else if (filter.selectedStatuses.contains('Inactive') &&
-                !filter.selectedStatuses.contains('Active')) {
+                       !filter.selectedStatuses.contains('Active')) {
               _currentFilters['isActive'] = false;
             }
           }
@@ -92,7 +90,7 @@ class _UserScreenState extends State<UserScreen> {
           }
           _currentPage = 1;
         });
-        _loadUsers();
+        _loadActivityTypes();
       },
     );
   }
@@ -100,10 +98,7 @@ class _UserScreenState extends State<UserScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: SortModel(
-        sortBy: _currentSortBy,
-        sortOrder: _currentSortOrder,
-      ),
+      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
         SortOption(field: 'isActive', label: 'Status'),
@@ -116,7 +111,7 @@ class _UserScreenState extends State<UserScreen> {
           _currentSortOrder = sort.sortOrder;
           _currentPage = 1;
         });
-        _loadUsers();
+        _loadActivityTypes();
       },
     );
   }
@@ -126,52 +121,30 @@ class _UserScreenState extends State<UserScreen> {
       _currentSearch = value;
       _currentPage = 1;
     });
-    _loadUsers();
+    _loadActivityTypes();
   }
 
   void _onPageChanged(int page) {
     setState(() {
       _currentPage = page;
     });
-    _loadUsers();
+    _loadActivityTypes();
   }
 
-  void _showUserDetails(UserScreenModel user) {
+  void _showActivityTypeDetails(ActivityTypeModel activityType) {
     DetailsBottomSheet.show(
       context: context,
-      title: "${user.firstName} ${user.lastName}",
-      isActive: user.isActive == "Active",
+      title: activityType.name,
+      isActive: activityType.isActive,
       fields: [
-        DetailField(
-          label: 'User Name',
-          value: "${user.firstName} ${user.lastName}",
-        ),
-        DetailField(
-          label: 'Status',
-          value: user.isActive == "Active" ? 'Active' : 'Inactive',
-        ),
-        DetailField(
-          label: 'Created By',
-          value: (user as dynamic).createdBy ?? "",
-        ),
-        DetailField(
-          label: 'Created Date',
-          value: (user as dynamic).createdAt ?? "",
-        ),
+        DetailField(label: 'Activity Type Name', value: activityType.name),
+        DetailField(label: 'Status', value: activityType.isActive ? 'Active' : 'Inactive'),
+        DetailField(label: 'Created By', value: activityType.createdBy),
+        DetailField(label: 'Created Date', value: activityType.createdAt),
+        if (activityType.updatedBy != null) DetailField(label: 'Updated By', value: activityType.updatedBy!),
+        if (activityType.updatedAt != null) DetailField(label: 'Updated Date', value: activityType.updatedAt!),
       ],
     );
-  }
-
-  void _navigateToEditUser(UserScreenModel user) async {
-    final result = await Navigator.pushNamed(
-      context,
-      AppRoutes.createUser,
-      arguments: user,
-    );
-
-    if (result == true) {
-      _loadUsers();
-    }
   }
 
   @override
@@ -183,8 +156,12 @@ class _UserScreenState extends State<UserScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createUser);
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/activity-types/create');
+              // Refresh the list if an activity type was created
+              if (result == true) {
+                _loadActivityTypes();
+              }
             },
             icon: const Icon(Icons.add),
           ),
@@ -197,11 +174,11 @@ class _UserScreenState extends State<UserScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Users',
+          'Activity Types',
           style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
         ),
       ),
-      body: BlocProvider<UserBloc>(
+      body: BlocProvider<ActivityTypeBloc>(
         create: (_) => _bloc,
         child: SafeArea(
           child: Column(
@@ -213,7 +190,7 @@ class _UserScreenState extends State<UserScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search users...',
+                    hintText: 'Search activity types...',
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -224,7 +201,7 @@ class _UserScreenState extends State<UserScreen> {
                                 _currentSearch = '';
                                 _currentPage = 1;
                               });
-                              _loadUsers();
+                              _loadActivityTypes();
                             },
                           )
                         : null,
@@ -250,10 +227,7 @@ class _UserScreenState extends State<UserScreen> {
               // Filter and Sort bar
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: FilterSortBar(
                   onFilterTap: _showFilterSheet,
                   onSortTap: _showSortSheet,
@@ -262,50 +236,37 @@ class _UserScreenState extends State<UserScreen> {
 
               // Card list
               Expanded(
-                child: BlocBuilder<UserBloc, UserState>(
+                child: BlocBuilder<ActivityTypeBloc, ActivityTypeState>(
                   builder: (context, state) {
-                    if (state is UserLoading) {
+                    if (state is ActivityTypeLoading) {
                       return const Center(child: CircularProgressIndicator());
-                    } else if (state is UserError) {
+                    } else if (state is ActivityTypeError) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: AppColors.error,
-                            ),
+                            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                             const SizedBox(height: 16),
-                            Text(
-                              state.message,
-                              style: const TextStyle(fontSize: 16),
-                            ),
+                            Text(state.message, style: const TextStyle(fontSize: 16)),
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: _loadUsers,
+                              onPressed: _loadActivityTypes,
                               child: const Text('Retry'),
                             ),
                           ],
                         ),
                       );
-                    } else if (state is UserLoaded) {
-                      if (state.users.isEmpty) {
+                    } else if (state is ActivityTypeLoaded) {
+                      if (state.activityTypes.isEmpty) {
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
-                                Icons.person_outline,
-                                size: 64,
-                                color: AppColors.grey,
-                              ),
+                              const Icon(Icons.category_outlined, size: 64, color: AppColors.grey),
                               const SizedBox(height: 16),
                               Text(
-                                'No users found',
-                                style: AppTextStyles.bodyLarge.copyWith(
-                                  color: AppColors.textLight,
-                                ),
+                                'No activity types found',
+                                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
                               ),
                             ],
                           ),
@@ -317,19 +278,16 @@ class _UserScreenState extends State<UserScreen> {
                           Expanded(
                             child: RefreshIndicator(
                               onRefresh: () async {
-                                _loadUsers();
-                                await Future.delayed(
-                                  const Duration(milliseconds: 500),
-                                );
+                                _loadActivityTypes();
+                                await Future.delayed(const Duration(milliseconds: 500));
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
-                                itemCount: state.users.length,
+                                itemCount: state.activityTypes.length,
                                 itemBuilder: (context, index) {
-                                  final user = state.users[index];
-                                  final serialNumber =
-                                      (state.page - 1) * state.take + index + 1;
-                                  return _buildUserCard(user, serialNumber);
+                                  final activityType = state.activityTypes[index];
+                                  final serialNumber = (state.page - 1) * state.take + index + 1;
+                                  return _buildActivityTypeCard(activityType, serialNumber);
                                 },
                               ),
                             ),
@@ -358,38 +316,49 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildUserCard(UserScreenModel user, int serialNumber) {
+  Widget _buildActivityTypeCard(ActivityTypeModel activityType, int serialNumber) {
     return RecordCard(
       serialNumber: serialNumber,
-      isActive: user.isActive == "Active",
+      isActive: activityType.isActive,
       fields: [
         CardField.title(
-          label: 'User Name',
-          value: "${user.firstName} ${user.lastName}",
+          label: 'Activity Type Name',
+          value: activityType.name,
         ),
         CardField.regular(
           label: 'Created By',
-          value: (user as dynamic).createdBy ?? "",
+          value: activityType.createdBy,
         ),
         CardField.regular(
           label: 'Created Date',
-          value: (user as dynamic).createdAt ?? "",
+          value: activityType.createdAt,
         ),
       ],
-      onEdit: () => _navigateToEditUser(user),
-      onDelete: () => _confirmDelete(user),
-      onTap: () => _showUserDetails(user),
+      onEdit: activityType.actions.any((action) => action.type == 'routerLink')
+          ? () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/activity-types/create',
+                arguments: {'isEdit': true, 'activityTypeData': activityType},
+              );
+              if (result == true) {
+                _loadActivityTypes();
+              }
+            }
+          : null,
+      onDelete: activityType.actions.any((action) => action.type == 'delete')
+          ? () => _confirmDelete(activityType)
+          : null,
+      onTap: () => _showActivityTypeDetails(activityType),
     );
   }
 
-  void _confirmDelete(UserScreenModel user) {
+  void _confirmDelete(ActivityTypeModel activityType) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Delete'),
-        content: Text(
-          'Are you sure you want to delete "${user.firstName} ${user.lastName}"?',
-        ),
+        content: Text('Are you sure you want to delete "${activityType.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -398,9 +367,9 @@ class _UserScreenState extends State<UserScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _bloc.add(DeleteUser(user.id));
+              _bloc.add(DeleteActivityType(activityType.id));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User deleted successfully')),
+                const SnackBar(content: Text('Activity type deleted successfully')),
               );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),

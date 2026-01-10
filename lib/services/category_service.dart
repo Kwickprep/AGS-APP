@@ -121,4 +121,18 @@ class CategoryService {
       throw Exception('Failed to update category: ${e.toString()}');
     }
   }
+
+  /// Get active categories for dropdown
+  Future<List<CategoryModel>> getActiveCategories() async {
+    try {
+      final response = await getCategories(
+        page: 1,
+        take: 1000,
+        filters: {'isActive': true},
+      );
+      return response.records;
+    } catch (e) {
+      throw Exception('Failed to load active categories: ${e.toString()}');
+    }
+  }
 }

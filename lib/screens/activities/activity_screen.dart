@@ -153,6 +153,22 @@ class _ActivityScreenState extends State<ActivityScreen> {
     );
   }
 
+  Future<void> _navigateToEditActivity(ActivityModel activity) async {
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.createActivity,
+      arguments: {
+        'activity': activity,
+        'isEdit': true,
+      },
+    );
+
+    // Reload activities if activity was updated successfully
+    if (result == true) {
+      _loadActivities();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -373,6 +389,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
           ),
       ],
       onView: () => _showActivityDetails(activity),
+      onEdit: () => _navigateToEditActivity(activity),
       onDelete: () => _confirmDelete(activity),
       onTap: () => _showActivityDetails(activity),
     );

@@ -21,26 +21,20 @@ class CardField {
     this.maxLines,
   });
 
-  CardField.title({
-    required this.label,
-    required this.value,
-    this.maxLines,
-  })  : isTitle = true,
-        isDescription = false;
+  CardField.title({required this.label, required this.value, this.maxLines})
+    : isTitle = true,
+      isDescription = false;
 
   CardField.description({
     required this.label,
     required this.value,
     this.maxLines = 2,
-  })  : isTitle = false,
-        isDescription = true;
+  }) : isTitle = false,
+       isDescription = true;
 
-  CardField.regular({
-    required this.label,
-    required this.value,
-    this.maxLines,
-  })  : isTitle = false,
-        isDescription = false;
+  CardField.regular({required this.label, required this.value, this.maxLines})
+    : isTitle = false,
+      isDescription = false;
 }
 
 /// Reusable record card widget
@@ -83,7 +77,7 @@ class RecordCard extends StatelessWidget {
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
-          )
+          ),
         ],
       ),
       child: InkWell(
@@ -93,7 +87,10 @@ class RecordCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header row with SR, ID and status
-            if (serialNumber != null || id != null || status != null || isActive != null) ...[
+            if (serialNumber != null ||
+                id != null ||
+                status != null ||
+                isActive != null) ...[
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -103,7 +100,10 @@ class RecordCard extends StatelessWidget {
                       children: [
                         if (serialNumber != null) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
@@ -134,7 +134,9 @@ class RecordCard extends StatelessWidget {
                     ),
                     if (status != null || isActive != null)
                       StatusBadge(
-                        status: status ?? (isActive == true ? 'Active' : 'Inactive'),
+                        status:
+                            status ??
+                            (isActive == true ? 'Active' : 'Inactive'),
                         isActive: isActive,
                       ),
                   ],
@@ -146,7 +148,10 @@ class RecordCard extends StatelessWidget {
             // Fields with dividers
             for (int i = 0; i < fields.length; i++) ...[
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: fields[i].isTitle
                     ? LabeledFieldTitle(
                         label: fields[i].label,
@@ -154,16 +159,16 @@ class RecordCard extends StatelessWidget {
                         maxLines: fields[i].maxLines,
                       )
                     : fields[i].isDescription
-                        ? LabeledFieldDescription(
-                            label: fields[i].label,
-                            value: fields[i].value,
-                            maxLines: fields[i].maxLines ?? 2,
-                          )
-                        : LabeledField(
-                            label: fields[i].label,
-                            value: fields[i].value,
-                            maxLines: fields[i].maxLines,
-                          ),
+                    ? LabeledFieldDescription(
+                        label: fields[i].label,
+                        value: fields[i].value,
+                        maxLines: fields[i].maxLines ?? 2,
+                      )
+                    : LabeledField(
+                        label: fields[i].label,
+                        value: fields[i].value,
+                        maxLines: fields[i].maxLines,
+                      ),
               ),
               if (i < fields.length - 1)
                 const Divider(height: 1, thickness: 1, color: AppColors.border),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../config/app_colors.dart';
+import '../../models/activity_model.dart';
 import '../../services/activity_service.dart';
 import '../../services/file_upload_service.dart';
 import '../../widgets/custom_button.dart';
@@ -11,7 +12,14 @@ import '../../widgets/custom_toast.dart';
 import 'theme_selection_screen.dart';
 
 class ActivityCreateScreen extends StatefulWidget {
-  const ActivityCreateScreen({super.key});
+  final ActivityModel? activity;
+  final bool isEdit;
+
+  const ActivityCreateScreen({
+    super.key,
+    this.activity,
+    this.isEdit = false,
+  });
 
   @override
   State<ActivityCreateScreen> createState() => _ActivityCreateScreenState();
@@ -70,6 +78,50 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
+    if (widget.isEdit && widget.activity != null) {
+      _prefillFormData();
+    }
+  }
+
+  void _prefillFormData() {
+    final activity = widget.activity!;
+    final body = activity.body;
+
+    // Set text controllers from body fields
+    if (body?.note != null && body!.note!.isNotEmpty) {
+      _activityNoteController.text = body.note!;
+    }
+    if (body?.nextScheduleNote != null && body!.nextScheduleNote!.isNotEmpty) {
+      _nextScheduleNoteController.text = body.nextScheduleNote!;
+    }
+
+    // For Product Search activities, populate requirements field and document IDs
+    if (body?.inputText != null && body!.inputText!.isNotEmpty) {
+      _requirementsController.text = body.inputText!;
+    }
+    if (body?.documentIds != null && body!.documentIds!.isNotEmpty) {
+      _uploadedDocumentIds = List<String>.from(body.documentIds!);
+    }
+
+    // Set boolean
+    if (body?.scheduledCallCompleted != null) {
+      _scheduledCallCompleted = body!.scheduledCallCompleted!;
+    }
+
+    // Set next schedule date
+    if (body?.nextScheduleDate != null && body!.nextScheduleDate!.isNotEmpty) {
+      try {
+        _selectedDateTime = DateTime.parse(body.nextScheduleDate!);
+        _nextScheduleDateController.text =
+            '${_selectedDateTime!.day.toString().padLeft(2, '0')}-${_selectedDateTime!.month.toString().padLeft(2, '0')}-${_selectedDateTime!.year} ${_selectedDateTime!.hour.toString().padLeft(2, '0')}:${_selectedDateTime!.minute.toString().padLeft(2, '0')}';
+      } catch (e) {
+        // If date parsing fails, leave it empty
+        debugPrint('Failed to parse nextScheduleDate: $e');
+      }
+    }
+
+    // Note: Dropdown IDs will be set after _loadInitialData completes
+    // We'll set them in the setState after loading completes
   }
 
   @override
@@ -99,6 +151,56 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         _users = users;
         _filteredUsers = users;
         _isLoadingData = false;
+
+        // If editing, set dropdown values based on activity data
+        if (widget.isEdit && widget.activity != null) {
+          final activity = widget.activity!;
+
+          // Set activity type by matching name
+          if (activity.activityType.isNotEmpty && activity.activityType != '-') {
+            final matchingType = _activityTypes.firstWhere(
+              (type) => type.name == activity.activityType,
+              orElse: () => ActivityTypeModel(id: '', name: '', isActive: false, isDefault: false),
+            );
+            if (matchingType.id.isNotEmpty) {
+              _selectedActivityTypeId = matchingType.id;
+            }
+          }
+
+          // Set inquiry by matching name
+          if (activity.inquiry.isNotEmpty && activity.inquiry != '-') {
+            final matchingInquiry = _inquiries.firstWhere(
+              (inquiry) => inquiry.name == activity.inquiry,
+              orElse: () => InquiryDropdownModel(id: '', name: ''),
+            );
+            if (matchingInquiry.id.isNotEmpty) {
+              _selectedInquiryId = matchingInquiry.id;
+            }
+          }
+
+          // Set company by matching name
+          if (activity.company.isNotEmpty && activity.company != '-') {
+            final matchingCompany = _companies.firstWhere(
+              (company) => company.name == activity.company,
+              orElse: () => CompanyDropdownModel(id: '', name: '', users: []),
+            );
+            if (matchingCompany.id.isNotEmpty) {
+              _selectedCompanyId = matchingCompany.id;
+              _filteredUsers = matchingCompany.users;
+
+              // Set user by matching name within the company
+              if (activity.user.isNotEmpty && activity.user != '-') {
+                final matchingUser = matchingCompany.users.firstWhere(
+                  (user) => user.fullName == activity.user,
+                  orElse: () => UserDropdownModel(id: '', firstName: '', phoneNumber: ''),
+                );
+                if (matchingUser.id.isNotEmpty) {
+                  _selectedUserId = matchingUser.id;
+                }
+              }
+            }
+          }
+        }
       });
     } catch (e) {
       setState(() {
@@ -304,50 +406,73 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
         // Add fields to body only if they have values
         final activityNote = _activityNoteController.text.trim();
         final nextScheduleNote = _nextScheduleNoteController.text.trim();
-        
+
         if (activityNote.isNotEmpty) {
           data['body']['note'] = activityNote;
         }
-        
+
         if (nextScheduleNote.isNotEmpty) {
           data['body']['nextScheduleNote'] = nextScheduleNote;
         }
-        
+
         if (_selectedDateTime != null) {
           // Convert to ISO 8601 format
           data['body']['nextScheduleDate'] = _selectedDateTime!.toUtc().toIso8601String();
         }
-        
+
         data['body']['scheduledCallCompleted'] = _scheduledCallCompleted;
       }
 
-      final createdActivityRecord = await _activityService.createActivity(data);
+      if (widget.isEdit) {
+        // Update existing activity
+        await _activityService.updateActivity(widget.activity!.id, data);
 
-      if (mounted) {
-        if (_isProductSearch) {
-          // For Product Search, navigate to theme selection screen
-          final body = createdActivityRecord['body'] as Map<String, dynamic>?;
-          final aiSuggestedThemes = body?['aiSuggestedThemes'];
+        if (mounted) {
+          CustomToast.show(
+            context,
+            'Activity updated successfully',
+            type: ToastType.success,
+          );
+          Navigator.pop(context, true);
+        }
+      } else {
+        // Create new activity
+        final createdActivityRecord = await _activityService.createActivity(data);
 
-          if (aiSuggestedThemes != null &&
-              aiSuggestedThemes is List &&
-              aiSuggestedThemes.isNotEmpty) {
-            // Navigate to theme selection screen
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ThemeSelectionScreen(
-                  activityId: createdActivityRecord['id'] as String,
-                  aiSuggestedThemes: aiSuggestedThemes,
+        if (mounted) {
+          if (_isProductSearch) {
+            // For Product Search, navigate to theme selection screen
+            final body = createdActivityRecord['body'] as Map<String, dynamic>?;
+            final aiSuggestedThemes = body?['aiSuggestedThemes'];
+
+            if (aiSuggestedThemes != null &&
+                aiSuggestedThemes is List &&
+                aiSuggestedThemes.isNotEmpty) {
+              // Navigate to theme selection screen
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ThemeSelectionScreen(
+                    activityId: createdActivityRecord['id'] as String,
+                    aiSuggestedThemes: aiSuggestedThemes,
+                  ),
                 ),
-              ),
-            );
+              );
 
-            // If theme was selected successfully, pop this screen too
-            if (result == true && mounted) {
+              // If theme was selected successfully, pop this screen too
+              if (result == true && mounted) {
+                Navigator.pop(context, true);
+              }
+            } else {
+              CustomToast.show(
+                context,
+                'Activity created successfully',
+                type: ToastType.success,
+              );
               Navigator.pop(context, true);
             }
           } else {
+            // For standard activities, just show success and pop
             CustomToast.show(
               context,
               'Activity created successfully',
@@ -355,21 +480,15 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
             );
             Navigator.pop(context, true);
           }
-        } else {
-          // For standard activities, just show success and pop
-          CustomToast.show(
-            context,
-            'Activity created successfully',
-            type: ToastType.success,
-          );
-          Navigator.pop(context, true);
         }
       }
     } catch (e) {
       if (mounted) {
         CustomToast.show(
           context,
-          e.toString().replaceAll('Exception: ', ''),
+          widget.isEdit
+              ? 'Failed to update activity: ${e.toString().replaceAll('Exception: ', '')}'
+              : e.toString().replaceAll('Exception: ', ''),
           type: ToastType.error,
         );
       }
@@ -415,9 +534,9 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Activity Details',
-              style: TextStyle(
+            Text(
+              widget.isEdit ? 'Edit Activity' : 'Activity Details',
+              style: const TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,

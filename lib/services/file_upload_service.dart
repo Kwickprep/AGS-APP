@@ -68,4 +68,33 @@ class FileUploadService {
     // Construct file URL - adjust based on your API response structure
     return '${_apiService.dio.options.baseUrl}/api/files/$documentId';
   }
+
+
+  Future<Map<String, String>> getPresignedUrls(List<String> fileIds) async {
+    try {
+      final response = await _apiService.post(
+        '/api/files/presigned-urls',
+        data: {'fileIds': fileIds},
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return data.map((key, value) => MapEntry(key, value.toString()));
+      } else {
+        throw Exception('Failed to get presigned URLs: ${response.statusMessage}');
+      }
+    } catch (e) {
+      throw Exception('Failed to get presigned URLs: $e');
+    }
+  }
+
+  /// Get presigned URL for a single file ID
+  Future<String?> getPresignedUrl(String fileId) async {
+    try {
+      final urls = await getPresignedUrls([fileId]);
+      return urls[fileId];
+    } catch (e) {
+      return null;
+    }
+  }
 }

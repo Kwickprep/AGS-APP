@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:get_it/get_it.dart';
-import '../models/tag_model.dart';
+import '../models/activity_type_model.dart';
+import '../models/form_page_layout_model.dart';
 import '../widgets/generic/generic_model.dart';
 import 'api_service.dart';
 
-class TagService  {
+class ActivityTypeService {
   final ApiService _apiService = GetIt.I<ApiService>();
 
-  Future<TagResponse> getTags({
+  Future<ActivityTypeResponse> getActivityTypes({
     int page = 1,
     int take = 20,
     String search = '',
@@ -23,28 +24,28 @@ class TagService  {
         'sortBy': sortBy,
         'sortOrder': sortOrder,
         'filters': jsonEncode(filters),
+        'isPageLayout': 'true',
       };
 
       final response = await _apiService.get(
-        '/api/tags',
+        '/api/activity-types',
         params: queryParams,
       );
 
-      return TagResponse.fromJson(response.data);
+      return ActivityTypeResponse.fromJson(response.data);
     } catch (e) {
-      throw Exception('Failed to load tags: ${e.toString()}');
+      throw Exception('Failed to load activity types: ${e.toString()}');
     }
   }
 
-  @override
-  Future<GenericResponse<TagModel>> getData({
+  Future<GenericResponse<ActivityTypeModel>> getData({
     required int page,
     required int take,
     required String search,
     required String sortBy,
     required String sortOrder,
   }) async {
-    final response = await getTags(
+    final response = await getActivityTypes(
       page: page,
       take: take,
       search: search,
@@ -52,7 +53,7 @@ class TagService  {
       sortOrder: sortOrder,
     );
 
-    return GenericResponse<TagModel>(
+    return GenericResponse<ActivityTypeModel>(
       total: response.total,
       page: response.page,
       take: response.take,
@@ -61,37 +62,41 @@ class TagService  {
     );
   }
 
-  Future<bool> deleteTag(String id) async {
+  Future<bool> deleteActivityType(String id) async {
     try {
-      await _apiService.delete('/api/tags/$id');
+      await _apiService.delete('/api/activity-types/$id');
       return true;
     } catch (e) {
-      throw Exception('Failed to delete tag: ${e.toString()}');
+      throw Exception('Failed to delete activity type: ${e.toString()}');
     }
   }
 
-  @override
   Future<void> deleteData(String id) async {
-    await deleteTag(id);
+    await deleteActivityType(id);
   }
 
-  Future<void> createTag({
+  Future<void> createActivityType({
     required String name,
     required bool isActive,
   }) async {
     try {
       final data = {
+        'id': '',
+        'createdBy': '',
+        'updatedBy': '',
+        'createdAt': '',
+        'updatedAt': '',
         'name': name,
         'isActive': isActive,
       };
 
-      await _apiService.post('/api/tags', data: data);
+      await _apiService.post('/api/activity-types', data: data);
     } catch (e) {
-      throw Exception('Failed to create tag: ${e.toString()}');
+      throw Exception('Failed to create activity type: ${e.toString()}');
     }
   }
 
-  Future<void> updateTag({
+  Future<void> updateActivityType({
     required String id,
     required String name,
     required bool isActive,
@@ -111,23 +116,42 @@ class TagService  {
         'updatedAt': updatedAt,
       };
 
-      await _apiService.put('/api/tags/$id', data: data);
+      await _apiService.put('/api/activity-types/$id', data: data);
     } catch (e) {
-      throw Exception('Failed to update tag: ${e.toString()}');
+      throw Exception('Failed to update activity type: ${e.toString()}');
     }
   }
 
-  /// Get active tags for dropdown
-  Future<List<TagModel>> getActiveTags() async {
+  /// Get active activity types for dropdown
+  Future<List<ActivityTypeModel>> getActiveActivityTypes() async {
     try {
-      final response = await getTags(
+      final response = await getActivityTypes(
         page: 1,
         take: 1000,
         filters: {'isActive': true},
       );
       return response.records;
     } catch (e) {
-      throw Exception('Failed to load active tags: ${e.toString()}');
+      throw Exception('Failed to load active activity types: ${e.toString()}');
+    }
+  }
+
+  /// Get form page layout for create/edit screen
+  /// Use 'none' for create, or actual ID for edit
+  Future<FormPageLayoutResponse> getFormPageLayout(String id) async {
+    try {
+      final queryParams = {
+        'isPageLayout': 'true',
+      };
+
+      final response = await _apiService.get(
+        '/api/activity-types/$id',
+        params: queryParams,
+      );
+
+      return FormPageLayoutResponse.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to load form layout: ${e.toString()}');
     }
   }
 }

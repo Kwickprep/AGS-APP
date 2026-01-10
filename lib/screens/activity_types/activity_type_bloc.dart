@@ -1,16 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import '../../models/user_screen_model.dart';
-import '../../services/user_service.dart';
+import '../../models/activity_type_model.dart';
+import '../../services/activity_type_service.dart';
 
 // ============================================================================
 // Events
 // ============================================================================
 
-abstract class UserEvent {}
+abstract class ActivityTypeEvent {}
 
-/// Main event to load users with all parameters
-class LoadUsers extends UserEvent {
+/// Main event to load activity types with all parameters
+class LoadActivityTypes extends ActivityTypeEvent {
   final int page;
   final int take;
   final String search;
@@ -18,7 +18,7 @@ class LoadUsers extends UserEvent {
   final String sortOrder;
   final Map<String, dynamic> filters;
 
-  LoadUsers({
+  LoadActivityTypes({
     this.page = 1,
     this.take = 20,
     this.search = '',
@@ -28,23 +28,23 @@ class LoadUsers extends UserEvent {
   });
 }
 
-class DeleteUser extends UserEvent {
+class DeleteActivityType extends ActivityTypeEvent {
   final String id;
-  DeleteUser(this.id);
+  DeleteActivityType(this.id);
 }
 
 // ============================================================================
 // States
 // ============================================================================
 
-abstract class UserState {}
+abstract class ActivityTypeState {}
 
-class UserInitial extends UserState {}
+class ActivityTypeInitial extends ActivityTypeState {}
 
-class UserLoading extends UserState {}
+class ActivityTypeLoading extends ActivityTypeState {}
 
-class UserLoaded extends UserState {
-  final List<UserScreenModel> users;
+class ActivityTypeLoaded extends ActivityTypeState {
+  final List<ActivityTypeModel> activityTypes;
   final int total;
   final int page;
   final int take;
@@ -54,8 +54,8 @@ class UserLoaded extends UserState {
   final String sortOrder;
   final Map<String, dynamic> filters;
 
-  UserLoaded({
-    required this.users,
+  ActivityTypeLoaded({
+    required this.activityTypes,
     required this.total,
     required this.page,
     required this.take,
@@ -66,8 +66,8 @@ class UserLoaded extends UserState {
     required this.filters,
   });
 
-  UserLoaded copyWith({
-    List<UserScreenModel>? users,
+  ActivityTypeLoaded copyWith({
+    List<ActivityTypeModel>? activityTypes,
     int? total,
     int? page,
     int? take,
@@ -77,8 +77,8 @@ class UserLoaded extends UserState {
     String? sortOrder,
     Map<String, dynamic>? filters,
   }) {
-    return UserLoaded(
-      users: users ?? this.users,
+    return ActivityTypeLoaded(
+      activityTypes: activityTypes ?? this.activityTypes,
       total: total ?? this.total,
       page: page ?? this.page,
       take: take ?? this.take,
@@ -91,42 +91,42 @@ class UserLoaded extends UserState {
   }
 }
 
-class UserError extends UserState {
+class ActivityTypeError extends ActivityTypeState {
   final String message;
-  UserError(this.message);
+  ActivityTypeError(this.message);
 }
 
 // ============================================================================
 // BLoC - Simple approach: Every change triggers API call
 // ============================================================================
 
-class UserBloc extends Bloc<UserEvent, UserState> {
-  final UserService _userService = GetIt.I<UserService>();
+class ActivityTypeBloc extends Bloc<ActivityTypeEvent, ActivityTypeState> {
+  final ActivityTypeService _activityTypeService = GetIt.I<ActivityTypeService>();
 
-  UserBloc() : super(UserInitial()) {
-    on<LoadUsers>(_onLoadUsers);
-    on<DeleteUser>(_onDeleteUser);
+  ActivityTypeBloc() : super(ActivityTypeInitial()) {
+    on<LoadActivityTypes>(_onLoadActivityTypes);
+    on<DeleteActivityType>(_onDeleteActivityType);
   }
 
-  /// Load users from API with given parameters
-  Future<void> _onLoadUsers(
-    LoadUsers event,
-    Emitter<UserState> emit,
+  /// Load activity types from API with given parameters
+  Future<void> _onLoadActivityTypes(
+    LoadActivityTypes event,
+    Emitter<ActivityTypeState> emit,
   ) async {
-    emit(UserLoading());
+    emit(ActivityTypeLoading());
 
     try {
-      final response = await _userService.getUsers(
+      final response = await _activityTypeService.getActivityTypes(
         page: event.page,
         take: event.take,
-        search: event.search.trim(),
+        search: event.search,
         sortBy: event.sortBy,
         sortOrder: event.sortOrder,
         filters: event.filters,
       );
 
-      emit(UserLoaded(
-        users: response.records,
+      emit(ActivityTypeLoaded(
+        activityTypes: response.records,
         total: response.total,
         page: response.page,
         take: response.take,
@@ -137,22 +137,22 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         filters: event.filters,
       ));
     } catch (e) {
-      emit(UserError(e.toString().replaceAll('Exception: ', '')));
+      emit(ActivityTypeError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
-  /// Delete user and reload current page
-  Future<void> _onDeleteUser(
-    DeleteUser event,
-    Emitter<UserState> emit,
+  /// Delete activity type and reload current page
+  Future<void> _onDeleteActivityType(
+    DeleteActivityType event,
+    Emitter<ActivityTypeState> emit,
   ) async {
     try {
-      await _userService.deleteUser(event.id);
-      
+      await _activityTypeService.deleteActivityType(event.id);
+
       // Reload with current parameters if we have a loaded state
-      if (state is UserLoaded) {
-        final currentState = state as UserLoaded;
-        add(LoadUsers(
+      if (state is ActivityTypeLoaded) {
+        final currentState = state as ActivityTypeLoaded;
+        add(LoadActivityTypes(
           page: currentState.page,
           take: currentState.take,
           search: currentState.search,
@@ -162,10 +162,10 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         ));
       } else {
         // Otherwise just reload with defaults
-        add(LoadUsers());
+        add(LoadActivityTypes());
       }
     } catch (e) {
-      emit(UserError(e.toString().replaceAll('Exception: ', '')));
+      emit(ActivityTypeError(e.toString().replaceAll('Exception: ', '')));
     }
   }
 }

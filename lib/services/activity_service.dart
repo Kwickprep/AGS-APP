@@ -142,6 +142,26 @@ class ActivityService {
     }
   }
 
+  // Get active companies with page layout (includes users)
+  Future<List<CompanyDropdownModel>> getActiveCompaniesWithUsers() async {
+    try {
+      final response = await _apiService.get(
+        '/api/companies',
+        params: {
+          'filters': '{"filters":{"isActive":true}}',
+          'isPageLayout': 'true',
+        },
+      );
+
+      final data = response.data['data'] as Map<String, dynamic>;
+      final records = data['records'] as List<dynamic>;
+
+      return records.map((record) => CompanyDropdownModel.fromJson(record)).toList();
+    } catch (e) {
+      throw Exception('Failed to load companies with users: ${e.toString()}');
+    }
+  }
+
   // Get active users for dropdown
   Future<List<UserDropdownModel>> getActiveUsers() async {
     try {

@@ -38,7 +38,6 @@ class GroupService {
     }
   }
 
-  @override
   Future<GenericResponse<GroupModel>> getData({
     required int page,
     required int take,
@@ -72,7 +71,6 @@ class GroupService {
     }
   }
 
-  @override
   Future<void> deleteData(String id) async {
     await deleteGroup(id);
   }
@@ -109,6 +107,53 @@ class GroupService {
       return true;
     } catch (e) {
       throw Exception('Failed to create group: ${e.toString()}');
+    }
+  }
+
+  Future<bool> updateGroup({
+    required String id,
+    required String name,
+    required bool isActive,
+    required String note,
+    required List<String> userIds,
+  }) async {
+    try {
+      await _apiService.put('/api/groups/$id', data: {
+        'name': name,
+        'isActive': isActive,
+        'note': note,
+        'userIds': userIds,
+      });
+      return true;
+    } catch (e) {
+      throw Exception('Failed to update group: ${e.toString()}');
+    }
+  }
+
+  Future<List<String>> getGroupUserIds(String groupId) async {
+    try {
+      final response = await _apiService.get(
+        '/api/groups/$groupId',
+        params: {'isPageLayout': 'true'},
+      );
+
+      // Parse the response to extract user IDs
+      final data = response.data['data'] ?? {};
+      final context = data['context'] ?? {};
+      final pageLayout = context['pageLayout'] ?? {};
+      final body = pageLayout['body'] ?? {};
+      final form = body['form'] ?? {};
+      final fields = form['fields'] ?? {};
+      final userIds = fields['userIds'] ?? {};
+      final value = userIds['value'];
+
+      if (value is List) {
+        return value.map((e) => e.toString()).toList();
+      }
+
+      return [];
+    } catch (e) {
+      throw Exception('Failed to load group details: ${e.toString()}');
     }
   }
 }

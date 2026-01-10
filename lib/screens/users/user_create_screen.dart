@@ -12,6 +12,7 @@ import '../../services/activity_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/custom_toast.dart';
+import '../../models/user_screen_model.dart';
 
 class UserCreateScreen extends StatefulWidget {
   const UserCreateScreen({super.key});
@@ -72,6 +73,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
 
   bool _isLoading = false;
   bool _isLoadingData = true;
+  bool _isEdit = false;
+  UserScreenModel? _editUser;
 
   // Hardcoded options
   final List<String> _roles = ['CUSTOMER', 'ADMIN', 'EMPLOYEE'];
@@ -262,6 +265,168 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
     _userSearchController.addListener(_filterUsers);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Get user data from route arguments
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args != null && args is UserScreenModel && !_isEdit) {
+      _editUser = args;
+      _isEdit = true;
+      _loadUserDetailsAndPrefill();
+    }
+  }
+
+  Future<void> _loadUserDetailsAndPrefill() async {
+    if (_editUser == null) return;
+
+    try {
+      // Fetch full user details
+      final userDetails = await _userService.getUserById(_editUser!.id);
+      await _prefillUserData(userDetails);
+    } catch (e) {
+      // If fetching fails, prefill with available data from UserScreenModel
+      _prefillBasicUserData();
+    }
+  }
+
+  Future<void> _prefillUserData(Map<String, dynamic> userDetails) async {
+    final user = _editUser!;
+
+    // Prefill basic information
+    _firstNameController.text = userDetails['firstName'] ?? user.firstName;
+    _middleNameController.text = userDetails['middleName'] ?? user.middleName;
+    _lastNameController.text = userDetails['lastName'] ?? user.lastName;
+    _emailController.text = userDetails['email'] ?? user.email;
+    _selectedRole = (userDetails['role'] ?? user.role).isNotEmpty
+        ? (userDetails['role'] ?? user.role)
+        : 'CUSTOMER';
+
+    // Parse and prefill phone number
+    final phoneCode = userDetails['phoneCode'] ?? '';
+    final phoneNumber = userDetails['phoneNumber'] ?? '';
+
+    if (phoneCode.isNotEmpty && phoneNumber.isNotEmpty) {
+      final cleanPhoneCode = phoneCode.replaceAll('+', '');
+      try {
+        _selectedPhoneCountry = CountryParser.parsePhoneCode(cleanPhoneCode);
+      } catch (e) {
+        // If parsing fails, keep the default country
+      }
+      _phoneNumberController.text = phoneNumber;
+    }
+
+    // Prefill role-specific fields
+    if (_selectedRole == 'CUSTOMER') {
+      _designationController.text = userDetails['designation'] ?? user.designation;
+      _departmentController.text = userDetails['department'] ?? user.department;
+      _divisionController.text = userDetails['division'] ?? user.division;
+
+      final influenceType = userDetails['influenceType'] ?? user.influenceType;
+      if (influenceType.isNotEmpty && influenceType != '-') {
+        _selectedInfluenceType = influenceType;
+      }
+
+      // Prefill address if available
+      if (userDetails['address'] != null) {
+        final address = userDetails['address'];
+        _selectedCountryValue = address['countryIsoCode'];
+        _selectedStateValue = address['stateIsoCode'];
+        _selectedCityValue = address['cityName'];
+        _postalCodeController.text = address['postalCode'] ?? '';
+        _addressLine1Controller.text = address['addressLine1'] ?? '';
+        _addressLine2Controller.text = address['addressLine2'] ?? '';
+
+        // Load states and cities for the selected country/state
+        if (_selectedCountryValue != null) {
+          await _loadStates(_selectedCountryValue!);
+          if (_selectedStateValue != null) {
+            await _loadCities(_selectedCountryValue!, _selectedStateValue!);
+          }
+        }
+      }
+
+      _noteController.text = userDetails['note'] ?? '';
+    } else {
+      // ADMIN or EMPLOYEE role
+      _employeeCodeController.text = userDetails['employeeCode'] ?? user.employeeCode;
+
+      final department = userDetails['department'] ?? user.department;
+      if (department.isNotEmpty && department != '-') {
+        _selectedDepartment = department;
+      }
+
+      // Prefill company and selected users
+      final companyIds = userDetails['companyIds'] as List<dynamic>?;
+      if (companyIds != null && companyIds.isNotEmpty) {
+        _selectedCompany = companyIds[0] as String;
+
+        // Load users for the selected company
+        await _loadUsersByCompany();
+
+        // Prefill selected user IDs
+        final companyUserIds = userDetails['companyUserIds'] as List<dynamic>?;
+        if (companyUserIds != null && companyUserIds.isNotEmpty) {
+          _selectedUserIds = companyUserIds.map((id) => id as String).toList();
+        }
+      }
+    }
+
+    // Trigger a rebuild to show the prefilled data
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _prefillBasicUserData() {
+    if (_editUser == null) return;
+
+    final user = _editUser!;
+
+    // Prefill basic information
+    _firstNameController.text = user.firstName;
+    _middleNameController.text = user.middleName;
+    _lastNameController.text = user.lastName;
+    _emailController.text = user.email;
+    _selectedRole = user.role.isNotEmpty ? user.role : 'CUSTOMER';
+
+    // Parse and prefill phone number
+    if (user.phone.isNotEmpty) {
+      final phoneParts = user.phone.split(' ');
+      if (phoneParts.length >= 2) {
+        final phoneCode = phoneParts[0].replaceAll('+', '');
+        final phoneNumber = phoneParts.sublist(1).join('');
+
+        // Try to find the country by phone code
+        try {
+          _selectedPhoneCountry = CountryParser.parsePhoneCode(phoneCode);
+        } catch (e) {
+          // If parsing fails, keep the default country
+        }
+
+        _phoneNumberController.text = phoneNumber;
+      }
+    }
+
+    // Prefill role-specific fields
+    setState(() {
+      if (_selectedRole == 'CUSTOMER') {
+        _designationController.text = user.designation;
+        _departmentController.text = user.department;
+        _divisionController.text = user.division;
+        if (user.influenceType.isNotEmpty && user.influenceType != '-') {
+          _selectedInfluenceType = user.influenceType;
+        }
+      } else {
+        _employeeCodeController.text = user.employeeCode;
+        if (user.department.isNotEmpty && user.department != '-') {
+          _selectedDepartment = user.department;
+        }
+      }
+    });
+  }
+
   Future<void> _loadCountries() async {
     final countries = await csc.getAllCountries();
     setState(() {
@@ -322,6 +487,25 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
         CustomToast.show(
           context,
           e.toString().replaceAll('Exception: ', ''),
+          type: ToastType.error,
+        );
+      }
+    }
+  }
+
+  Future<void> _loadCompaniesWithUsers() async {
+    try {
+      // First API call: Get companies with users
+      final companiesWithUsers = await _activityService.getActiveCompaniesWithUsers();
+
+      setState(() {
+        _companies = companiesWithUsers;
+      });
+    } catch (e) {
+      if (mounted) {
+        CustomToast.show(
+          context,
+          'Failed to load companies: ${e.toString().replaceAll('Exception: ', '')}',
           type: ToastType.error,
         );
       }
@@ -490,12 +674,16 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
         data['companyUserIds'] = _selectedUserIds;
       }
 
-      await _userService.createUser(data);
+      if (_isEdit && _editUser != null) {
+        await _userService.updateUser(_editUser!.id, data);
+      } else {
+        await _userService.createUser(data);
+      }
 
       if (mounted) {
         CustomToast.show(
           context,
-          'User created successfully',
+          _isEdit ? 'User updated successfully' : 'User created successfully',
           type: ToastType.success,
         );
         Navigator.pop(context, true);
@@ -527,9 +715,9 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Create User',
-          style: TextStyle(
+        title: Text(
+          _isEdit ? 'Edit User' : 'Create User',
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -602,7 +790,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                                       label: role,
                                     );
                                   }).toList(),
-                                  onChanged: (value) {
+                                  onChanged: (value) async {
                                     setState(() {
                                       _selectedRole = value ?? 'CUSTOMER';
                                       _selectedCompany = null;
@@ -610,6 +798,11 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                                       _companyUsers = [];
                                       _filteredCompanyUsers = [];
                                     });
+
+                                    // Call API when role is EMPLOYEE or ADMIN
+                                    if (_selectedRole == 'EMPLOYEE' || _selectedRole == 'ADMIN') {
+                                      await _loadCompaniesWithUsers();
+                                    }
                                   },
                                   isRequired: true,
                                 ),
@@ -686,7 +879,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                           child: Column(
                             children: [
                               CustomButton(
-                                text: 'Create User',
+                                text: _isEdit ? 'Update User' : 'Create User',
                                 onPressed: _createUser,
                                 isLoading: _isLoading,
                                 icon: Icons.check,

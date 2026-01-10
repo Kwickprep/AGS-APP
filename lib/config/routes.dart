@@ -21,6 +21,8 @@ import '../screens/inquiries/inquiry_create_screen.dart';
 import '../screens/groups/group_create_screen.dart';
 import '../screens/users/user_screen.dart';
 import '../screens/users/user_create_screen.dart';
+import '../screens/activity_types/activity_type_screen.dart';
+import '../screens/activity_types/activity_type_create_screen.dart';
 
 class AppRoutes {
   static const String startup = '/startup';
@@ -44,6 +46,8 @@ class AppRoutes {
   static const String products = '/products';
   static const String users = '/users';
   static const String createUser = '/users/create';
+  static const String activityTypes = '/activity-types';
+  static const String createActivityType = '/activity-types/create';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -87,8 +91,8 @@ class AppRoutes {
       createActivity: (context) {
         final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return ActivityCreateScreen(
-          // isEdit: args?['isEdit'] ?? false,
-          // activityData: args?['activityData'],
+          isEdit: args?['isEdit'] ?? false,
+          activity: args?['activity'],
         );
       },
       inquiries: (context) => const InquiryScreen(),
@@ -100,10 +104,24 @@ class AppRoutes {
         );
       },
       groups: (context) => const GroupScreen(),
-      createGroup: (context) => const GroupCreateScreen(),
+      createGroup: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return GroupCreateScreen(
+          group: args?['group'],
+          isEdit: args?['isEdit'] ?? false,
+        );
+      },
       products: (context) => const ProductScreen(),
       users: (context) => const UserScreen(),
       createUser: (context) => const UserCreateScreen(),
+      activityTypes: (context) => const ActivityTypeScreen(),
+      createActivityType: (context) {
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return ActivityTypeCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          activityTypeData: args?['activityTypeData'],
+        );
+      },
     };
   }
 

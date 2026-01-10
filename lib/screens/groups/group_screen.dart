@@ -142,7 +142,21 @@ class _GroupScreenState extends State<GroupScreen> {
         DetailField(label: 'Created By', value: group.createdBy),
         DetailField(label: 'Created Date', value: group.createdAt),
       ],
+      onEdit: () => _navigateToEditGroup(group),
     );
+  }
+
+  Future<void> _navigateToEditGroup(GroupModel group) async {
+    final result = await Navigator.pushNamed(
+      context,
+      AppRoutes.createGroup,
+      arguments: {'group': group, 'isEdit': true},
+    );
+
+    // Reload groups if update was successful
+    if (result == true) {
+      _loadGroups();
+    }
   }
 
   @override
@@ -329,6 +343,7 @@ class _GroupScreenState extends State<GroupScreen> {
         ),
       ],
       onView: () => _showGroupDetails(group),
+      onEdit: () => _navigateToEditGroup(group),
       onDelete: () => _confirmDelete(group),
       onTap: () => _showGroupDetails(group),
     );

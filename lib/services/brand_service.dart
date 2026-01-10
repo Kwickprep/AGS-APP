@@ -124,4 +124,18 @@ class BrandService {
       throw Exception('Failed to update brand: ${e.toString()}');
     }
   }
+
+  /// Get active brands for dropdown
+  Future<List<BrandModel>> getActiveBrands() async {
+    try {
+      final response = await getBrands(
+        page: 1,
+        take: 1000,
+        filters: {'isActive': true},
+      );
+      return response.records;
+    } catch (e) {
+      throw Exception('Failed to load active brands: ${e.toString()}');
+    }
+  }
 }
