@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../config/api_config.dart';
+import '../core/permissions/permission_manager.dart';
 import '../models/auth_response.dart';
 import '../models/user_model.dart';
 import 'api_service.dart';
@@ -30,6 +31,9 @@ class AuthService {
         );
         await _storage.saveUser(authResponse.data!.user);
 
+        // Initialize permissions
+        PermissionManager().updatePermissions(authResponse.data!.user);
+
         // Save remember me preference
         await _storage.saveRememberMe(rememberMe, email,password);
 
@@ -49,6 +53,8 @@ class AuthService {
 
   Future<void> logout() async {
     await _storage.clearSession();
+    // Clear permissions
+    PermissionManager().clear();
   }
 
   Future<bool> isLoggedIn() async {
@@ -62,6 +68,8 @@ class AuthService {
   Future<bool> checkAndRestoreSession() async {
     final isLoggedIn = await _storage.isLoggedIn();
     if (isLoggedIn) {
+      // Restore permissions from stored user data
+      await PermissionManager().initialize();
       return true;
     }
     return false;
@@ -132,6 +140,9 @@ class AuthService {
           authResponse.data!.refreshToken,
         );
         await _storage.saveUser(authResponse.data!.user);
+
+        // Initialize permissions
+        PermissionManager().updatePermissions(authResponse.data!.user);
 
         return authResponse.data!.user;
       }

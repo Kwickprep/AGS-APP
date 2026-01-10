@@ -5,6 +5,8 @@ import '../../config/app_text_styles.dart';
 import '../../config/routes.dart';
 import '../../models/activity_model.dart';
 import './activity_bloc.dart';
+import '../../core/permissions/permission_checker.dart';
+import '../../widgets/permission_widget.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
@@ -177,11 +179,14 @@ class _ActivityScreenState extends State<ActivityScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createActivity);
-            },
-            icon: const Icon(Icons.add),
+          PermissionWidget(
+            permission: 'activities.create',
+            child: IconButton(
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.createActivity);
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -389,8 +394,8 @@ class _ActivityScreenState extends State<ActivityScreen> {
           ),
       ],
       onView: () => _showActivityDetails(activity),
-      onEdit: () => _navigateToEditActivity(activity),
-      onDelete: () => _confirmDelete(activity),
+      onEdit: PermissionChecker.canUpdateActivity ? () => _navigateToEditActivity(activity) : null,
+      onDelete: PermissionChecker.canDeleteActivity ? () => _confirmDelete(activity) : null,
       onTap: () => _showActivityDetails(activity),
     );
   }

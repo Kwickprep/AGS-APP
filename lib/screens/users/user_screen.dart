@@ -5,6 +5,8 @@ import '../../config/app_text_styles.dart';
 import '../../config/routes.dart';
 import '../../models/user_screen_model.dart';
 import './user_bloc.dart';
+import '../../core/permissions/permission_checker.dart';
+import '../../widgets/permission_widget.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -182,11 +184,14 @@ class _UserScreenState extends State<UserScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createUser);
-            },
-            icon: const Icon(Icons.add),
+          PermissionWidget(
+            permission: 'users.create',
+            child: IconButton(
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.createUser);
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -376,8 +381,8 @@ class _UserScreenState extends State<UserScreen> {
           value: (user as dynamic).createdAt ?? "",
         ),
       ],
-      onEdit: () => _navigateToEditUser(user),
-      onDelete: () => _confirmDelete(user),
+      onEdit: PermissionChecker.canUpdateUser ? () => _navigateToEditUser(user) : null,
+      onDelete: PermissionChecker.canDeleteUser ? () => _confirmDelete(user) : null,
       onTap: () => _showUserDetails(user),
     );
   }

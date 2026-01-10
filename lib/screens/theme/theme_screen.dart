@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
+import '../../core/permissions/permission_checker.dart';
 import '../../models/theme_model.dart';
 import '../category/category_bloc.dart';
 import './theme_bloc.dart';
@@ -11,6 +12,7 @@ import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../widgets/permission_widget.dart';
 
 /// Theme list screen with full features: filter, sort, pagination, and details
 class ThemeScreen extends StatefulWidget {
@@ -157,15 +159,19 @@ class _ThemeScreenState extends State<ThemeScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.pushNamed(context, '/themes/create');
-              // Refresh the list if a theme was created
-              if (result == true) {
-                _loadThemes();
-              }
-            },
-            icon: const Icon(Icons.add),
+          // Only show "Add Theme" button if user has create permission
+          PermissionWidget(
+            permission: 'themes.create',
+            child: IconButton(
+              onPressed: () async {
+                final result = await Navigator.pushNamed(context, '/themes/create');
+                // Refresh the list if a theme was created
+                if (result == true) {
+                  _loadThemes();
+                }
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -319,17 +325,19 @@ class _ThemeScreenState extends State<ThemeScreen> {
         CardField.regular(label: 'Description', value: theme.description.isNotEmpty ? theme.description : 'N/A'),
         CardField.regular(label: 'Created Date', value: theme.createdAt),
       ],
-      onEdit: () async {
-        final result = await Navigator.pushNamed(
-          context,
-          '/themes/create',
-          arguments: {'isEdit': true, 'themeData': theme},
-        );
-        if (result == true) {
-          _loadThemes();
-        }
-      },
-      onDelete: () => _confirmDelete(theme),
+      onEdit: PermissionChecker.canUpdateTheme
+          ? () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/themes/create',
+                arguments: {'isEdit': true, 'themeData': theme},
+              );
+              if (result == true) {
+                _loadThemes();
+              }
+            }
+          : null,
+      onDelete: PermissionChecker.canDeleteTheme ? () => _confirmDelete(theme) : null,
       onTap: () => _showThemeDetails(theme),
     );
   }

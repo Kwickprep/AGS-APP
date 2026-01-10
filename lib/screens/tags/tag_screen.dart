@@ -4,6 +4,8 @@ import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
 import '../../models/tag_model.dart';
 import './tag_bloc.dart';
+import '../../core/permissions/permission_checker.dart';
+import '../../widgets/permission_widget.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -148,15 +150,18 @@ class _TagScreenState extends State<TagScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.pushNamed(context, '/tags/create');
-              // Refresh the list if a tag was created
-              if (result == true) {
-                _loadTags();
-              }
-            },
-            icon: const Icon(Icons.add),
+          PermissionWidget(
+            permission: 'tags.create',
+            child: IconButton(
+              onPressed: () async {
+                final result = await Navigator.pushNamed(context, '/tags/create');
+                // Refresh the list if a tag was created
+                if (result == true) {
+                  _loadTags();
+                }
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -310,13 +315,15 @@ class _TagScreenState extends State<TagScreen> {
         CardField.regular(label: 'Created By', value: tag.createdBy),
         CardField.regular(label: 'Created Date', value: tag.createdAt),
       ],
-      onEdit: () async {
-        final result = await Navigator.pushNamed(context, '/tags/create', arguments: {'isEdit': true, 'tagData': tag});
-        if (result == true) {
-          _loadTags();
-        }
-      },
-      onDelete: () => _confirmDelete(tag),
+      onEdit: PermissionChecker.canUpdateTag
+          ? () async {
+              final result = await Navigator.pushNamed(context, '/tags/create', arguments: {'isEdit': true, 'tagData': tag});
+              if (result == true) {
+                _loadTags();
+              }
+            }
+          : null,
+      onDelete: PermissionChecker.canDeleteTag ? () => _confirmDelete(tag) : null,
       onTap: () => _showTagDetails(tag),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
+import '../../core/permissions/permission_checker.dart';
 import '../../models/brand_model.dart';
 import './brand_bloc.dart';
 import '../../widgets/common/record_card.dart';
@@ -10,6 +11,7 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../widgets/common/filter_sort_bar.dart';
+import '../../widgets/permission_widget.dart';
 
 /// Brand list screen with full features: filter, sort, pagination, and details
 class BrandScreen extends StatefulWidget {
@@ -157,15 +159,19 @@ class _BrandScreenState extends State<BrandScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.pushNamed(context, '/brands/create');
-              // Refresh the list if a brand was created
-              if (result == true) {
-                _loadBrands();
-              }
-            },
-            icon: const Icon(Icons.add),
+          // Only show "Add Brand" button if user has create permission
+          PermissionWidget(
+            permission: 'brands.create',
+            child: IconButton(
+              onPressed: () async {
+                final result = await Navigator.pushNamed(context, '/brands/create');
+                // Refresh the list if a brand was created
+                if (result == true) {
+                  _loadBrands();
+                }
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -344,17 +350,19 @@ class _BrandScreenState extends State<BrandScreen> {
           value: brand.createdAt,
         ),
       ],
-      onEdit: () async {
-        final result = await Navigator.pushNamed(
-          context,
-          '/brands/create',
-          arguments: {'isEdit': true, 'brandData': brand},
-        );
-        if (result == true) {
-          _loadBrands();
-        }
-      },
-      onDelete: () => _confirmDelete(brand),
+      onEdit: PermissionChecker.canUpdateBrand
+          ? () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/brands/create',
+                arguments: {'isEdit': true, 'brandData': brand},
+              );
+              if (result == true) {
+                _loadBrands();
+              }
+            }
+          : null,
+      onDelete: PermissionChecker.canDeleteBrand ? () => _confirmDelete(brand) : null,
       onTap: () => _showBrandDetails(brand),
     );
   }

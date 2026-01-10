@@ -5,6 +5,8 @@ import '../../config/app_text_styles.dart';
 import '../../config/routes.dart';
 import '../../models/company_model.dart';
 import './company_bloc.dart';
+import '../../core/permissions/permission_checker.dart';
+import '../../widgets/permission_widget.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -221,17 +223,20 @@ class _CompanyScreenState extends State<CompanyScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.pushNamed(
-                context,
-                AppRoutes.createCompany,
-              );
-              if (result == true) {
-                _loadCompanies();
-              }
-            },
-            icon: const Icon(Icons.add),
+          PermissionWidget(
+            permission: 'companies.create',
+            child: IconButton(
+              onPressed: () async {
+                final result = await Navigator.pushNamed(
+                  context,
+                  AppRoutes.createCompany,
+                );
+                if (result == true) {
+                  _loadCompanies();
+                }
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -430,8 +435,8 @@ class _CompanyScreenState extends State<CompanyScreen> {
           value: company.createdAt,
         ),
       ],
-      onEdit: () => _navigateToEditCompany(company),
-      onDelete: () => _confirmDelete(company),
+      onEdit: PermissionChecker.canUpdateCompany ? () => _navigateToEditCompany(company) : null,
+      onDelete: PermissionChecker.canDeleteCompany ? () => _confirmDelete(company) : null,
       onTap: () => _showCompanyDetails(company),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
+import '../../core/permissions/permission_checker.dart';
 import '../../models/category_model.dart';
 import './category_bloc.dart';
 import '../../widgets/common/record_card.dart';
@@ -10,6 +11,7 @@ import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../widgets/permission_widget.dart';
 
 /// Category list screen with full features: filter, sort, pagination, and details
 class CategoryScreen extends StatefulWidget {
@@ -155,15 +157,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.pushNamed(context, '/categories/create');
-              // Refresh the list if a category was created
-              if (result == true) {
-                _loadCategories();
-              }
-            },
-            icon: const Icon(Icons.add),
+          // Only show "Add Category" button if user has create permission
+          PermissionWidget(
+            permission: 'categories.create',
+            child: IconButton(
+              onPressed: () async {
+                final result = await Navigator.pushNamed(context, '/categories/create');
+                // Refresh the list if a category was created
+                if (result == true) {
+                  _loadCategories();
+                }
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -342,17 +348,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
           value: category.createdAt,
         ),
       ],
-      onEdit: () async {
-        final result = await Navigator.pushNamed(
-          context,
-          '/categories/create',
-          arguments: {'isEdit': true, 'categoryData': category},
-        );
-        if (result == true) {
-          _loadCategories();
-        }
-      },
-      onDelete: () => _confirmDelete(category),
+      onEdit: PermissionChecker.canUpdateCategory
+          ? () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/categories/create',
+                arguments: {'isEdit': true, 'categoryData': category},
+              );
+              if (result == true) {
+                _loadCategories();
+              }
+            }
+          : null,
+      onDelete: PermissionChecker.canDeleteCategory ? () => _confirmDelete(category) : null,
       onTap: () => _showCategoryDetails(category),
     );
   }

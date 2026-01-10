@@ -4,6 +4,8 @@ import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
 import '../../models/activity_type_model.dart';
 import './activity_type_bloc.dart';
+import '../../core/permissions/permission_checker.dart';
+import '../../widgets/permission_widget.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
@@ -155,15 +157,18 @@ class _ActivityTypeScreenState extends State<ActivityTypeScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () async {
-              final result = await Navigator.pushNamed(context, '/activity-types/create');
-              // Refresh the list if an activity type was created
-              if (result == true) {
-                _loadActivityTypes();
-              }
-            },
-            icon: const Icon(Icons.add),
+          PermissionWidget(
+            permission: 'activity-types.create',
+            child: IconButton(
+              onPressed: () async {
+                final result = await Navigator.pushNamed(context, '/activity-types/create');
+                // Refresh the list if an activity type was created
+                if (result == true) {
+                  _loadActivityTypes();
+                }
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -334,7 +339,7 @@ class _ActivityTypeScreenState extends State<ActivityTypeScreen> {
           value: activityType.createdAt,
         ),
       ],
-      onEdit: activityType.actions.any((action) => action.type == 'routerLink')
+      onEdit: PermissionChecker.canUpdateActivityType
           ? () async {
               final result = await Navigator.pushNamed(
                 context,
@@ -346,9 +351,7 @@ class _ActivityTypeScreenState extends State<ActivityTypeScreen> {
               }
             }
           : null,
-      onDelete: activityType.actions.any((action) => action.type == 'delete')
-          ? () => _confirmDelete(activityType)
-          : null,
+      onDelete: PermissionChecker.canDeleteActivityType ? () => _confirmDelete(activityType) : null,
       onTap: () => _showActivityTypeDetails(activityType),
     );
   }

@@ -5,6 +5,8 @@ import '../../config/app_text_styles.dart';
 import '../../config/routes.dart';
 import '../../models/group_model.dart';
 import './group_bloc.dart';
+import '../../core/permissions/permission_checker.dart';
+import '../../widgets/permission_widget.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -47,14 +49,16 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _loadGroups() {
-    _bloc.add(LoadGroups(
-      page: _currentPage,
-      take: _itemsPerPage,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-      filters: _currentFilters,
-    ));
+    _bloc.add(
+      LoadGroups(
+        page: _currentPage,
+        take: _itemsPerPage,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+        filters: _currentFilters,
+      ),
+    );
   }
 
   void _showFilterSheet() {
@@ -81,7 +85,7 @@ class _GroupScreenState extends State<GroupScreen> {
                 !filter.selectedStatuses.contains('Inactive')) {
               _currentFilters['isActive'] = true;
             } else if (filter.selectedStatuses.contains('Inactive') &&
-                       !filter.selectedStatuses.contains('Active')) {
+                !filter.selectedStatuses.contains('Active')) {
               _currentFilters['isActive'] = false;
             }
           }
@@ -98,7 +102,10 @@ class _GroupScreenState extends State<GroupScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
+      initialSort: SortModel(
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
         SortOption(field: 'isActive', label: 'Status'),
@@ -138,7 +145,10 @@ class _GroupScreenState extends State<GroupScreen> {
       isActive: group.isActive,
       fields: [
         DetailField(label: 'Group Name', value: group.name),
-        DetailField(label: 'Status', value: group.isActive ? 'Active' : 'Inactive'),
+        DetailField(
+          label: 'Status',
+          value: group.isActive ? 'Active' : 'Inactive',
+        ),
         DetailField(label: 'Created By', value: group.createdBy),
         DetailField(label: 'Created Date', value: group.createdAt),
       ],
@@ -167,11 +177,14 @@ class _GroupScreenState extends State<GroupScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createGroup);
-            },
-            icon: const Icon(Icons.add),
+          PermissionWidget(
+            permission: 'groups.create',
+            child: IconButton(
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.createGroup);
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -235,7 +248,10 @@ class _GroupScreenState extends State<GroupScreen> {
               // Filter and Sort bar
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: FilterSortBar(
                   onFilterTap: _showFilterSheet,
                   onSortTap: _showSortSheet,
@@ -253,9 +269,16 @@ class _GroupScreenState extends State<GroupScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: AppColors.error,
+                            ),
                             const SizedBox(height: 16),
-                            Text(state.message, style: const TextStyle(fontSize: 16)),
+                            Text(
+                              state.message,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _loadGroups,
@@ -270,11 +293,17 @@ class _GroupScreenState extends State<GroupScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.group_outlined, size: 64, color: AppColors.grey),
+                              const Icon(
+                                Icons.group_outlined,
+                                size: 64,
+                                color: AppColors.grey,
+                              ),
                               const SizedBox(height: 16),
                               Text(
                                 'No groups found',
-                                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
+                                style: AppTextStyles.bodyLarge.copyWith(
+                                  color: AppColors.textLight,
+                                ),
                               ),
                             ],
                           ),
@@ -287,14 +316,17 @@ class _GroupScreenState extends State<GroupScreen> {
                             child: RefreshIndicator(
                               onRefresh: () async {
                                 _loadGroups();
-                                await Future.delayed(const Duration(milliseconds: 500));
+                                await Future.delayed(
+                                  const Duration(milliseconds: 500),
+                                );
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
                                 itemCount: state.groups.length,
                                 itemBuilder: (context, index) {
                                   final group = state.groups[index];
-                                  final serialNumber = (state.page - 1) * state.take + index + 1;
+                                  final serialNumber =
+                                      (state.page - 1) * state.take + index + 1;
                                   return _buildGroupCard(group, serialNumber);
                                 },
                               ),
@@ -329,22 +361,17 @@ class _GroupScreenState extends State<GroupScreen> {
       serialNumber: serialNumber,
       isActive: group.isActive,
       fields: [
-        CardField.title(
-          label: 'Group Name',
-          value: group.name,
-        ),
-        CardField.regular(
-          label: 'Created By',
-          value: group.createdBy,
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: group.createdAt,
-        ),
+        CardField.title(label: 'Group Name', value: group.name),
+        CardField.regular(label: 'Created By', value: group.createdBy),
+        CardField.regular(label: 'Created Date', value: group.createdAt),
       ],
       onView: () => _showGroupDetails(group),
-      onEdit: () => _navigateToEditGroup(group),
-      onDelete: () => _confirmDelete(group),
+      onEdit: PermissionChecker.canUpdateGroup
+          ? () => _navigateToEditGroup(group)
+          : null,
+      onDelete: PermissionChecker.canDeleteGroup
+          ? () => _confirmDelete(group)
+          : null,
       onTap: () => _showGroupDetails(group),
     );
   }
@@ -375,5 +402,4 @@ class _GroupScreenState extends State<GroupScreen> {
       ),
     );
   }
-
 }

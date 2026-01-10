@@ -13,6 +13,7 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/product/product_card.dart';
 import '../../widgets/product/product_details_bottom_sheet.dart';
+import '../../widgets/permission_widget.dart';
 import '../../services/file_upload_service.dart';
 
 /// Product list screen with full features: filter, sort, pagination, and details
@@ -230,10 +231,14 @@ class _ProductScreenState extends State<ProductScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: AppColors.textPrimary),
-            onPressed: _navigateToCreateProduct,
-            tooltip: 'Create Product',
+          // Only show "Add Product" button if user has create permission
+          PermissionWidget(
+            permission: 'products.create',
+            child: IconButton(
+              icon: const Icon(Icons.add, color: AppColors.textPrimary),
+              onPressed: _navigateToCreateProduct,
+              tooltip: 'Create Product',
+            ),
           ),
         ],
         bottom: const PreferredSize(

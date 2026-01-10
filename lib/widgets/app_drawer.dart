@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../config/app_colors.dart';
-import '../config/routes.dart';
-import '../config/huge_icons.dart';
+import '../core/permissions/permission_config.dart';
+import '../core/permissions/permission_manager.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -15,7 +15,9 @@ class AppDrawer extends StatefulWidget {
 
 class _AppDrawerState extends State<AppDrawer> {
   final AuthService _authService = GetIt.I<AuthService>();
+  final PermissionManager _permissionManager = PermissionManager();
   UserModel? _user;
+  List<AppModule> _accessibleModules = [];
 
   @override
   void initState() {
@@ -28,6 +30,10 @@ class _AppDrawerState extends State<AppDrawer> {
     if (mounted) {
       setState(() {
         _user = user;
+        // Filter modules based on user permissions
+        _accessibleModules = PermissionConfig.getAccessibleModules(
+          _permissionManager.permissions,
+        );
       });
     }
   }
@@ -41,69 +47,34 @@ class _AppDrawerState extends State<AppDrawer> {
           // Simple Profile Header
           _buildProfileHeader(),
 
-          // Scrollable Menu Items
+          // Scrollable Menu Items (filtered by permissions)
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              physics: const BouncingScrollPhysics(),
-              children: [
-                _buildMenuItem(
-                  icon: HugeIcons.award03,
-                  title: 'Brands',
-                  route: AppRoutes.brands,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.orthogonalEdge,
-                  title: 'Categories',
-                  route: AppRoutes.categories,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.colors,
-                  title: 'Themes',
-                  route: AppRoutes.themes,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.tag01,
-                  title: 'Tags',
-                  route: AppRoutes.tags,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.package,
-                  title: 'Products',
-                  route: AppRoutes.products,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.chartColumn,
-                  title: 'Activities',
-                  route: AppRoutes.activities,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.share07,
-                  title: 'Activity Types',
-                  route: AppRoutes.activityTypes,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.messageQuestion,
-                  title: 'Inquiries',
-                  route: AppRoutes.inquiries,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.userGroup,
-                  title: 'Groups',
-                  route: AppRoutes.groups,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.userMultiple02,
-                  title: 'Users',
-                  route: AppRoutes.users,
-                ),
-                _buildMenuItem(
-                  icon: HugeIcons.bandage,
-                  title: 'Companies',
-                  route: AppRoutes.companies,
-                ),
-              ],
-            ),
+            child: _accessibleModules.isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: Text(
+                        'No accessible modules',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _accessibleModules.length,
+                    itemBuilder: (context, index) {
+                      final module = _accessibleModules[index];
+                      return _buildMenuItem(
+                        icon: module.icon,
+                        title: module.name,
+                        route: module.route,
+                      );
+                    },
+                  ),
           ),
 
           // Divider

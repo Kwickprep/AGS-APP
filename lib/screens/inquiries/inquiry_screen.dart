@@ -5,6 +5,8 @@ import '../../config/app_text_styles.dart';
 import '../../config/routes.dart';
 import '../../models/inquiry_model.dart';
 import './inquiry_bloc.dart';
+import '../../core/permissions/permission_checker.dart';
+import '../../widgets/permission_widget.dart';
 import '../../widgets/common/record_card.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
@@ -12,7 +14,6 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 
-/// Inquiry list screen with full features: filter, sort, pagination, and details
 class InquiryScreen extends StatefulWidget {
   const InquiryScreen({super.key});
 
@@ -47,14 +48,16 @@ class _InquiryScreenState extends State<InquiryScreen> {
   }
 
   void _loadInquiries() {
-    _bloc.add(LoadInquiries(
-      page: _currentPage,
-      take: _itemsPerPage,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-      filters: _currentFilters,
-    ));
+    _bloc.add(
+      LoadInquiries(
+        page: _currentPage,
+        take: _itemsPerPage,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+        filters: _currentFilters,
+      ),
+    );
   }
 
   void _showFilterSheet() {
@@ -81,7 +84,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                 !filter.selectedStatuses.contains('Inactive')) {
               _currentFilters['isActive'] = true;
             } else if (filter.selectedStatuses.contains('Inactive') &&
-                       !filter.selectedStatuses.contains('Active')) {
+                !filter.selectedStatuses.contains('Active')) {
               _currentFilters['isActive'] = false;
             }
           }
@@ -98,7 +101,10 @@ class _InquiryScreenState extends State<InquiryScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
+      initialSort: SortModel(
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
         SortOption(field: 'isActive', label: 'Status'),
@@ -138,7 +144,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
       isActive: true,
       fields: [
         DetailField(label: 'Inquiry Name', value: inquiry.name),
-        DetailField(label: 'Status', value: true ? 'Active' : 'Inactive'),
+        DetailField(label: 'Status', value: 'Active'),
         DetailField(label: 'Created By', value: inquiry.createdBy),
         DetailField(label: 'Created Date', value: inquiry.createdAt),
       ],
@@ -153,11 +159,14 @@ class _InquiryScreenState extends State<InquiryScreen> {
         leading: const BackButton(),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.createInquiry);
-            },
-            icon: const Icon(Icons.add),
+          PermissionWidget(
+            permission: 'inquiries.create',
+            child: IconButton(
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.createInquiry);
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
         bottom: const PreferredSize(
@@ -221,7 +230,10 @@ class _InquiryScreenState extends State<InquiryScreen> {
               // Filter and Sort bar
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: FilterSortBar(
                   onFilterTap: _showFilterSheet,
                   onSortTap: _showSortSheet,
@@ -239,9 +251,16 @@ class _InquiryScreenState extends State<InquiryScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: AppColors.error,
+                            ),
                             const SizedBox(height: 16),
-                            Text(state.message, style: const TextStyle(fontSize: 16)),
+                            Text(
+                              state.message,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _loadInquiries,
@@ -256,11 +275,17 @@ class _InquiryScreenState extends State<InquiryScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.question_answer_outlined, size: 64, color: AppColors.grey),
+                              const Icon(
+                                Icons.question_answer_outlined,
+                                size: 64,
+                                color: AppColors.grey,
+                              ),
                               const SizedBox(height: 16),
                               Text(
                                 'No inquirys found',
-                                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
+                                style: AppTextStyles.bodyLarge.copyWith(
+                                  color: AppColors.textLight,
+                                ),
                               ),
                             ],
                           ),
@@ -273,15 +298,21 @@ class _InquiryScreenState extends State<InquiryScreen> {
                             child: RefreshIndicator(
                               onRefresh: () async {
                                 _loadInquiries();
-                                await Future.delayed(const Duration(milliseconds: 500));
+                                await Future.delayed(
+                                  const Duration(milliseconds: 500),
+                                );
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
                                 itemCount: state.inquiries.length,
                                 itemBuilder: (context, index) {
                                   final inquiry = state.inquiries[index];
-                                  final serialNumber = (state.page - 1) * state.take + index + 1;
-                                  return _buildInquiryCard(inquiry, serialNumber);
+                                  final serialNumber =
+                                      (state.page - 1) * state.take + index + 1;
+                                  return _buildInquiryCard(
+                                    inquiry,
+                                    serialNumber,
+                                  );
                                 },
                               ),
                             ),
@@ -315,30 +346,23 @@ class _InquiryScreenState extends State<InquiryScreen> {
       serialNumber: serialNumber,
       isActive: true,
       fields: [
-        CardField.title(
-          label: 'Inquiry Name',
-          value: inquiry.name,
-        ),
-        CardField.regular(
-          label: 'Created By',
-          value: inquiry.createdBy,
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: inquiry.createdAt,
-        ),
+        CardField.title(label: 'Inquiry Name', value: inquiry.name),
+        CardField.regular(label: 'Created By', value: inquiry.createdBy),
+        CardField.regular(label: 'Created Date', value: inquiry.createdAt),
       ],
-      onEdit: () async {
-        final result = await Navigator.pushNamed(
-          context,
-          '/inquiries/create',
-          arguments: {'isEdit': true, 'inquiryData': inquiry},
-        );
-        if (result == true) {
-          _loadInquiries();
-        }
-      },
-      onDelete: () => _confirmDelete(inquiry),
+      onEdit: PermissionChecker.canUpdateInquiry
+          ? () async {
+              final result = await Navigator.pushNamed(
+                context,
+                '/inquiries/create',
+                arguments: {'isEdit': true, 'inquiryData': inquiry},
+              );
+              if (result == true) {
+                _loadInquiries();
+              }
+            }
+          : null,
+      onDelete: PermissionChecker.canDeleteInquiry ? () => _confirmDelete(inquiry) : null,
       onTap: () => _showInquiryDetails(inquiry),
     );
   }
@@ -369,5 +393,4 @@ class _InquiryScreenState extends State<InquiryScreen> {
       ),
     );
   }
-
 }
