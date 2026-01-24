@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_text_styles.dart';
 
 enum ToastType {
   success,
@@ -175,9 +176,8 @@ class _ToastWidgetState extends State<_ToastWidget>
                           children: [
                             Text(
                               _title,
-                              style: const TextStyle(
+                              style: AppTextStyles.bodyMedium.copyWith(
                                 color: Colors.white,
-                                fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.3,
                               ),
@@ -185,10 +185,8 @@ class _ToastWidgetState extends State<_ToastWidget>
                             const SizedBox(height: 4),
                             Text(
                               widget.message,
-                              style: const TextStyle(
+                              style: AppTextStyles.buttonSmall.copyWith(
                                 color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
                                 height: 1.3,
                               ),
                             ),

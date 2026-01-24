@@ -1,5 +1,8 @@
 import 'package:ags/screens/activities/activity_screen.dart';
 import 'package:ags/screens/products/product_screen.dart';
+import 'package:ags/screens/user_home/pages/user_home.dart';
+import 'package:ags/screens/messages/message_screen.dart';
+import 'package:ags/core/permissions/permission_manager.dart';
 
 import 'package:flutter/material.dart';
 import '../screens/category/category_screen.dart';
@@ -52,6 +55,8 @@ class AppRoutes {
   static const String createActivityType = '/activity-types/create';
   static const String companies = '/companies';
   static const String createCompany = '/companies/create';
+  static const String userHome = '/userHome';
+  static const String messages = '/messages';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -61,7 +66,8 @@ class AppRoutes {
       home: (context) => const HomeScreen(),
       themes: (context) => const ThemeScreen(),
       createTheme: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return ThemeCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           themeData: args?['themeData'],
@@ -69,7 +75,8 @@ class AppRoutes {
       },
       categories: (context) => const CategoryScreen(),
       createCategory: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return CategoryCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           categoryData: args?['categoryData'],
@@ -77,7 +84,8 @@ class AppRoutes {
       },
       brands: (context) => const BrandScreen(),
       createBrand: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return BrandCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           brandData: args?['brandData'],
@@ -85,7 +93,8 @@ class AppRoutes {
       },
       tags: (context) => const TagScreen(),
       createTag: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return TagCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           tagData: args?['tagData'],
@@ -93,7 +102,8 @@ class AppRoutes {
       },
       activities: (context) => const ActivityScreen(),
       createActivity: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return ActivityCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           activity: args?['activity'],
@@ -101,7 +111,8 @@ class AppRoutes {
       },
       inquiries: (context) => const InquiryScreen(),
       createInquiry: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return InquiryCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           inquiryData: args?['inquiryData'],
@@ -109,7 +120,8 @@ class AppRoutes {
       },
       groups: (context) => const GroupScreen(),
       createGroup: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return GroupCreateScreen(
           group: args?['group'],
           isEdit: args?['isEdit'] ?? false,
@@ -120,7 +132,8 @@ class AppRoutes {
       createUser: (context) => const UserCreateScreen(),
       activityTypes: (context) => const ActivityTypeScreen(),
       createActivityType: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return ActivityTypeCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           activityTypeData: args?['activityTypeData'],
@@ -128,16 +141,33 @@ class AppRoutes {
       },
       companies: (context) => const CompanyScreen(),
       createCompany: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return CompanyCreateScreen(
           isEdit: args?['isEdit'] ?? false,
           companyData: args?['companyData'],
         );
       },
+      userHome: (context) {
+        // final args =
+        // ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return UserHome();
+      },
+      messages: (context) => const MessageScreen(),
     };
   }
 
   static String getInitialRoute(bool isLoggedIn) {
-    return isLoggedIn ? home : login;
+    if (!isLoggedIn) return login;
+    return getHomeRoute();
+  }
+
+  /// Get the appropriate home route based on user role
+  static String getHomeRoute() {
+    final role = PermissionManager().role;
+    if (role == 'CUSTOMER') {
+      return userHome;
+    }
+    return home;
   }
 }

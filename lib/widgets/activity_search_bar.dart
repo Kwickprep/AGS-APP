@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:ags/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
+import '../../../config/app_text_styles.dart';
 
 class ActivitySearchBar extends StatefulWidget {
   final Function(String) onSearch;
@@ -231,14 +232,14 @@ class _ActivitySearchBarState extends State<ActivitySearchBar> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Filter Options',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: AppTextStyles.cardTitle.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'No filters available at the moment',
-                    style: TextStyle(color: AppColors.grey),
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey),
                   ),
                   const SizedBox(height: 16),
                   Row(

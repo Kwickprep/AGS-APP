@@ -140,9 +140,7 @@ class ActivityTypeService {
   /// Use 'none' for create, or actual ID for edit
   Future<FormPageLayoutResponse> getFormPageLayout(String id) async {
     try {
-      final queryParams = {
-        'isPageLayout': 'true',
-      };
+      final queryParams = {'isPageLayout': 'true'};
 
       final response = await _apiService.get(
         '/api/activity-types/$id',

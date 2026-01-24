@@ -22,6 +22,7 @@ class ApiService {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'x-platform': 'webapp',
+          // 'x-platform': 'mobile',
         },
       ),
     );
@@ -53,7 +54,9 @@ class ApiService {
         onError: (error, handler) async {
           // Log only essential error info
           if (kDebugMode) {
-            print('❌ ${error.response?.statusCode ?? 'ERROR'} ${error.requestOptions.path}');
+            print(
+              '❌ ${error.response?.statusCode ?? 'ERROR'} ${error.requestOptions.path}',
+            );
             if (error.response?.data != null) {
               print('   ${error.response?.data}');
             }
@@ -96,6 +99,7 @@ class ApiService {
       rethrow;
     }
   }
+
   Future<Response> delete(String path) async {
     try {
       return await _dio.delete(path);

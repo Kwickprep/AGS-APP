@@ -4,6 +4,7 @@ import '../config/app_colors.dart';
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
+  final FocusNode? focusNode;
   final String label;
   final String? hint;
   final IconData? prefixIcon;
@@ -27,6 +28,7 @@ class CustomTextField extends StatelessWidget {
     this.controller,
     required this.label,
     this.prefixIcon,
+    this.focusNode,
     this.suffixIcon,
     this.suffixWidget,
     this.obscureText = false,
@@ -74,6 +76,7 @@ class CustomTextField extends StatelessWidget {
           const SizedBox(height: 8),
         ],
         TextFormField(
+          focusNode: focusNode,
           controller: controller,
           obscureText: obscureText,
           keyboardType: keyboardType,

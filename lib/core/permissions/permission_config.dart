@@ -139,12 +139,20 @@ class PermissionConfig {
       updatePermission: 'companies.update',
       deletePermission: 'companies.delete',
     ),
+    AppModule(
+      name: 'Messages',
+      icon: HugeIcons.message01,
+      route: AppRoutes.messages,
+      // Messages is accessible to all authenticated users
+    ),
   ];
 
   /// Get modules filtered by user permissions
   static List<AppModule> getAccessibleModules(List<String> userPermissions) {
-    return allModules
-        .where((module) => module.hasAnyPermission(userPermissions))
-        .toList();
+    return allModules.isNotEmpty
+        ? allModules
+              .where((module) => module.hasAnyPermission(userPermissions))
+              .toList()
+        : [];
   }
 }

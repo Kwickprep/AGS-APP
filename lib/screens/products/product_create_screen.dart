@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../config/app_colors.dart';
+import '../../config/app_text_styles.dart';
 import '../../services/product_service.dart';
 import '../../services/file_upload_service.dart';
 import '../../services/brand_service.dart';
@@ -563,11 +564,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
           ),
           title: Text(
             widget.isEdit ? 'Edit Product' : 'Create Product',
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTextStyles.heading3,
           ),
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -586,11 +583,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
         ),
         title: Text(
           widget.isEdit ? 'Edit Product' : 'Create Product',
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTextStyles.heading3,
         ),
         bottom: const PreferredSize(
           preferredSize: Size(double.infinity, 1),
@@ -816,19 +809,16 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'Images',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
+              style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 4),
             Text(
               '(Optional)',
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTextStyles.caption.copyWith(
                 color: AppColors.textLight.withValues(alpha: 0.6),
               ),
             ),
@@ -984,16 +974,14 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                   // Upload text
                   Text(
                     'Upload product images (JPG, PNG,',
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTextStyles.buttonSmall.copyWith(
                       color: AppColors.textLight.withValues(alpha: 0.8),
                     ),
                     textAlign: TextAlign.center,
                   ),
                   Text(
                     'GIF, WEBP). Max file size: 10MB.',
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTextStyles.buttonSmall.copyWith(
                       color: AppColors.textLight.withValues(alpha: 0.8),
                     ),
                     textAlign: TextAlign.center,
@@ -1013,19 +1001,16 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'Categories',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
+              style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 4),
-            const Text(
+            Text(
               '*',
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.error,
                 fontWeight: FontWeight.w500,
               ),
@@ -1050,9 +1035,8 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                   });
                 },
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                labelStyle: const TextStyle(
+                labelStyle: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.primary,
-                  fontSize: 12,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -1094,19 +1078,16 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'Tags',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
+              style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 4),
             Text(
               '(Optional)',
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTextStyles.caption.copyWith(
                 color: AppColors.textLight.withValues(alpha: 0.6),
               ),
             ),
@@ -1130,9 +1111,8 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                   });
                 },
                 backgroundColor: AppColors.success.withValues(alpha: 0.1),
-                labelStyle: const TextStyle(
+                labelStyle: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.success,
-                  fontSize: 12,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -1207,19 +1187,16 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
         // Header
         Row(
           children: [
-            const Text(
+            Text(
               'Product Themes',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.textPrimary,
+              style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 4),
             Text(
               '(Optional)',
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTextStyles.caption.copyWith(
                 color: AppColors.textLight.withValues(alpha: 0.6),
               ),
             ),
@@ -1265,7 +1242,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
             ),
             isDense: true,
           ),
-          style: const TextStyle(fontSize: 14),
+          style: AppTextStyles.bodyMedium,
           onChanged: _onThemeSearchChanged,
         ),
         const SizedBox(height: 12),
@@ -1276,8 +1253,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               'Showing ${(_themesCurrentPage - 1) * _themesPerPage + 1}-${(_themesCurrentPage - 1) * _themesPerPage + _themes.length} of $_themesTotal',
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTextStyles.caption.copyWith(
                 color: AppColors.textLight.withValues(alpha: 0.7),
               ),
             ),
@@ -1306,23 +1282,21 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                 ),
                 child: Row(
                   children: [
-                    const SizedBox(
+                    SizedBox(
                       width: 40,
                       child: Text(
                         'No.',
-                        style: TextStyle(
-                          fontSize: 13,
+                        style: AppTextStyles.buttonSmall.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
                       ),
                     ),
-                    const Expanded(
+                    Expanded(
                       flex: 3,
                       child: Text(
                         'Theme Name',
-                        style: TextStyle(
-                          fontSize: 13,
+                        style: AppTextStyles.buttonSmall.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
@@ -1333,8 +1307,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                       width: 120,
                       child: Text(
                         'Relevance Score',
-                        style: const TextStyle(
-                          fontSize: 13,
+                        style: AppTextStyles.buttonSmall.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
                         ),
@@ -1368,8 +1341,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                           width: 40,
                           child: Text(
                             '$serialNumber.',
-                            style: const TextStyle(
-                              fontSize: 13,
+                            style: AppTextStyles.buttonSmall.copyWith(
                               color: AppColors.textPrimary,
                             ),
                           ),
@@ -1383,9 +1355,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                             children: [
                               Text(
                                 theme.name,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
+                                style: AppTextStyles.buttonSmall.copyWith(
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -1393,8 +1363,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   theme.description,
-                                  style: TextStyle(
-                                    fontSize: 11,
+                                  style: AppTextStyles.label.copyWith(
                                     color: AppColors.textLight.withValues(
                                       alpha: 0.7,
                                     ),
@@ -1444,7 +1413,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                               ),
                               isDense: true,
                             ),
-                            style: const TextStyle(fontSize: 13),
+                            style: AppTextStyles.buttonSmall,
                             onChanged: (value) {
                               if (value.trim().isNotEmpty) {
                                 final score = int.tryParse(value.trim());
@@ -1526,9 +1495,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                       ),
                       child: Text(
                         '$pageNumber',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                        style: AppTextStyles.buttonSmall.copyWith(
                           color: pageNumber == _themesCurrentPage
                               ? Colors.white
                               : AppColors.textPrimary,
@@ -1611,14 +1578,10 @@ class _CategorySelectionSheetState extends State<_CategorySelectionSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Select Categories',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.heading3,
                   ),
                 ),
                 IconButton(
@@ -1746,14 +1709,10 @@ class _TagSelectionSheetState extends State<_TagSelectionSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Select Tags',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTextStyles.heading3,
                   ),
                 ),
                 IconButton(

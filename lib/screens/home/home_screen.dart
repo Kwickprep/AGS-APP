@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../config/app_colors.dart';
+import '../../config/app_text_styles.dart';
 import '../../widgets/app_drawer.dart';
 import 'home_bloc.dart';
 
@@ -40,19 +41,17 @@ class HomeView extends StatelessWidget {
                 color: AppColors.grey.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Coming Soon',
-                style: TextStyle(
+                style: AppTextStyles.heading1.copyWith(
                   fontSize: 32,
-                  fontWeight: FontWeight.bold,
                   color: AppColors.black,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 'Dashboard features are under development',
-                style: TextStyle(
-                  fontSize: 16,
+                style: AppTextStyles.bodyLarge.copyWith(
                   color: AppColors.grey.withValues(alpha: 0.7),
                 ),
               ),

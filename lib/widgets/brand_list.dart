@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../../config/app_colors.dart';
+import '../../../config/app_text_styles.dart';
 import '../../../models/brand_model.dart';
 
 class BrandList extends StatefulWidget {
@@ -60,7 +61,7 @@ class _BrandListState extends State<BrandList> {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.bold,
               color: isActive ? AppColors.primary : AppColors.black,
             ),
@@ -118,10 +119,10 @@ class _BrandListState extends State<BrandList> {
                           AppColors.background,
                         ),
                         columns: [
-                          const DataColumn(
+                          DataColumn(
                             label: Text(
                               'SR',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
                           DataColumn(
@@ -177,7 +178,7 @@ class _BrandListState extends State<BrandList> {
           DataCell(
             Text(
               serialNumber.toString(),
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
           DataCell(
@@ -193,10 +194,9 @@ class _BrandListState extends State<BrandList> {
                   child: Center(
                     child: Text(
                       brand.name.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(
+                      style: AppTextStyles.heading3.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
                       ),
                     ),
                   ),
@@ -204,7 +204,7 @@ class _BrandListState extends State<BrandList> {
                 const SizedBox(width: 12),
                 Text(
                   brand.name,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -224,9 +224,8 @@ class _BrandListState extends State<BrandList> {
               ),
               child: Text(
                 brand.isActive ? 'Active' : 'Inactive',
-                style: TextStyle(
+                style: AppTextStyles.bodySmall.copyWith(
                   color: brand.isActive ? AppColors.success : AppColors.error,
-                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -269,9 +268,9 @@ class _BrandListState extends State<BrandList> {
             color: AppColors.grey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'No brands found',
-            style: TextStyle(fontSize: 18, color: AppColors.grey),
+            style: AppTextStyles.heading3.copyWith(color: AppColors.grey),
           ),
         ],
       ),
@@ -298,7 +297,7 @@ class _BrandListState extends State<BrandList> {
         children: [
           Text(
             '$startItem-$endItem of ${widget.total}',
-            style: const TextStyle(color: AppColors.grey),
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey),
           ),
           Row(
             children: [
@@ -344,7 +343,7 @@ class _BrandListState extends State<BrandList> {
                 ),
                 child: Text(
                   '${widget.currentPage} / ${widget.totalPages}',
-                  style: const TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.white,
                     fontWeight: FontWeight.bold,
                   ),

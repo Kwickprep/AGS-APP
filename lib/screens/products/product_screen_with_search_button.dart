@@ -1,6 +1,10 @@
 // ALTERNATIVE VERSION: Product Screen with Search Button
 // This file shows an alternative implementation with a manual search button
 // Copy the relevant sections to product_screen.dart if you prefer this approach
+//
+// Required imports (ensure these are in product_screen.dart):
+// import '../../config/app_colors.dart';
+// import '../../config/app_text_styles.dart';
 
 /*
 To use this approach, replace the search bar section in product_screen.dart with:
@@ -47,12 +51,10 @@ Container(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Search',
-                style: TextStyle(
+                style: AppTextStyles.button.copyWith(
                   color: AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),

@@ -190,7 +190,7 @@ class _LoginViewState extends State<LoginView>
               );
               Future.delayed(const Duration(milliseconds: 500), () {
                 if (context.mounted) {
-                  Navigator.pushReplacementNamed(context, AppRoutes.home);
+                  Navigator.pushReplacementNamed(context, AppRoutes.getHomeRoute());
                 }
               });
             } else if (state is LoginError) {

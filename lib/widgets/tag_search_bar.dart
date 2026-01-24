@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:ags/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
+import '../config/app_text_styles.dart';
 
 class TagSearchBar extends StatefulWidget {
   final Function(String) onSearch;
@@ -242,16 +243,16 @@ class _TagSearchBarState extends State<TagSearchBar> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Filter Options',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: AppTextStyles.cardTitle.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Status:',
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(width: 16),
                       Expanded(

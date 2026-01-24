@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
+import '../config/app_text_styles.dart';
 import '../models/contact_model.dart';
 
 class ContactSelectionTable extends StatefulWidget {
@@ -166,7 +167,7 @@ class _ContactSelectionTableState extends State<ContactSelectionTable> {
         children: [
           Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 4),
           if (isCurrentColumn)
@@ -225,7 +226,7 @@ class _ContactSelectionTableState extends State<ContactSelectionTable> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               '${widget.selectedContactIds.length} contact(s) selected',
-              style: const TextStyle(
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -271,11 +272,11 @@ class _ContactSelectionTableState extends State<ContactSelectionTable> {
                     DataColumn(label: _buildSortableHeader('Department', 'department')),
                     DataColumn(label: _buildSortableHeader('Designation', 'designation')),
                     DataColumn(label: _buildSortableHeader('Division', 'division')),
-                    const DataColumn(label: Text('Influence Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                    const DataColumn(label: Text('Employee Code', style: TextStyle(fontWeight: FontWeight.bold))),
-                    const DataColumn(label: Text('Groups', style: TextStyle(fontWeight: FontWeight.bold))),
-                    const DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                    const DataColumn(label: Text('Created By', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Influence Type', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Employee Code', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Groups', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Status', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Created By', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
                     DataColumn(label: _buildSortableHeader('Created Date', 'createdAt')),
                   ],
                   rows: paginatedContacts.map((contact) {
@@ -306,9 +307,8 @@ class _ContactSelectionTableState extends State<ContactSelectionTable> {
                             ),
                             child: Text(
                               contact.role,
-                              style: TextStyle(
+                              style: AppTextStyles.bodySmall.copyWith(
                                 color: _getRoleColor(contact.role),
-                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -335,11 +335,10 @@ class _ContactSelectionTableState extends State<ContactSelectionTable> {
                             ),
                             child: Text(
                               contact.isActive,
-                              style: TextStyle(
+                              style: AppTextStyles.bodySmall.copyWith(
                                 color: contact.isActiveStatus
                                     ? AppColors.success
                                     : AppColors.error,
-                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -364,8 +363,7 @@ class _ContactSelectionTableState extends State<ContactSelectionTable> {
             children: [
               Text(
                 'Showing ${(_currentPage - 1) * _itemsPerPage + 1}-${(_currentPage * _itemsPerPage > _filteredContacts.length ? _filteredContacts.length : _currentPage * _itemsPerPage)} of ${_filteredContacts.length}',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textLight,
                 ),
               ),
@@ -409,7 +407,7 @@ class _ContactSelectionTableState extends State<ContactSelectionTable> {
                             ),
                             child: Text(
                               pageNum.toString(),
-                              style: TextStyle(
+                              style: AppTextStyles.bodyMedium.copyWith(
                                 color: _currentPage == pageNum
                                     ? Colors.white
                                     : AppColors.textPrimary,

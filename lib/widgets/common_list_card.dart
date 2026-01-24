@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
+import '../config/app_text_styles.dart';
 
 /// Configuration for a row in the card
 class CardRowConfig {
@@ -142,11 +143,7 @@ class CommonListCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+                      style: AppTextStyles.cardTitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -166,9 +163,8 @@ class CommonListCard extends StatelessWidget {
                       ),
                       child: Text(
                         statusBadge!.text,
-                        style: TextStyle(
+                        style: AppTextStyles.bodySmall.copyWith(
                           color: statusBadge!.textColor,
-                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -195,8 +191,7 @@ class CommonListCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Text(
                             row.label!,
-                            style: const TextStyle(
-                              fontSize: 12,
+                            style: AppTextStyles.bodySmall.copyWith(
                               fontWeight: FontWeight.w600,
                               color: AppColors.grey,
                             ),
@@ -208,8 +203,7 @@ class CommonListCard extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 22),
                         child: Text(
                           row.text,
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: AppTextStyles.bodyMedium.copyWith(
                             color: row.textColor ?? AppColors.textPrimary,
                           ),
                           maxLines: 3,
@@ -229,8 +223,7 @@ class CommonListCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           row.text,
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: AppTextStyles.bodyMedium.copyWith(
                             color: row.textColor ?? AppColors.textPrimary,
                           ),
                           maxLines: 2,

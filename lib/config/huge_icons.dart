@@ -55,6 +55,10 @@ class HugeIcons {
       ? Icons.emoji_events_outlined
       : IconData(0xe805, fontFamily: _kFontFam, fontPackage: _kFontPkg);
 
+  static const IconData hamBurger = _useFallback
+      ? Icons.menu
+      : IconData(0xe805, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+
   /// tag-01 icon (Tags)
   static const IconData tag01 = _useFallback
       ? Icons.local_offer_outlined
@@ -84,4 +88,9 @@ class HugeIcons {
   static const IconData bandage = _useFallback
       ? Icons.business_outlined
       : IconData(0xe80b, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+
+  /// message-01 icon (Messages)
+  static const IconData message01 = _useFallback
+      ? Icons.message_outlined
+      : IconData(0xe80c, fontFamily: _kFontFam, fontPackage: _kFontPkg);
 }

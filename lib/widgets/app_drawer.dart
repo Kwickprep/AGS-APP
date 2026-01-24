@@ -30,7 +30,6 @@ class _AppDrawerState extends State<AppDrawer> {
     if (mounted) {
       setState(() {
         _user = user;
-        // Filter modules based on user permissions
         _accessibleModules = PermissionConfig.getAccessibleModules(
           _permissionManager.permissions,
         );
@@ -55,10 +54,7 @@ class _AppDrawerState extends State<AppDrawer> {
                       padding: EdgeInsets.all(24.0),
                       child: Text(
                         'No accessible modules',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
                       ),
                     ),
                   )
@@ -151,11 +147,7 @@ class _AppDrawerState extends State<AppDrawer> {
     required String route,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: Colors.grey[700],
-        size: 24,
-      ),
+      leading: Icon(icon, color: Colors.grey[700], size: 24),
       title: Text(
         title,
         style: const TextStyle(
@@ -164,11 +156,7 @@ class _AppDrawerState extends State<AppDrawer> {
           color: Colors.black87,
         ),
       ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: Colors.grey[400],
-        size: 20,
-      ),
+      trailing: Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
       onTap: () {
         Navigator.pop(context);
         Navigator.pushNamed(context, route);

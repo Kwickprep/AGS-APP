@@ -344,7 +344,7 @@ class _ProductScreenState extends State<ProductScreen> {
                             const SizedBox(height: 16),
                             Text(
                               state.message,
-                              style: const TextStyle(fontSize: 16),
+                              style: AppTextStyles.bodyLarge,
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(

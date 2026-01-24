@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../config/app_colors.dart';
+import '../config/app_text_styles.dart';
 import '../models/tag_model.dart';
 
 class TagTable extends StatefulWidget {
@@ -60,7 +61,7 @@ class _TagTableState extends State<TagTable> {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.bold,
               color: isActive ? AppColors.primary : AppColors.black,
             ),
@@ -118,10 +119,10 @@ class _TagTableState extends State<TagTable> {
                     AppColors.background,
                   ),
                   columns: [
-                    const DataColumn(
+                    DataColumn(
                       label: Text(
                         'SR',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                       ),
                     ),
                     DataColumn(
@@ -171,13 +172,13 @@ class _TagTableState extends State<TagTable> {
           DataCell(
             Text(
               serialNumber.toString(),
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
           DataCell(
             Text(
               tag.name,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
           DataCell(
@@ -195,9 +196,8 @@ class _TagTableState extends State<TagTable> {
               ),
               child: Text(
                 tag.isActive ? 'Active' : 'Inactive',
-                style: TextStyle(
+                style: AppTextStyles.bodySmall.copyWith(
                   color: tag.isActive ? AppColors.success : AppColors.error,
-                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -240,10 +240,9 @@ class _TagTableState extends State<TagTable> {
             color: AppColors.grey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'No tags found',
-            style: TextStyle(
-              fontSize: 18,
+            style: AppTextStyles.heading3.copyWith(
               color: AppColors.grey,
             ),
           ),
@@ -272,7 +271,7 @@ class _TagTableState extends State<TagTable> {
         children: [
           Text(
             '$startItem-$endItem of ${widget.total}',
-            style: const TextStyle(color: AppColors.grey),
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.grey),
           ),
           Row(
             children: [
@@ -318,7 +317,7 @@ class _TagTableState extends State<TagTable> {
                 ),
                 child: Text(
                   '${widget.currentPage} / ${widget.totalPages}',
-                  style: const TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.white,
                     fontWeight: FontWeight.bold,
                   ),

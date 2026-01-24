@@ -16,6 +16,8 @@ import 'services/file_upload_service.dart';
 import 'services/user_service.dart';
 import 'services/activity_type_service.dart';
 import 'services/company_service.dart';
+import 'services/user_product_search_service.dart';
+import 'services/whatsapp_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -36,6 +38,8 @@ void setupDependencies() {
   getIt.registerSingleton<UserService>(UserService());
   getIt.registerSingleton<ActivityTypeService>(ActivityTypeService());
   getIt.registerSingleton<CompanyService>(CompanyService());
+  getIt.registerSingleton<UserProductSearchService>(UserProductSearchService());
+  getIt.registerSingleton<WhatsAppService>(WhatsAppService());
 }
 
 void main() async {
