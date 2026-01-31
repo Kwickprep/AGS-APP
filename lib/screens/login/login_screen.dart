@@ -183,14 +183,30 @@ class _LoginViewState extends State<LoginView>
         body: BlocConsumer<LoginBloc, LoginState>(
           listener: (context, state) {
             if (state is LoginSuccess) {
+              final user = state.user;
+              final needsRegistration = user.needsRegistration;
+
               CustomToast.show(
                 context,
-                'Login successful! Welcome back.',
+                needsRegistration
+                    ? 'OTP verified! Please complete your profile.'
+                    : 'Login successful! Welcome back.',
                 type: ToastType.success,
               );
               Future.delayed(const Duration(milliseconds: 500), () {
                 if (context.mounted) {
-                  Navigator.pushReplacementNamed(context, AppRoutes.getHomeRoute());
+                  if (needsRegistration) {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      AppRoutes.registration,
+                      arguments: {'userId': user.id},
+                    );
+                  } else {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      AppRoutes.getHomeRoute(),
+                    );
+                  }
                 }
               });
             } else if (state is LoginError) {

@@ -3,6 +3,7 @@ import 'package:ags/screens/products/product_screen.dart';
 import 'package:ags/screens/user_home/pages/user_home.dart';
 import 'package:ags/screens/messages/message_screen.dart';
 import 'package:ags/core/permissions/permission_manager.dart';
+import 'package:ags/screens/registration/registration_screen.dart';
 
 import 'package:flutter/material.dart';
 import '../screens/category/category_screen.dart';
@@ -56,6 +57,7 @@ class AppRoutes {
   static const String companies = '/companies';
   static const String createCompany = '/companies/create';
   static const String userHome = '/userHome';
+  static const String registration = '/registration';
   static const String messages = '/messages';
 
   static Map<String, WidgetBuilder> getRoutes() {
@@ -149,9 +151,12 @@ class AppRoutes {
         );
       },
       userHome: (context) {
-        // final args =
-        // ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         return UserHome();
+      },
+      registration: (context) {
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return RegistrationScreen(userId: args?['userId'] ?? '');
       },
       messages: (context) => const MessageScreen(),
     };

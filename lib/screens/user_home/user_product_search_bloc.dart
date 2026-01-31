@@ -9,7 +9,7 @@ import '../../services/user_product_search_service.dart';
 
 abstract class UserProductSearchEvent {}
 
-/// Event to search products with a text query and/or document IDs
+/// Initial search with text and/or images
 class SearchProducts extends UserProductSearchEvent {
   final String query;
   final List<String> documentIds;
@@ -17,24 +17,34 @@ class SearchProducts extends UserProductSearchEvent {
   SearchProducts({required this.query, this.documentIds = const []});
 }
 
-/// Event to select a theme
+/// Select a theme
 class SelectTheme extends UserProductSearchEvent {
   final AISuggestedTheme theme;
-
   SelectTheme({required this.theme});
 }
 
-/// Event to select a category
-class SelectCategory extends UserProductSearchEvent {
-  final AISuggestedCategory category;
-
-  SelectCategory({required this.category});
+/// Select a price range
+class SelectPriceRange extends UserProductSearchEvent {
+  final PriceRange priceRange;
+  SelectPriceRange({required this.priceRange});
 }
 
-/// Event to clear search results and start over
+/// Select a product (user taps "I Want This")
+class SelectProduct extends UserProductSearchEvent {
+  final UserProductSearchModel product;
+  SelectProduct({required this.product});
+}
+
+/// Submit MOQ for selected product
+class SubmitMoq extends UserProductSearchEvent {
+  final String moq;
+  SubmitMoq({required this.moq});
+}
+
+/// Clear search and start over
 class ClearSearch extends UserProductSearchEvent {}
 
-/// Event to go back to previous step
+/// Go back to previous step
 class GoBack extends UserProductSearchEvent {}
 
 // ============================================================================
@@ -47,7 +57,6 @@ class UserProductSearchInitial extends UserProductSearchState {}
 
 class UserProductSearchLoading extends UserProductSearchState {
   final List<ChatMessage> messages;
-
   UserProductSearchLoading({required this.messages});
 }
 
@@ -55,51 +64,40 @@ class UserProductSearchConversation extends UserProductSearchState {
   final String? activityId;
   final List<ChatMessage> messages;
   final List<AISuggestedTheme> suggestedThemes;
-  final List<AISuggestedCategory> suggestedCategories;
+  final List<PriceRange> availablePriceRanges;
   final List<UserProductSearchModel> products;
   final String stage;
   final AISuggestedTheme? selectedTheme;
-  final AISuggestedCategory? selectedCategory;
+  final PriceRange? selectedPriceRange;
+  final UserProductSearchModel? selectedProduct;
   final UserProductSearchConversation? previousState;
 
   UserProductSearchConversation({
     this.activityId,
     required this.messages,
     this.suggestedThemes = const [],
-    this.suggestedCategories = const [],
+    this.availablePriceRanges = const [],
     this.products = const [],
     required this.stage,
     this.selectedTheme,
-    this.selectedCategory,
+    this.selectedPriceRange,
+    this.selectedProduct,
     this.previousState,
   });
 
-  UserProductSearchConversation copyWith({
-    String? activityId,
-    List<ChatMessage>? messages,
-    List<AISuggestedTheme>? suggestedThemes,
-    List<AISuggestedCategory>? suggestedCategories,
-    List<UserProductSearchModel>? products,
-    String? stage,
-    AISuggestedTheme? selectedTheme,
-    AISuggestedCategory? selectedCategory,
-    UserProductSearchConversation? previousState,
-  }) {
-    return UserProductSearchConversation(
-      activityId: activityId ?? this.activityId,
-      messages: messages ?? this.messages,
-      suggestedThemes: suggestedThemes ?? this.suggestedThemes,
-      suggestedCategories: suggestedCategories ?? this.suggestedCategories,
-      products: products ?? this.products,
-      stage: stage ?? this.stage,
-      selectedTheme: selectedTheme ?? this.selectedTheme,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
-      previousState: previousState ?? this.previousState,
-    );
-  }
-
-  /// Check if we can go back to a previous state
   bool get canGoBack => previousState != null;
+}
+
+class UserProductSearchCompleted extends UserProductSearchState {
+  final List<ChatMessage> messages;
+  final UserProductSearchModel product;
+  final String moq;
+
+  UserProductSearchCompleted({
+    required this.messages,
+    required this.product,
+    required this.moq,
+  });
 }
 
 class UserProductSearchError extends UserProductSearchState {
@@ -121,7 +119,9 @@ class UserProductSearchBloc
   UserProductSearchBloc() : super(UserProductSearchInitial()) {
     on<SearchProducts>(_onSearchProducts);
     on<SelectTheme>(_onSelectTheme);
-    on<SelectCategory>(_onSelectCategory);
+    on<SelectPriceRange>(_onSelectPriceRange);
+    on<SelectProduct>(_onSelectProduct);
+    on<SubmitMoq>(_onSubmitMoq);
     on<ClearSearch>(_onClearSearch);
     on<GoBack>(_onGoBack);
   }
@@ -133,10 +133,8 @@ class UserProductSearchBloc
   ) async {
     final hasQuery = event.query.trim().isNotEmpty;
     final hasDocuments = event.documentIds.isNotEmpty;
-
     if (!hasQuery && !hasDocuments) return;
 
-    // Create user message
     final userMessage = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       content: event.query.isNotEmpty ? event.query : 'Uploaded images',
@@ -145,13 +143,7 @@ class UserProductSearchBloc
       imageUrls: event.documentIds.isNotEmpty ? event.documentIds : null,
     );
 
-    final currentMessages = <ChatMessage>[];
-    if (state is UserProductSearchConversation) {
-      currentMessages
-          .addAll((state as UserProductSearchConversation).messages);
-    }
-    currentMessages.add(userMessage);
-
+    final currentMessages = <ChatMessage>[userMessage];
     emit(UserProductSearchLoading(messages: currentMessages));
 
     try {
@@ -160,32 +152,25 @@ class UserProductSearchBloc
         documentIds: event.documentIds,
       );
 
-      // Create bot response message
       String botMessage = "I've analyzed your requirements. ";
       if (response.aiSuggestedThemes.isNotEmpty) {
         botMessage +=
-            "Based on your input, I've identified some themes that might match what you're looking for. Please select the one that best fits your needs.";
-      } else if (response.aiSuggestedCategories.isNotEmpty) {
-        botMessage +=
-            "Here are some categories that might interest you. Please select one to continue.";
+            "Here are some themes that match your needs. Please select the one that fits best.";
       } else {
         botMessage += "Here's what I found for you.";
       }
 
-      final botChatMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      currentMessages.add(ChatMessage(
+        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
         content: botMessage,
         isUser: false,
         timestamp: DateTime.now(),
-      );
-
-      currentMessages.add(botChatMessage);
+      ));
 
       emit(UserProductSearchConversation(
         activityId: response.activityId,
         messages: currentMessages,
         suggestedThemes: response.aiSuggestedThemes,
-        suggestedCategories: response.aiSuggestedCategories,
         products: response.products,
         stage: response.stage ?? 'THEME_SELECTION',
       ));
@@ -197,16 +182,14 @@ class UserProductSearchBloc
     }
   }
 
-  /// Handle theme selection
+  /// Handle theme selection - then auto-skip category to get price ranges
   Future<void> _onSelectTheme(
     SelectTheme event,
     Emitter<UserProductSearchState> emit,
   ) async {
     if (state is! UserProductSearchConversation) return;
-
     final currentState = state as UserProductSearchConversation;
 
-    // Add user selection message
     final userMessage = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       content: event.theme.name,
@@ -215,40 +198,33 @@ class UserProductSearchBloc
     );
 
     final messages = [...currentState.messages, userMessage];
-
     emit(UserProductSearchLoading(messages: messages));
 
     try {
-      final response = await _service.selectTheme(
+      // Step 1: Select theme (backend moves to CATEGORY_SELECTION)
+      await _service.selectTheme(
         activityId: currentState.activityId!,
         theme: event.theme,
       );
 
-      // Create bot response
-      String botMessage = "Excellent choice! '${event.theme.name}' is a great theme. ";
-      if (response.aiSuggestedCategories.isNotEmpty) {
-        botMessage +=
-            "Now, let's narrow down the category. Which of these best describes what you're looking for?";
-      } else {
-        botMessage += "Let me find the best products for you.";
-      }
-
-      final botChatMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: botMessage,
-        isUser: false,
-        timestamp: DateTime.now(),
+      // Step 2: Skip category (backend moves to PRICE_RANGE_SELECTION)
+      final response = await _service.skipCategory(
+        activityId: currentState.activityId!,
       );
 
-      messages.add(botChatMessage);
+      messages.add(ChatMessage(
+        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+        content:
+            "Great choice! '${event.theme.name}' selected. Now, select your budget range to find the best products.",
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
 
       emit(UserProductSearchConversation(
         activityId: currentState.activityId,
         messages: messages,
-        suggestedThemes: [],
-        suggestedCategories: response.aiSuggestedCategories,
-        products: response.products,
-        stage: response.stage ?? 'CATEGORY_SELECTION',
+        availablePriceRanges: response.availablePriceRanges,
+        stage: response.stage ?? 'PRICE_RANGE_SELECTION',
         selectedTheme: event.theme,
         previousState: currentState,
       ));
@@ -260,53 +236,55 @@ class UserProductSearchBloc
     }
   }
 
-  /// Handle category selection
-  Future<void> _onSelectCategory(
-    SelectCategory event,
+  /// Handle price range selection
+  Future<void> _onSelectPriceRange(
+    SelectPriceRange event,
     Emitter<UserProductSearchState> emit,
   ) async {
     if (state is! UserProductSearchConversation) return;
-
     final currentState = state as UserProductSearchConversation;
 
-    // Add user selection message
     final userMessage = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      content: event.category.name,
+      content: event.priceRange.label,
       isUser: true,
       timestamp: DateTime.now(),
     );
 
     final messages = [...currentState.messages, userMessage];
-
     emit(UserProductSearchLoading(messages: messages));
 
     try {
-      final response = await _service.selectCategory(
+      final response = await _service.selectPriceRange(
         activityId: currentState.activityId!,
-        category: event.category,
+        priceRange: event.priceRange,
       );
 
-      // Create bot response
-      final botMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content:
-            "Great! I've found some products in '${event.category.name}' that match your requirements.",
+      final productCount = response.products.length;
+      String botMessage;
+      if (productCount > 0) {
+        botMessage =
+            "I found $productCount product${productCount > 1 ? 's' : ''} matching your requirements. Tap on a product to explore further.";
+      } else {
+        botMessage =
+            "No products found for this combination. Try a different price range or start a new search.";
+      }
+
+      messages.add(ChatMessage(
+        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+        content: botMessage,
         isUser: false,
         timestamp: DateTime.now(),
-      );
-
-      messages.add(botMessage);
+      ));
 
       emit(UserProductSearchConversation(
         activityId: currentState.activityId,
         messages: messages,
-        suggestedThemes: [],
-        suggestedCategories: [],
         products: response.products,
-        stage: 'PRODUCTS',
+        stage: response.stage ?? 'PRODUCT_SELECTION',
         selectedTheme: currentState.selectedTheme,
-        selectedCategory: event.category,
+        selectedPriceRange: event.priceRange,
+        previousState: currentState,
       ));
     } catch (e) {
       emit(UserProductSearchError(
@@ -316,7 +294,91 @@ class UserProductSearchBloc
     }
   }
 
-  /// Clear search results
+  /// Handle product selection (user taps "I Want This")
+  void _onSelectProduct(
+    SelectProduct event,
+    Emitter<UserProductSearchState> emit,
+  ) {
+    if (state is! UserProductSearchConversation) return;
+    final currentState = state as UserProductSearchConversation;
+
+    final userMessage = ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: 'I want: ${event.product.name}',
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
+
+    final messages = [...currentState.messages, userMessage];
+
+    messages.add(ChatMessage(
+      id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+      content:
+          "Excellent choice! Please select the approximate quantity you need.",
+      isUser: false,
+      timestamp: DateTime.now(),
+    ));
+
+    emit(UserProductSearchConversation(
+      activityId: currentState.activityId,
+      messages: messages,
+      products: currentState.products,
+      stage: 'MOQ_SELECTION',
+      selectedTheme: currentState.selectedTheme,
+      selectedPriceRange: currentState.selectedPriceRange,
+      selectedProduct: event.product,
+      previousState: currentState,
+    ));
+  }
+
+  /// Handle MOQ submission
+  Future<void> _onSubmitMoq(
+    SubmitMoq event,
+    Emitter<UserProductSearchState> emit,
+  ) async {
+    if (state is! UserProductSearchConversation) return;
+    final currentState = state as UserProductSearchConversation;
+
+    if (currentState.selectedProduct == null) return;
+
+    final userMessage = ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: event.moq,
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
+
+    final messages = [...currentState.messages, userMessage];
+    emit(UserProductSearchLoading(messages: messages));
+
+    try {
+      await _service.selectProductWithMoq(
+        activityId: currentState.activityId!,
+        product: currentState.selectedProduct!,
+        moq: event.moq,
+      );
+
+      messages.add(ChatMessage(
+        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+        content:
+            "Thank you! Your interest in '${currentState.selectedProduct!.name}' has been recorded. One of our AGS Promotional Aid Experts will connect with you within 24 working hours.",
+        isUser: false,
+        timestamp: DateTime.now(),
+      ));
+
+      emit(UserProductSearchCompleted(
+        messages: messages,
+        product: currentState.selectedProduct!,
+        moq: event.moq,
+      ));
+    } catch (e) {
+      emit(UserProductSearchError(
+        message: e.toString().replaceAll('Exception: ', ''),
+        messages: messages,
+      ));
+    }
+  }
+
   void _onClearSearch(
     ClearSearch event,
     Emitter<UserProductSearchState> emit,
@@ -324,7 +386,6 @@ class UserProductSearchBloc
     emit(UserProductSearchInitial());
   }
 
-  /// Go back to previous step
   void _onGoBack(
     GoBack event,
     Emitter<UserProductSearchState> emit,

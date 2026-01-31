@@ -9,6 +9,11 @@ class UserModel {
   final String? phoneNumber;
   final List<String>? permissions;
   final bool? isActive;
+  final bool? isRegistered;
+  final String? registrationStage;
+  final String? userProvidedIndustry;
+  final String? userProvidedCompany;
+  final String? division;
   final String? designation;
   final String? employeeCode;
   final String? bloodGroup;
@@ -37,6 +42,11 @@ class UserModel {
     this.phoneNumber,
     this.permissions,
     this.isActive,
+    this.isRegistered,
+    this.registrationStage,
+    this.userProvidedIndustry,
+    this.userProvidedCompany,
+    this.division,
     this.designation,
     this.employeeCode,
     this.bloodGroup,
@@ -69,6 +79,11 @@ class UserModel {
           ? List<String>.from(json['permissions'])
           : null,
       isActive: json['isActive'],
+      isRegistered: json['isRegistered'],
+      registrationStage: json['registrationStage'],
+      userProvidedIndustry: json['userProvidedIndustry'],
+      userProvidedCompany: json['userProvidedCompany'],
+      division: json['division'],
       designation: json['designation'],
       employeeCode: json['employeeCode'],
       bloodGroup: json['bloodGroup'],
@@ -100,6 +115,11 @@ class UserModel {
       if (phoneNumber != null) 'phoneNumber': phoneNumber,
       if (permissions != null) 'permissions': permissions,
       if (isActive != null) 'isActive': isActive,
+      if (isRegistered != null) 'isRegistered': isRegistered,
+      if (registrationStage != null) 'registrationStage': registrationStage,
+      if (userProvidedIndustry != null) 'userProvidedIndustry': userProvidedIndustry,
+      if (userProvidedCompany != null) 'userProvidedCompany': userProvidedCompany,
+      if (division != null) 'division': division,
       if (designation != null) 'designation': designation,
       if (employeeCode != null) 'employeeCode': employeeCode,
       if (bloodGroup != null) 'bloodGroup': bloodGroup,
@@ -119,10 +139,14 @@ class UserModel {
     };
   }
 
+  /// Whether this user needs to complete registration
+  bool get needsRegistration => isRegistered != true && role == 'CUSTOMER';
+
   String get fullName {
     final parts = [firstName, if (middleName != null) middleName, lastName];
     return parts.where((p) => p != null && p.isNotEmpty).join(' ');
   }
+
   String get phone => phoneCode != null && phoneNumber != null
       ? '$phoneCode $phoneNumber'
       : '';

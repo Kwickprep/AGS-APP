@@ -21,8 +21,7 @@ class ApiService {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'x-platform': 'webapp',
-          // 'x-platform': 'mobile',
+          'x-platform': 'mobile',
         },
       ),
     );

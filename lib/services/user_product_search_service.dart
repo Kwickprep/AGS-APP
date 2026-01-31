@@ -47,7 +47,7 @@ class UserProductSearchService {
       };
 
       final response = await _apiService.put(
-        '/api/activity-types/$activityId',
+        '/api/activities/$activityId',
         data: data,
       );
 
@@ -57,30 +57,76 @@ class UserProductSearchService {
     }
   }
 
-  /// Select a category for the product search
-  Future<UserProductSearchResponse> selectCategory({
+  /// Skip category selection (category is optional, go directly to price range)
+  Future<UserProductSearchResponse> skipCategory({
     required String activityId,
-    required AISuggestedCategory category,
   }) async {
     try {
       final data = {
         'body': {
-          'selectedCategory': {
-            'id': category.id,
-            'name': category.name,
-            'description': category.description,
-          },
+          'selectedCategory': null,
         },
       };
 
       final response = await _apiService.put(
-        '/api/activity-types/$activityId',
+        '/api/activities/$activityId',
         data: data,
       );
 
       return UserProductSearchResponse.fromJson(response.data);
     } catch (e) {
-      throw Exception('Failed to select category: ${e.toString()}');
+      throw Exception('Failed to skip category: ${e.toString()}');
+    }
+  }
+
+  /// Select a price range
+  Future<UserProductSearchResponse> selectPriceRange({
+    required String activityId,
+    required PriceRange priceRange,
+  }) async {
+    try {
+      final data = {
+        'body': {
+          'selectedPriceRange': priceRange.toJson(),
+        },
+      };
+
+      final response = await _apiService.put(
+        '/api/activities/$activityId',
+        data: data,
+      );
+
+      return UserProductSearchResponse.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to select price range: ${e.toString()}');
+    }
+  }
+
+  /// Select a product and submit MOQ to complete the search
+  Future<UserProductSearchResponse> selectProductWithMoq({
+    required String activityId,
+    required UserProductSearchModel product,
+    required String moq,
+  }) async {
+    try {
+      final data = {
+        'body': {
+          'selectedProduct': {
+            'id': product.id,
+            'name': product.name,
+          },
+          'moq': moq,
+        },
+      };
+
+      final response = await _apiService.put(
+        '/api/activities/$activityId',
+        data: data,
+      );
+
+      return UserProductSearchResponse.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to complete selection: ${e.toString()}');
     }
   }
 }

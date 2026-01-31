@@ -52,5 +52,20 @@ void main() async {
   final authService = getIt<AuthService>();
   final isLoggedIn = await authService.checkAndRestoreSession();
 
-  runApp(MyApp(isLoggedIn: isLoggedIn));
+  // Check if logged-in customer needs registration
+  bool needsRegistration = false;
+  String userId = '';
+  if (isLoggedIn) {
+    final user = await getIt<StorageService>().getUser();
+    if (user != null && user.needsRegistration) {
+      needsRegistration = true;
+      userId = user.id;
+    }
+  }
+
+  runApp(MyApp(
+    isLoggedIn: isLoggedIn,
+    needsRegistration: needsRegistration,
+    userId: userId,
+  ));
 }
