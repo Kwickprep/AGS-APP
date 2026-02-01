@@ -8,7 +8,7 @@ class DashboardService {
   // 1. Summary statistics (Admin)
   Future<DashboardSummary> getSummary() async {
     try {
-      final res = await _api.get('/api/v1/dashboard/summary');
+      final res = await _api.get('/api/dashboard/summary');
       return DashboardSummary.fromJson(res.data['data']);
     } catch (e) {
       throw Exception('Failed to load summary: $e');
@@ -18,7 +18,7 @@ class DashboardService {
   // 2. Employee stats
   Future<EmployeeStats> getEmployeeStats() async {
     try {
-      final res = await _api.get('/api/v1/dashboard/employee-stats');
+      final res = await _api.get('/api/dashboard/employee-stats');
       return EmployeeStats.fromJson(res.data['data']);
     } catch (e) {
       throw Exception('Failed to load employee stats: $e');
@@ -28,7 +28,7 @@ class DashboardService {
   // 3. Recent inquiries
   Future<DashboardInquiriesResponse> getInquiries({int limit = 5}) async {
     try {
-      final res = await _api.get('/api/v1/dashboard/inquiries', params: {
+      final res = await _api.get('/api/dashboard/inquiries', params: {
         'limit': limit.toString(),
       });
       return DashboardInquiriesResponse.fromJson(res.data['data']);
@@ -43,7 +43,7 @@ class DashboardService {
   }) async {
     try {
       final res = await _api.get(
-        '/api/v1/dashboard/activities/scheduled',
+        '/api/dashboard/activities/scheduled',
         params: {'limit': limit.toString()},
       );
       return DashboardActivitiesResponse.fromJson(res.data['data']);
@@ -55,7 +55,7 @@ class DashboardService {
   // 5. WhatsApp unread
   Future<WhatsAppUnreadResponse> getWhatsAppUnread({int limit = 5}) async {
     try {
-      final res = await _api.get('/api/v1/dashboard/whatsapp/unread', params: {
+      final res = await _api.get('/api/dashboard/whatsapp/unread', params: {
         'limit': limit.toString(),
       });
       return WhatsAppUnreadResponse.fromJson(res.data['data']);
@@ -70,7 +70,7 @@ class DashboardService {
   }) async {
     try {
       final res = await _api.get(
-        '/api/v1/dashboard/campaigns/scheduled',
+        '/api/dashboard/campaigns/scheduled',
         params: {'limit': limit.toString()},
       );
       return DashboardCampaignsResponse.fromJson(res.data['data']);
@@ -82,7 +82,7 @@ class DashboardService {
   // 7. Activity type analytics
   Future<ActivityTypeAnalytics> getActivityTypeAnalytics() async {
     try {
-      final res = await _api.get('/api/v1/dashboard/analytics/activity-types');
+      final res = await _api.get('/api/dashboard/analytics/activity-types');
       return ActivityTypeAnalytics.fromJson(res.data['data']);
     } catch (e) {
       throw Exception('Failed to load activity analytics: $e');
@@ -93,7 +93,7 @@ class DashboardService {
   Future<InquiryStatusAnalytics> getInquiryStatusAnalytics() async {
     try {
       final res =
-          await _api.get('/api/v1/dashboard/analytics/inquiries/status');
+          await _api.get('/api/dashboard/analytics/inquiries/status');
       return InquiryStatusAnalytics.fromJson(res.data['data']);
     } catch (e) {
       throw Exception('Failed to load inquiry status: $e');
@@ -104,7 +104,7 @@ class DashboardService {
   Future<ProductSearchFunnel> getProductSearchFunnel() async {
     try {
       final res = await _api.get(
-        '/api/v1/dashboard/analytics/product-search/funnel',
+        '/api/dashboard/analytics/product-search/funnel',
       );
       return ProductSearchFunnel.fromJson(res.data['data']);
     } catch (e) {
@@ -116,7 +116,7 @@ class DashboardService {
   Future<ProductSearchSourceAnalytics> getProductSearchSources() async {
     try {
       final res = await _api.get(
-        '/api/v1/dashboard/analytics/product-search/sources',
+        '/api/dashboard/analytics/product-search/sources',
       );
       return ProductSearchSourceAnalytics.fromJson(res.data['data']);
     } catch (e) {
@@ -128,7 +128,7 @@ class DashboardService {
   Future<TopThemesAnalytics> getTopThemes({int limit = 5}) async {
     try {
       final res = await _api.get(
-        '/api/v1/dashboard/analytics/product-search/themes',
+        '/api/dashboard/analytics/product-search/themes',
         params: {'limit': limit.toString()},
       );
       return TopThemesAnalytics.fromJson(res.data['data']);
@@ -141,7 +141,7 @@ class DashboardService {
   Future<TopCategoriesAnalytics> getTopCategories({int limit = 5}) async {
     try {
       final res = await _api.get(
-        '/api/v1/dashboard/analytics/product-search/categories',
+        '/api/dashboard/analytics/product-search/categories',
         params: {'limit': limit.toString()},
       );
       return TopCategoriesAnalytics.fromJson(res.data['data']);
@@ -154,7 +154,7 @@ class DashboardService {
   Future<TopProductsAnalytics> getTopProducts({int limit = 5}) async {
     try {
       final res = await _api.get(
-        '/api/v1/dashboard/analytics/product-search/products',
+        '/api/dashboard/analytics/product-search/products',
         params: {'limit': limit.toString()},
       );
       return TopProductsAnalytics.fromJson(res.data['data']);
@@ -167,7 +167,7 @@ class DashboardService {
   Future<TopCompaniesAnalytics> getTopCompanies({int limit = 5}) async {
     try {
       final res = await _api.get(
-        '/api/v1/dashboard/analytics/inquiries/companies',
+        '/api/dashboard/analytics/inquiries/companies',
         params: {'limit': limit.toString()},
       );
       return TopCompaniesAnalytics.fromJson(res.data['data']);
