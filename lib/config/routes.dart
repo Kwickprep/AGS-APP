@@ -1,6 +1,6 @@
 import 'package:ags/screens/activities/activity_screen.dart';
 import 'package:ags/screens/products/product_screen.dart';
-import 'package:ags/screens/user_home/pages/user_home.dart';
+import 'package:ags/screens/user_home/customer_shell.dart';
 import 'package:ags/screens/messages/message_screen.dart';
 import 'package:ags/core/permissions/permission_manager.dart';
 import 'package:ags/screens/registration/registration_screen.dart';
@@ -151,7 +151,7 @@ class AppRoutes {
         );
       },
       userHome: (context) {
-        return UserHome();
+        return const CustomerShell();
       },
       registration: (context) {
         final args =

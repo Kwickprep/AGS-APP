@@ -18,6 +18,7 @@ import 'services/activity_type_service.dart';
 import 'services/company_service.dart';
 import 'services/user_product_search_service.dart';
 import 'services/whatsapp_service.dart';
+import 'services/dashboard_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -40,6 +41,7 @@ void setupDependencies() {
   getIt.registerSingleton<CompanyService>(CompanyService());
   getIt.registerSingleton<UserProductSearchService>(UserProductSearchService());
   getIt.registerSingleton<WhatsAppService>(WhatsAppService());
+  getIt.registerSingleton<DashboardService>(DashboardService());
 }
 
 void main() async {
