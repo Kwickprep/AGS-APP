@@ -24,6 +24,9 @@ class AppModule {
 
   /// Check if user has any permission for this module
   bool hasAnyPermission(List<String> userPermissions) {
+    // system.admin has access to everything
+    if (userPermissions.contains('system.admin')) return true;
+
     final permissions = [
       readPermission,
       createPermission,
