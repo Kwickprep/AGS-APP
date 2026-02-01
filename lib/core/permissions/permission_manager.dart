@@ -40,8 +40,8 @@ class PermissionManager {
   /// Get current user role
   String get role => _role;
 
-  /// Check if user is admin (has system.admin permission)
-  bool get isAdmin => _permissions.contains('system.admin');
+  /// Check if user is admin (by role or system.admin permission)
+  bool get isAdmin => _role == 'ADMIN' || _permissions.contains('system.admin');
 
   /// Check if user has a specific permission
   bool hasPermission(String permission) {

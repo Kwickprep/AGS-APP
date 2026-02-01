@@ -30,9 +30,11 @@ class _AppDrawerState extends State<AppDrawer> {
     if (mounted) {
       setState(() {
         _user = user;
-        _accessibleModules = PermissionConfig.getAccessibleModules(
-          _permissionManager.permissions,
-        );
+        _accessibleModules = _permissionManager.isAdmin
+            ? PermissionConfig.allModules.toList()
+            : PermissionConfig.getAccessibleModules(
+                _permissionManager.permissions,
+              );
       });
     }
   }
