@@ -145,6 +145,33 @@ class PermissionConfig {
       route: AppRoutes.messages,
       // Messages is accessible to all authenticated users
     ),
+    AppModule(
+      name: 'Template Categories',
+      icon: Icons.folder_outlined,
+      route: AppRoutes.templateCategories,
+      readPermission: 'whatsapp.read',
+      createPermission: 'whatsapp.create',
+      updatePermission: 'whatsapp.update',
+      deletePermission: 'whatsapp.delete',
+    ),
+    AppModule(
+      name: 'Auto Replies',
+      icon: Icons.reply_all_outlined,
+      route: AppRoutes.autoReplies,
+      readPermission: 'whatsapp.read',
+      createPermission: 'whatsapp.create',
+      updatePermission: 'whatsapp.update',
+      deletePermission: 'whatsapp.delete',
+    ),
+    AppModule(
+      name: 'Campaigns',
+      icon: Icons.campaign_outlined,
+      route: AppRoutes.campaigns,
+      readPermission: 'whatsapp.read',
+      createPermission: 'whatsapp.create',
+      updatePermission: 'whatsapp.update',
+      deletePermission: 'whatsapp.delete',
+    ),
   ];
 
   /// Get modules filtered by user permissions

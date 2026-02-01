@@ -29,6 +29,12 @@ import '../screens/activity_types/activity_type_screen.dart';
 import '../screens/activity_types/activity_type_create_screen.dart';
 import '../screens/companies/company_screen.dart';
 import '../screens/companies/company_create_screen.dart';
+import '../screens/whatsapp_template_categories/template_category_screen.dart';
+import '../screens/whatsapp_template_categories/template_category_create_screen.dart';
+import '../screens/whatsapp_auto_replies/auto_reply_screen.dart';
+import '../screens/whatsapp_auto_replies/auto_reply_create_screen.dart';
+import '../screens/whatsapp_campaigns/campaign_screen.dart';
+import '../screens/whatsapp_campaigns/campaign_create_screen.dart';
 
 class AppRoutes {
   static const String startup = '/startup';
@@ -59,6 +65,12 @@ class AppRoutes {
   static const String userHome = '/userHome';
   static const String registration = '/registration';
   static const String messages = '/messages';
+  static const String templateCategories = '/whatsapp/template-categories';
+  static const String createTemplateCategory = '/whatsapp/template-categories/create';
+  static const String autoReplies = '/whatsapp/auto-replies';
+  static const String createAutoReply = '/whatsapp/auto-replies/create';
+  static const String campaigns = '/whatsapp/campaigns';
+  static const String createCampaign = '/whatsapp/campaigns/create';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -159,6 +171,34 @@ class AppRoutes {
         return RegistrationScreen(userId: args?['userId'] ?? '');
       },
       messages: (context) => const MessageScreen(),
+      // WhatsApp sub-modules
+      templateCategories: (context) => const TemplateCategoryScreen(),
+      createTemplateCategory: (context) {
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return TemplateCategoryCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          data: args?['data'],
+        );
+      },
+      autoReplies: (context) => const AutoReplyScreen(),
+      createAutoReply: (context) {
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return AutoReplyCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          data: args?['data'],
+        );
+      },
+      campaigns: (context) => const CampaignScreen(),
+      createCampaign: (context) {
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return CampaignCreateScreen(
+          isEdit: args?['isEdit'] ?? false,
+          data: args?['data'],
+        );
+      },
     };
   }
 

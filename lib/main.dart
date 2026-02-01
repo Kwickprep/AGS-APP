@@ -19,6 +19,9 @@ import 'services/company_service.dart';
 import 'services/user_product_search_service.dart';
 import 'services/whatsapp_service.dart';
 import 'services/dashboard_service.dart';
+import 'services/whatsapp_template_category_service.dart';
+import 'services/whatsapp_auto_reply_service.dart';
+import 'services/whatsapp_campaign_service.dart';
 
 final getIt = GetIt.instance;
 
@@ -42,6 +45,9 @@ void setupDependencies() {
   getIt.registerSingleton<UserProductSearchService>(UserProductSearchService());
   getIt.registerSingleton<WhatsAppService>(WhatsAppService());
   getIt.registerSingleton<DashboardService>(DashboardService());
+  getIt.registerSingleton<WhatsAppTemplateCategoryService>(WhatsAppTemplateCategoryService());
+  getIt.registerSingleton<WhatsAppAutoReplyService>(WhatsAppAutoReplyService());
+  getIt.registerSingleton<WhatsAppCampaignService>(WhatsAppCampaignService());
 }
 
 void main() async {
