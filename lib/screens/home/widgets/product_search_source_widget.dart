@@ -15,6 +15,9 @@ class ProductSearchSourceWidget extends StatelessWidget {
     'dashboard': Color(0xFF6366F1),
     'whatsapp': Color(0xFF25D366),
     'application': Color(0xFF3B82F6),
+    'mobile_customer': Color(0xFF14B8A6),
+    'mobile_employee': Color(0xFFF97316),
+    'mobile_admin': Color(0xFFEC4899),
   };
 
   @override

@@ -36,7 +36,7 @@ class CardField {
       isDescription = false;
 }
 
-/// Reusable record card widget with compact design
+/// Reusable record card widget with clean, modern design
 class RecordCard extends StatelessWidget {
   final String? id;
   final int? serialNumber;
@@ -71,21 +71,23 @@ class RecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Separate title fields from regular fields
     final titleFields = fields.where((f) => f.isTitle).toList();
     final regularFields = fields.where((f) => !f.isTitle).toList();
     final hasMetadata = createdBy != null || createdAt != null;
+    final hasActions = onView != null || onEdit != null || onDelete != null;
+    final hasFooter = hasMetadata || hasActions;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -96,98 +98,122 @@ class RecordCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: SR badge + status
-            if (serialNumber != null || status != null || isActive != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (serialNumber != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '#$serialNumber',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+            // Content area with unified padding
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: SR badge + Status badge
+                  if (serialNumber != null || status != null || isActive != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (serialNumber != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                '#$serialNumber',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          if (status != null || isActive != null)
+                            StatusBadge(
+                              status: status ?? (isActive == true ? 'Active' : 'Inactive'),
+                              isActive: isActive,
+                            ),
+                        ],
                       ),
-                    if (status != null || isActive != null)
-                      StatusBadge(
-                        status: status ?? (isActive == true ? 'Active' : 'Inactive'),
-                        isActive: isActive,
-                      ),
-                  ],
-                ),
-              ),
+                    ),
 
-            // Title fields
-            for (final field in titleFields)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  // Title: value only (screen context provides meaning)
+                  for (final field in titleFields)
+                    Padding(
+                      padding: EdgeInsets.only(
+                        bottom: regularFields.isNotEmpty ? 12 : 0,
+                      ),
+                      child: Text(
+                        field.value,
+                        style: AppTextStyles.cardTitle,
+                        maxLines: field.maxLines ?? 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+
+                  // Regular fields in 2-column grid
+                  if (regularFields.isNotEmpty)
+                    _buildFieldGrid(regularFields),
+                ],
+              ),
+            ),
+
+            // Footer: metadata + actions (single section, one divider)
+            if (hasFooter) ...[
+              const Divider(height: 1, thickness: 1, color: AppColors.divider),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color: const Color(0xFFF8F9FA),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      field.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textLight,
-                        fontWeight: FontWeight.w500,
+                    if (createdBy != null || createdAt != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.person_outline, size: 14, color: AppColors.textLight),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Created${createdBy != null && createdBy!.isNotEmpty ? ' by $createdBy' : ''}${createdAt != null && createdAt!.isNotEmpty ? '  ·  $createdAt' : ''}',
+                              style: AppTextStyles.cardMetadata,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      field.value,
-                      style: AppTextStyles.cardTitle,
-                      maxLines: field.maxLines ?? 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-
-            // Divider before regular fields
-            if (regularFields.isNotEmpty)
-              const Divider(height: 1, thickness: 1, color: AppColors.border),
-
-            // Regular fields in 2-column grid
-            if (regularFields.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
-                child: _buildFieldGrid(regularFields),
-              ),
-
-            // Metadata footer (created/updated)
-            if (hasMetadata) ...[
-              const Divider(height: 1, thickness: 1, color: AppColors.border),
-              _buildMetadataFooter(),
-            ],
-
-            // Action buttons
-            if (onView != null || onEdit != null || onDelete != null) ...[
-              const Divider(height: 1, thickness: 1, color: AppColors.border),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (onView != null) ...[
-                      ActionButton.view(onTap: onView),
-                      const SizedBox(width: 12),
+                    if (updatedBy != null || updatedAt != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.edit_outlined, size: 14, color: AppColors.textLight),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Updated${updatedBy != null && updatedBy!.isNotEmpty ? ' by $updatedBy' : ''}${updatedAt != null && updatedAt!.isNotEmpty ? '  ·  $updatedAt' : ''}',
+                              style: AppTextStyles.cardMetadata,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
-                    if (onEdit != null) ...[
-                      ActionButton.edit(onTap: onEdit),
-                      const SizedBox(width: 12),
+                    if (hasActions) ...[
+                      if (hasMetadata) const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (onView != null) ...[
+                            ActionButton.view(onTap: onView),
+                            const SizedBox(width: 12),
+                          ],
+                          if (onEdit != null) ...[
+                            ActionButton.edit(onTap: onEdit),
+                            const SizedBox(width: 12),
+                          ],
+                          if (onDelete != null) ActionButton.delete(onTap: onDelete),
+                        ],
+                      ),
                     ],
-                    if (onDelete != null) ActionButton.delete(onTap: onDelete),
                   ],
                 ),
               ),
@@ -203,10 +229,11 @@ class RecordCard extends StatelessWidget {
     for (int i = 0; i < regularFields.length; i += 2) {
       final left = regularFields[i];
       final right = (i + 1 < regularFields.length) ? regularFields[i + 1] : null;
+      final isLastRow = i + 2 >= regularFields.length;
 
       rows.add(
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: EdgeInsets.only(bottom: isLastRow ? 0 : 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -232,9 +259,9 @@ class RecordCard extends StatelessWidget {
         children: [
           Text(
             field.label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textLight, fontWeight: FontWeight.w500),
+            style: AppTextStyles.cardMetadata.copyWith(fontWeight: FontWeight.w500),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 3),
           Text(
             field.value,
             style: AppTextStyles.cardDescription,
@@ -249,59 +276,20 @@ class RecordCard extends StatelessWidget {
       children: [
         Text(
           field.label,
-          style: const TextStyle(fontSize: 11, color: AppColors.textLight, fontWeight: FontWeight.w500),
+          style: AppTextStyles.cardMetadata.copyWith(fontWeight: FontWeight.w500),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 3),
         Text(
           field.value.isNotEmpty ? field.value : 'N/A',
-          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
           maxLines: field.maxLines ?? 1,
           overflow: TextOverflow.ellipsis,
         ),
       ],
-    );
-  }
-
-  Widget _buildMetadataFooter() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
-      color: const Color(0xFFFAFAFA),
-      child: Column(
-        children: [
-          if (createdBy != null || createdAt != null)
-            Row(
-              children: [
-                const Icon(Icons.person_outline, size: 13, color: AppColors.textLight),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    'Created${createdBy != null && createdBy!.isNotEmpty ? ' by $createdBy' : ''}${createdAt != null && createdAt!.isNotEmpty ? '  ·  $createdAt' : ''}',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textLight),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          if (updatedBy != null || updatedAt != null) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.edit_outlined, size: 13, color: AppColors.textLight),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    'Updated${updatedBy != null && updatedBy!.isNotEmpty ? ' by $updatedBy' : ''}${updatedAt != null && updatedAt!.isNotEmpty ? '  ·  $updatedAt' : ''}',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textLight),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

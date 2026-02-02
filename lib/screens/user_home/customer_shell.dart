@@ -26,7 +26,8 @@ class _CustomerShellState extends State<CustomerShell> {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => SearchHistoryBloc(),
-      child: Scaffold(
+      child: Builder(
+        builder: (blocContext) => Scaffold(
         body: IndexedStack(
           index: _currentIndex,
           children: const [
@@ -44,7 +45,7 @@ class _CustomerShellState extends State<CustomerShell> {
             onTap: (index) {
               if (index == 1 && _currentIndex != 1) {
                 // Refresh history when switching to the tab
-                context.read<SearchHistoryBloc>().add(RefreshSearchHistory());
+                blocContext.read<SearchHistoryBloc>().add(RefreshSearchHistory());
               }
               setState(() => _currentIndex = index);
             },
@@ -74,6 +75,7 @@ class _CustomerShellState extends State<CustomerShell> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

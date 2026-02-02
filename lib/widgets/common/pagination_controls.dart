@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
+import '../../config/app_text_styles.dart';
 
 class PaginationControls extends StatelessWidget {
   final int currentPage;
@@ -47,7 +48,7 @@ class PaginationControls extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: AppColors.border)),
       ),
@@ -93,7 +94,7 @@ class PaginationControls extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
                     'Showing ${((currentPage - 1) * itemsPerPage!) + 1}-${currentPage * itemsPerPage! > totalItems! ? totalItems : currentPage * itemsPerPage!} of $totalItems',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
+                    style: AppTextStyles.bodySmall,
                   ),
                 ),
               // Page controls
@@ -159,10 +160,10 @@ class _PageNumberButton extends StatelessWidget {
         height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF81C784) : Colors.white,
+          color: isActive ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isActive ? const Color(0xFF81C784) : const Color(0xFFE0E0E0),
+            color: isActive ? AppColors.primary : AppColors.border,
           ),
         ),
         child: Text(
@@ -170,7 +171,7 @@ class _PageNumberButton extends StatelessWidget {
           style: TextStyle(
             fontSize: 15,
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            color: isActive ? Colors.white : const Color(0xFF757575),
+            color: isActive ? Colors.white : AppColors.textSecondary,
           ),
         ),
       ),
@@ -202,12 +203,12 @@ class _NavigationButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Icon(
           icon,
           size: 20,
-          color: enabled ? const Color(0xFF757575) : const Color(0xFFBDBDBD),
+          color: enabled ? AppColors.textSecondary : AppColors.lightGrey,
         ),
       ),
     );

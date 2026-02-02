@@ -184,6 +184,13 @@ class PriceRange {
   Map<String, dynamic> toJson() {
     return {'label': label, 'min': min, 'max': max};
   }
+
+  static List<PriceRange> get defaultOptions => [
+        PriceRange(label: '₹0 - ₹250', min: 0, max: 250),
+        PriceRange(label: '₹250 - ₹500', min: 250, max: 500),
+        PriceRange(label: '₹500 - ₹1,000', min: 500, max: 1000),
+        PriceRange(label: '₹1,000 & Above', min: 1000, max: 9999999),
+      ];
 }
 
 /// MOQ Range model
@@ -225,7 +232,11 @@ class UserProductSearchResponse {
   });
 
   factory UserProductSearchResponse.fromJson(Map<String, dynamic> json) {
-    final data = json['data'];
+    final rawData = json['data'];
+    // Backend wraps single records in { record: {...} }, unwrap it
+    final data = (rawData is Map<String, dynamic> && rawData.containsKey('record'))
+        ? rawData['record'] as Map<String, dynamic>?
+        : rawData;
     List<UserProductSearchModel> productList = [];
     List<AISuggestedTheme> themeList = [];
     List<PriceRange> priceRangeList = [];
@@ -236,7 +247,7 @@ class UserProductSearchResponse {
       activityId = data['id']?.toString();
 
       final body = data['body'];
-      if (body != null) {
+      if (body != null && body is Map<String, dynamic>) {
         stage = body['stage'];
 
         // Parse AI suggested themes

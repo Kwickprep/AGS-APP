@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../models/user_product_search_model.dart';
@@ -167,16 +168,24 @@ class UserProductSearchBloc
         timestamp: DateTime.now(),
       ));
 
+      // Determine stage from response data, not backend stage string
+      // (backend may echo 'INITIAL' which the UI doesn't handle)
+      final stage = response.aiSuggestedThemes.isNotEmpty
+          ? 'THEME_SELECTION'
+          : response.products.isNotEmpty
+              ? 'PRODUCT_SELECTION'
+              : 'THEME_SELECTION';
+
       emit(UserProductSearchConversation(
         activityId: response.activityId,
         messages: currentMessages,
         suggestedThemes: response.aiSuggestedThemes,
         products: response.products,
-        stage: response.stage ?? 'THEME_SELECTION',
+        stage: stage,
       ));
     } catch (e) {
       emit(UserProductSearchError(
-        message: e.toString().replaceAll('Exception: ', ''),
+        message: _friendlyError(e),
         messages: currentMessages,
       ));
     }
@@ -201,15 +210,11 @@ class UserProductSearchBloc
     emit(UserProductSearchLoading(messages: messages));
 
     try {
-      // Step 1: Select theme (backend moves to CATEGORY_SELECTION)
-      await _service.selectTheme(
+      // Select theme and skip category in one call (mobile skips category step)
+      final response = await _service.selectTheme(
         activityId: currentState.activityId!,
         theme: event.theme,
-      );
-
-      // Step 2: Skip category (backend moves to PRICE_RANGE_SELECTION)
-      final response = await _service.skipCategory(
-        activityId: currentState.activityId!,
+        skipCategories: true,
       );
 
       messages.add(ChatMessage(
@@ -224,13 +229,13 @@ class UserProductSearchBloc
         activityId: currentState.activityId,
         messages: messages,
         availablePriceRanges: response.availablePriceRanges,
-        stage: response.stage ?? 'PRICE_RANGE_SELECTION',
+        stage: 'PRICE_RANGE_SELECTION',
         selectedTheme: event.theme,
         previousState: currentState,
       ));
     } catch (e) {
       emit(UserProductSearchError(
-        message: e.toString().replaceAll('Exception: ', ''),
+        message: _friendlyError(e),
         messages: messages,
       ));
     }
@@ -281,14 +286,14 @@ class UserProductSearchBloc
         activityId: currentState.activityId,
         messages: messages,
         products: response.products,
-        stage: response.stage ?? 'PRODUCT_SELECTION',
+        stage: 'PRODUCT_SELECTION',
         selectedTheme: currentState.selectedTheme,
         selectedPriceRange: event.priceRange,
         previousState: currentState,
       ));
     } catch (e) {
       emit(UserProductSearchError(
-        message: e.toString().replaceAll('Exception: ', ''),
+        message: _friendlyError(e),
         messages: messages,
       ));
     }
@@ -373,7 +378,7 @@ class UserProductSearchBloc
       ));
     } catch (e) {
       emit(UserProductSearchError(
-        message: e.toString().replaceAll('Exception: ', ''),
+        message: _friendlyError(e),
         messages: messages,
       ));
     }
@@ -396,5 +401,36 @@ class UserProductSearchBloc
         emit(currentState.previousState!);
       }
     }
+  }
+
+  /// Convert technical errors into user-friendly messages
+  static String _friendlyError(dynamic e) {
+    if (e is DioException) {
+      switch (e.type) {
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.connectionTimeout:
+          return 'The request is taking longer than expected. Please try again.';
+        case DioExceptionType.connectionError:
+          return 'Unable to connect to the server. Please check your internet connection.';
+        case DioExceptionType.badResponse:
+          final statusCode = e.response?.statusCode ?? 0;
+          if (statusCode == 500 || statusCode == 502 || statusCode == 503) {
+            return 'Our server is currently busy. Please try again in a moment.';
+          }
+          return 'Something went wrong. Please try again.';
+        default:
+          return 'Something went wrong. Please try again.';
+      }
+    }
+    final msg = e.toString().replaceAll('Exception: ', '');
+    // If the message contains technical Dio/HTTP jargon, replace it
+    if (msg.contains('DioException') ||
+        msg.contains('timeout') ||
+        msg.contains('SocketException') ||
+        msg.contains('HandshakeException')) {
+      return 'Something went wrong. Please try again.';
+    }
+    return msg;
   }
 }

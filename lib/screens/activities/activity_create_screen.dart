@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../config/app_colors.dart';
+import '../../core/permissions/permission_manager.dart';
 import '../../models/activity_model.dart';
 import '../../services/activity_service.dart';
 import '../../services/file_upload_service.dart';
@@ -351,6 +352,14 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
     try {
       final Map<String, dynamic> data;
 
+      // Determine mobile source based on user role
+      final role = PermissionManager().role;
+      final mobileSource = role == 'ADMIN'
+          ? 'mobile_admin'
+          : role == 'EMPLOYEE'
+              ? 'mobile_employee'
+              : 'mobile_customer';
+
       if (_isProductSearch) {
         // Product Search activity format
         data = {
@@ -358,6 +367,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           'companyId': _selectedCompanyId,
           'inquiryId': _selectedInquiryId,
           'userId': _selectedUserId,
+          'source': mobileSource,
           'body': {
             'inputText': _requirementsController.text.trim(),
             'documentIds': _uploadedDocumentIds,
@@ -371,6 +381,7 @@ class _ActivityCreateScreenState extends State<ActivityCreateScreen> {
           'companyId': _selectedCompanyId,
           'inquiryId': _selectedInquiryId,
           'userId': _selectedUserId,
+          'source': mobileSource,
           'body': {},
         };
 

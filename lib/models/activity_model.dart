@@ -12,6 +12,7 @@ class ActivityModel implements GenericModel {
   final String category;
   final String priceRange;
   final String product;
+  final String? productImageFileId;
   final String moq;
   final String documents;
   final String nextScheduleDate;
@@ -36,6 +37,7 @@ class ActivityModel implements GenericModel {
     required this.category,
     required this.priceRange,
     required this.product,
+    this.productImageFileId,
     required this.moq,
     required this.documents,
     required this.nextScheduleDate,
@@ -129,6 +131,8 @@ class ActivityModel implements GenericModel {
       category: extractString(json['category']),
       priceRange: extractString(json['priceRange']),
       product: extractString(json['product']),
+      productImageFileId: json['productImageFileId'] as String?
+          ?? _extractImageFileId(json['body']),
       moq: extractString(json['moq']),
       documents: extractString(json['documents']),
       nextScheduleDate: extractString(json['nextScheduleDate']),
@@ -143,6 +147,46 @@ class ActivityModel implements GenericModel {
           [],
       body: activityBody,
     );
+  }
+
+  /// Extract product image file ID from body data.
+  /// Tries: selectedProduct.images[0].id → aiSuggestedProducts match by id
+  static String? _extractImageFileId(dynamic body) {
+    if (body == null || body is! Map<String, dynamic>) return null;
+    final selectedProduct = body['selectedProduct'];
+    if (selectedProduct == null || selectedProduct is! Map<String, dynamic>) return null;
+
+    // Try selectedProduct.images first (for new activities that include images)
+    final images = selectedProduct['images'];
+    if (images is List && images.isNotEmpty) {
+      final firstImage = images[0];
+      if (firstImage is Map<String, dynamic>) {
+        final id = firstImage['id'] as String?;
+        if (id != null && id.isNotEmpty) return id;
+      }
+    }
+
+    // Fallback: find this product in aiSuggestedProducts by ID
+    final productId = selectedProduct['id'];
+    if (productId != null) {
+      final aiProducts = body['aiSuggestedProducts'];
+      if (aiProducts is List) {
+        for (final p in aiProducts) {
+          if (p is Map<String, dynamic> && p['id']?.toString() == productId.toString()) {
+            final pImages = p['images'];
+            if (pImages is List && pImages.isNotEmpty) {
+              final firstImg = pImages[0];
+              if (firstImg is Map<String, dynamic>) {
+                final id = firstImg['id'] as String?;
+                if (id != null && id.isNotEmpty) return id;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   @override

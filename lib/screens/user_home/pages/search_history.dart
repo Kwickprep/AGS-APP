@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 
 import '../../../config/app_colors.dart';
 import '../../../config/app_text_styles.dart';
 import '../../../models/activity_model.dart';
+import '../../../services/file_upload_service.dart';
 import '../search_history_bloc.dart';
 
 class SearchHistory extends StatefulWidget {
@@ -16,6 +18,8 @@ class SearchHistory extends StatefulWidget {
 
 class _SearchHistoryState extends State<SearchHistory> {
   final ScrollController _scrollController = ScrollController();
+  final FileUploadService _fileUploadService = GetIt.I<FileUploadService>();
+  final Map<String, String> _imageUrlCache = {};
 
   @override
   void initState() {
@@ -28,6 +32,25 @@ class _SearchHistoryState extends State<SearchHistory> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadActivityImages(List<ActivityModel> activities) async {
+    final idsToLoad = <String>[];
+    for (final a in activities) {
+      final fileId = a.productImageFileId;
+      if (fileId != null && fileId.isNotEmpty && !_imageUrlCache.containsKey(fileId)) {
+        idsToLoad.add(fileId);
+      }
+    }
+    print('[HIST-IMG] IDs to load: $idsToLoad (${idsToLoad.length} new, ${_imageUrlCache.length} cached)');
+    if (idsToLoad.isEmpty) return;
+    try {
+      final presignedUrls = await _fileUploadService.getPresignedUrls(idsToLoad);
+      print('[HIST-IMG] Got ${presignedUrls.length} presigned URLs');
+      if (mounted) setState(() => _imageUrlCache.addAll(presignedUrls));
+    } catch (e) {
+      print('[HIST-IMG] ERROR loading presigned URLs: $e');
+    }
   }
 
   void _onScroll() {
@@ -56,7 +79,16 @@ class _SearchHistoryState extends State<SearchHistory> {
           style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
         ),
       ),
-      body: BlocBuilder<SearchHistoryBloc, SearchHistoryState>(
+      body: BlocConsumer<SearchHistoryBloc, SearchHistoryState>(
+        listener: (context, state) {
+          if (state is SearchHistoryLoaded) {
+            print('[HIST-IMG] SearchHistoryLoaded with ${state.activities.length} activities');
+            for (final a in state.activities) {
+              print('[HIST-IMG]   activity ${a.id}: productImageFileId=${a.productImageFileId}');
+            }
+            _loadActivityImages(state.activities);
+          }
+        },
         builder: (context, state) {
           if (state is SearchHistoryLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -85,7 +117,10 @@ class _SearchHistoryState extends State<SearchHistory> {
                       child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                     );
                   }
-                  return _buildActivityCard(state.activities[index]);
+                  return GestureDetector(
+                    onTap: () => _showActivityDetail(state.activities[index]),
+                    child: _buildActivityCard(state.activities[index]),
+                  );
                 },
               ),
             );
@@ -99,7 +134,10 @@ class _SearchHistoryState extends State<SearchHistory> {
 
   Widget _buildActivityCard(ActivityModel activity) {
     final body = activity.body;
-    final inputText = body?.inputText ?? '';
+    // Use formatted note field (backend maps inputText → note) with body as fallback
+    final inputText = activity.note.isNotEmpty && activity.note != '-'
+        ? activity.note
+        : (body?.inputText ?? '');
     final stage = body?.stage ?? 'INITIAL';
     // Use top-level formatted fields (from backend formatter) with body as fallback
     final themeName = activity.theme.isNotEmpty
@@ -111,8 +149,13 @@ class _SearchHistoryState extends State<SearchHistory> {
     final moq = activity.moq.isNotEmpty
         ? activity.moq
         : (body?.moq ?? '');
-    final hasDocuments = body?.documentIds?.isNotEmpty == true;
+    final hasDocuments = activity.documents.isNotEmpty && activity.documents != '-'
+        ? true
+        : (body?.documentIds?.isNotEmpty == true);
     final stageInfo = _getStageInfo(stage);
+    final imageUrl = activity.productImageFileId != null
+        ? _imageUrlCache[activity.productImageFileId]
+        : null;
 
     String dateStr = '';
     if (activity.createdAt.isNotEmpty) {
@@ -142,7 +185,24 @@ class _SearchHistoryState extends State<SearchHistory> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: query + stage badge
+            // Product image
+            if (imageUrl != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: double.infinity,
+                  height: 120,
+                  color: const Color(0xFFF5F5F5),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            // Top row: query + stage badge (only for meaningful stages)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -162,22 +222,24 @@ class _SearchHistoryState extends State<SearchHistory> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: stageInfo.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    stageInfo.label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: stageInfo.color,
+                if (stageInfo.label.isNotEmpty) ...[
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: stageInfo.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      stageInfo.label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: stageInfo.color,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
 
@@ -247,8 +309,245 @@ class _SearchHistoryState extends State<SearchHistory> {
       case 'THEME_SELECTION':
         return _StageInfo('In Progress', const Color(0xFFF9A825));
       default:
-        return _StageInfo('Started', AppColors.grey);
+        return _StageInfo('', AppColors.grey);
     }
+  }
+
+  void _showActivityDetail(ActivityModel activity) {
+    final body = activity.body;
+    // Backend formatter maps inputText → note field
+    final inputText = activity.note.isNotEmpty && activity.note != '-'
+        ? activity.note
+        : (body?.inputText ?? '');
+    final stage = body?.stage ?? 'INITIAL';
+    final stageInfo = _getStageInfo(stage);
+    final themeName = activity.theme.isNotEmpty && activity.theme != '-'
+        ? activity.theme
+        : (body?.selectedTheme?['name'] as String? ?? '');
+    final themeReason = body?.selectedTheme?['reason'] as String? ?? '';
+    final priceRangeLabel = activity.priceRange.isNotEmpty && activity.priceRange != '-'
+        ? activity.priceRange
+        : (body?.selectedPriceRange?['label'] as String? ?? '');
+    final productName = activity.product.isNotEmpty && activity.product != '-'
+        ? activity.product
+        : (body?.selectedProduct?['name'] as String? ?? '');
+    final productDesc = body?.selectedProduct?['aiGeneratedDescription'] as String?
+        ?? body?.selectedProduct?['description'] as String?
+        ?? '';
+    final moq = activity.moq.isNotEmpty && activity.moq != '-'
+        ? activity.moq
+        : (body?.moq ?? '');
+    final hasDocuments = activity.documents.isNotEmpty && activity.documents != '-'
+        ? true
+        : (body?.documentIds?.isNotEmpty == true);
+    final productImageUrl = activity.productImageFileId != null
+        ? _imageUrlCache[activity.productImageFileId]
+        : null;
+
+    String dateStr = '';
+    if (activity.createdAt.isNotEmpty) {
+      try {
+        final date = DateTime.parse(activity.createdAt);
+        dateStr = DateFormat('dd MMM yyyy, h:mm a').format(date);
+      } catch (_) {
+        dateStr = activity.createdAt;
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        builder: (_, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Search Details',
+                        style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
+                      ),
+                    ),
+                    if (stageInfo.label.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: stageInfo.color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          stageInfo.label,
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: stageInfo.color),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Content
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    // Brand message
+                    _buildDetailSection(
+                      icon: Icons.edit_note_outlined,
+                      title: 'Brand Message',
+                      child: Text(
+                        inputText.isNotEmpty ? inputText : (hasDocuments ? 'Image upload' : 'Not provided'),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: inputText.isNotEmpty ? AppColors.textPrimary : AppColors.textSecondary,
+                          fontStyle: inputText.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+
+                    // Date
+                    if (dateStr.isNotEmpty)
+                      _buildDetailSection(
+                        icon: Icons.calendar_today_outlined,
+                        title: 'Date',
+                        child: Text(dateStr, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+                      ),
+
+                    // Theme
+                    if (themeName.isNotEmpty)
+                      _buildDetailSection(
+                        icon: Icons.palette_outlined,
+                        title: 'Selected Theme',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(themeName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                            if (themeReason.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(themeReason, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4)),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                    // Price Range
+                    if (priceRangeLabel.isNotEmpty)
+                      _buildDetailSection(
+                        icon: Icons.payments_outlined,
+                        title: 'Price Range',
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(priceRangeLabel, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                        ),
+                      ),
+
+                    // Selected Product
+                    if (productName.isNotEmpty)
+                      _buildDetailSection(
+                        icon: Icons.inventory_2_outlined,
+                        title: 'Selected Product',
+                        child: Container(
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (productImageUrl != null)
+                                Container(
+                                  width: double.infinity,
+                                  height: 200,
+                                  color: const Color(0xFFF5F5F5),
+                                  child: Image.network(
+                                    productImageUrl,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                                  ),
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(productName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                    if (productDesc.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Text(productDesc, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, height: 1.5)),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    // MOQ
+                    if (moq.isNotEmpty)
+                      _buildDetailSection(
+                        icon: Icons.production_quantity_limits_outlined,
+                        title: 'Requested Quantity (MOQ)',
+                        child: Text(moq, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailSection({required IconData icon, required String title, required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.grey)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 26),
+            child: child,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildEmptyState() {

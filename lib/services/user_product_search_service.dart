@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import '../core/permissions/permission_manager.dart';
 import '../models/user_product_search_model.dart';
 import 'api_service.dart';
 
@@ -6,6 +7,20 @@ class UserProductSearchService {
   final ApiService _apiService = GetIt.I<ApiService>();
 
   static const String _activityTypeId = '68e77f49728d6edb593273cc';
+
+  /// Get the mobile source string based on user role
+  static String get _mobileSource {
+    final role = PermissionManager().role;
+    switch (role) {
+      case 'ADMIN':
+        return 'mobile_admin';
+      case 'EMPLOYEE':
+        return 'mobile_employee';
+      case 'CUSTOMER':
+      default:
+        return 'mobile_customer';
+    }
+  }
 
   /// Search products with a text query and/or document IDs
   Future<UserProductSearchResponse> searchProducts({
@@ -15,6 +30,7 @@ class UserProductSearchService {
     try {
       final data = {
         'activityTypeId': _activityTypeId,
+        'source': _mobileSource,
         'body': {
           'inputText': query,
           'documentIds': documentIds,
@@ -34,6 +50,7 @@ class UserProductSearchService {
   Future<UserProductSearchResponse> selectTheme({
     required String activityId,
     required AISuggestedTheme theme,
+    bool skipCategories = false,
   }) async {
     try {
       final data = {
@@ -43,6 +60,7 @@ class UserProductSearchService {
             'name': theme.name,
             'reason': theme.reason,
           },
+          if (skipCategories) 'skipCategories': true,
         },
       };
 
@@ -114,6 +132,10 @@ class UserProductSearchService {
           'selectedProduct': {
             'id': product.id,
             'name': product.name,
+            if (product.images.isNotEmpty)
+              'images': product.images
+                  .map((img) => {'id': img.id, 'fileUrl': img.fileUrl})
+                  .toList(),
           },
           'moq': moq,
         },
