@@ -13,6 +13,7 @@ import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../utils/date_formatter.dart';
 
 /// Company list screen with full features: filter, sort, pagination, and details
 class CompanyScreen extends StatefulWidget {
@@ -426,15 +427,9 @@ class _CompanyScreenState extends State<CompanyScreen> {
           label: 'Industry',
           value: company.industry,
         ),
-        CardField.regular(
-          label: 'Created By',
-          value: company.createdBy,
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: company.createdAt,
-        ),
       ],
+      createdBy: company.createdBy,
+      createdAt: formatDate(company.createdAt),
       onEdit: PermissionChecker.canUpdateCompany ? () => _navigateToEditCompany(company) : null,
       onDelete: PermissionChecker.canDeleteCompany ? () => _confirmDelete(company) : null,
       onTap: () => _showCompanyDetails(company),

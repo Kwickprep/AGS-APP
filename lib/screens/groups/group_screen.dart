@@ -13,6 +13,7 @@ import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../utils/date_formatter.dart';
 
 /// Group list screen with full features: filter, sort, pagination, and details
 class GroupScreen extends StatefulWidget {
@@ -362,9 +363,9 @@ class _GroupScreenState extends State<GroupScreen> {
       isActive: group.isActive,
       fields: [
         CardField.title(label: 'Group Name', value: group.name),
-        CardField.regular(label: 'Created By', value: group.createdBy),
-        CardField.regular(label: 'Created Date', value: group.createdAt),
       ],
+      createdBy: group.createdBy,
+      createdAt: formatDate(group.createdAt),
       onView: () => _showGroupDetails(group),
       onEdit: PermissionChecker.canUpdateGroup
           ? () => _navigateToEditGroup(group)

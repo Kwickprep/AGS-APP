@@ -12,6 +12,7 @@ import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/permission_widget.dart';
+import '../../utils/date_formatter.dart';
 
 /// Campaign list screen with full features: filter, sort, pagination, and details
 class CampaignScreen extends StatefulWidget {
@@ -388,11 +389,11 @@ class _CampaignScreenState extends State<CampaignScreen> {
           label: 'Start Date',
           value: record.startDateTime.isNotEmpty ? record.startDateTime : 'N/A',
         ),
-        CardField.regular(
-          label: 'Created By',
-          value: record.createdBy,
-        ),
       ],
+      createdBy: record.createdBy,
+      createdAt: formatDate(record.createdAt),
+      updatedBy: record.updatedBy,
+      updatedAt: record.updatedAt != null ? formatDate(record.updatedAt!) : null,
       onEdit: PermissionChecker.canUpdateWhatsApp
           ? () async {
               final result = await Navigator.pushNamed(

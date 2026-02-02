@@ -13,6 +13,7 @@ import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../utils/date_formatter.dart';
 
 class InquiryScreen extends StatefulWidget {
   const InquiryScreen({super.key});
@@ -347,9 +348,11 @@ class _InquiryScreenState extends State<InquiryScreen> {
       isActive: true,
       fields: [
         CardField.title(label: 'Inquiry Name', value: inquiry.name),
-        CardField.regular(label: 'Created By', value: inquiry.createdBy),
-        CardField.regular(label: 'Created Date', value: inquiry.createdAt),
       ],
+      createdBy: inquiry.createdBy,
+      createdAt: formatDate(inquiry.createdAt),
+      updatedBy: inquiry.updatedBy,
+      updatedAt: inquiry.updatedAt != null ? formatDate(inquiry.updatedAt!) : null,
       onEdit: PermissionChecker.canUpdateInquiry
           ? () async {
               final result = await Navigator.pushNamed(

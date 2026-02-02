@@ -12,6 +12,7 @@ import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/permission_widget.dart';
+import '../../utils/date_formatter.dart';
 
 /// Auto Reply list screen with full features: filter, sort, pagination, and details
 class AutoReplyScreen extends StatefulWidget {
@@ -350,15 +351,11 @@ class _AutoReplyScreenState extends State<AutoReplyScreen> {
           label: 'Status',
           value: record.isActive ? 'Active' : 'Inactive',
         ),
-        CardField.regular(
-          label: 'Created By',
-          value: record.createdBy,
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: record.createdAt,
-        ),
       ],
+      createdBy: record.createdBy,
+      createdAt: formatDate(record.createdAt),
+      updatedBy: record.updatedBy,
+      updatedAt: record.updatedAt != null ? formatDate(record.updatedAt!) : null,
       onEdit: PermissionChecker.canUpdateWhatsApp
           ? () async {
               final result = await Navigator.pushNamed(

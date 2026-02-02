@@ -52,7 +52,7 @@ class _SearchHistoryState extends State<SearchHistory> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'My Requests',
+          'My Product Search',
           style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
         ),
       ),

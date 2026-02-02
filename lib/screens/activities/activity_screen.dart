@@ -12,6 +12,7 @@ import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../utils/date_formatter.dart';
 
 /// Activity list screen with full features: filter, sort, pagination, and details
 /// Uses individual BLoC pattern - every change triggers new API call
@@ -393,6 +394,10 @@ class _ActivityScreenState extends State<ActivityScreen> {
             value: activity.nextScheduleDate,
           ),
       ],
+      createdBy: activity.createdBy,
+      createdAt: formatDate(activity.createdAt),
+      updatedBy: activity.updatedBy,
+      updatedAt: activity.updatedAt != null ? formatDate(activity.updatedAt!) : null,
       onView: () => _showActivityDetails(activity),
       onEdit: PermissionChecker.canUpdateActivity ? () => _navigateToEditActivity(activity) : null,
       onDelete: PermissionChecker.canDeleteActivity ? () => _confirmDelete(activity) : null,

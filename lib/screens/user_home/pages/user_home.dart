@@ -175,11 +175,18 @@ class _UserHomeState extends State<UserHome> {
       child: Row(
         children: [
           const SizedBox(width: 36),
-          const Expanded(
+          Expanded(
             child: Center(
-              child: Text(
-                "Promotional Aid Ideas",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset('assets/images/ags_icon.png', width: 36, height: 36),
+                  const SizedBox(width: 8),
+                  const Text(
+                    "AGS Connect",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  ),
+                ],
               ),
             ),
           ),

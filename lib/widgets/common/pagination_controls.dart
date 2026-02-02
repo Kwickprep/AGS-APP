@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
-import '../../config/app_text_styles.dart';
 
 class PaginationControls extends StatelessWidget {
   final int currentPage;
@@ -85,37 +84,52 @@ class PaginationControls extends StatelessWidget {
             );
           }
 
-          return Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _NavigationButton(
-                  onTap: canGoPrevious
-                      ? () {
-                    onPrevious?.call();
-                    onPageChanged?.call(currentPage - 1);
-                  }
-                      : null,
-                  icon: Icons.chevron_left,
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Item count info
+              if (totalItems != null && itemsPerPage != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Showing ${((currentPage - 1) * itemsPerPage!) + 1}-${currentPage * itemsPerPage! > totalItems! ? totalItems : currentPage * itemsPerPage!} of $totalItems',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF757575)),
+                  ),
                 ),
+              // Page controls
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _NavigationButton(
+                      onTap: canGoPrevious
+                          ? () {
+                        onPrevious?.call();
+                        onPageChanged?.call(currentPage - 1);
+                      }
+                          : null,
+                      icon: Icons.chevron_left,
+                    ),
 
-                const SizedBox(width: 8),
+                    const SizedBox(width: 8),
 
-                pageButtons,
+                    pageButtons,
 
-                const SizedBox(width: 8),
+                    const SizedBox(width: 8),
 
-                _NavigationButton(
-                  onTap: canGoNext
-                      ? () {
-                    onNext?.call();
-                    onPageChanged?.call(currentPage + 1);
-                  }
-                      : null,
-                  icon: Icons.chevron_right,
+                    _NavigationButton(
+                      onTap: canGoNext
+                          ? () {
+                        onNext?.call();
+                        onPageChanged?.call(currentPage + 1);
+                      }
+                          : null,
+                      icon: Icons.chevron_right,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),

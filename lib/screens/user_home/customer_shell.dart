@@ -64,7 +64,7 @@ class _CustomerShellState extends State<CustomerShell> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.history_outlined),
                 activeIcon: Icon(Icons.history),
-                label: 'My Requests',
+                label: 'My Product Search',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),

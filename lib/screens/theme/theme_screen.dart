@@ -13,6 +13,7 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../widgets/permission_widget.dart';
+import '../../utils/date_formatter.dart';
 
 /// Theme list screen with full features: filter, sort, pagination, and details
 class ThemeScreen extends StatefulWidget {
@@ -321,10 +322,12 @@ class _ThemeScreenState extends State<ThemeScreen> {
       isActive: theme.isActive,
       fields: [
         CardField.title(label: 'Theme Name', value: theme.name),
-        CardField.regular(label: 'Created By', value: theme.createdBy),
         CardField.regular(label: 'Description', value: theme.description.isNotEmpty ? theme.description : 'N/A'),
-        CardField.regular(label: 'Created Date', value: theme.createdAt),
       ],
+      createdBy: theme.createdBy,
+      createdAt: formatDate(theme.createdAt),
+      updatedBy: theme.updatedBy,
+      updatedAt: formatDate(theme.updatedAt),
       onEdit: PermissionChecker.canUpdateTheme
           ? () async {
               final result = await Navigator.pushNamed(

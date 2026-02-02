@@ -12,6 +12,7 @@ import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/permission_widget.dart';
+import '../../utils/date_formatter.dart';
 
 /// Brand list screen with full features: filter, sort, pagination, and details
 class BrandScreen extends StatefulWidget {
@@ -328,6 +329,10 @@ class _BrandScreenState extends State<BrandScreen> {
     return RecordCard(
       serialNumber: serialNumber,
       isActive: brand.isActive,
+      createdBy: brand.createdBy,
+      createdAt: formatDate(brand.createdAt),
+      updatedBy: brand.updatedBy,
+      updatedAt: brand.updatedAt != null ? formatDate(brand.updatedAt!) : null,
       fields: [
         CardField.title(
           label: 'Brand Name',
@@ -340,14 +345,6 @@ class _BrandScreenState extends State<BrandScreen> {
         CardField.regular(
           label: 'Discount %',
           value: brand.discount != null ? '${brand.discount!.toStringAsFixed(2)}%' : 'N/A',
-        ),
-        CardField.regular(
-          label: 'Created By',
-          value: brand.createdBy,
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: brand.createdAt,
         ),
       ],
       onEdit: PermissionChecker.canUpdateBrand

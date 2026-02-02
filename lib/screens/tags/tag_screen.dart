@@ -12,6 +12,7 @@ import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../utils/date_formatter.dart';
 
 /// Tag list screen with full features: filter, sort, pagination, and details
 class TagScreen extends StatefulWidget {
@@ -312,9 +313,11 @@ class _TagScreenState extends State<TagScreen> {
       isActive: tag.isActive,
       fields: [
         CardField.title(label: 'Tag Name', value: tag.name),
-        CardField.regular(label: 'Created By', value: tag.createdBy),
-        CardField.regular(label: 'Created Date', value: tag.createdAt),
       ],
+      createdBy: tag.createdBy,
+      createdAt: formatDate(tag.createdAt),
+      updatedBy: tag.updatedBy,
+      updatedAt: tag.updatedAt != null ? formatDate(tag.updatedAt!) : null,
       onEdit: PermissionChecker.canUpdateTag
           ? () async {
               final result = await Navigator.pushNamed(context, '/tags/create', arguments: {'isEdit': true, 'tagData': tag});

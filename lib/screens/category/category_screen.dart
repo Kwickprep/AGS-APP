@@ -12,6 +12,7 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../widgets/permission_widget.dart';
+import '../../utils/date_formatter.dart';
 
 /// Category list screen with full features: filter, sort, pagination, and details
 class CategoryScreen extends StatefulWidget {
@@ -339,15 +340,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
           label: 'Product Count',
           value: category.productCount?.toString() ?? '0',
         ),
-        CardField.regular(
-          label: 'Created By',
-          value: category.createdBy,
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: category.createdAt,
-        ),
       ],
+      createdBy: category.createdBy,
+      createdAt: formatDate(category.createdAt),
+      updatedBy: category.updatedBy,
+      updatedAt: category.updatedAt != null ? formatDate(category.updatedAt!) : null,
       onEdit: PermissionChecker.canUpdateCategory
           ? () async {
               final result = await Navigator.pushNamed(

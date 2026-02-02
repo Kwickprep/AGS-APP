@@ -13,6 +13,7 @@ import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
+import '../../utils/date_formatter.dart';
 
 /// User list screen with full features: filter, sort, pagination, and details
 class UserScreen extends StatefulWidget {
@@ -372,15 +373,9 @@ class _UserScreenState extends State<UserScreen> {
           label: 'User Name',
           value: "${user.firstName} ${user.lastName}",
         ),
-        CardField.regular(
-          label: 'Created By',
-          value: (user as dynamic).createdBy ?? "",
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: (user as dynamic).createdAt ?? "",
-        ),
       ],
+      createdBy: user.createdBy,
+      createdAt: formatDate(user.createdAt),
       onEdit: PermissionChecker.canUpdateUser ? () => _navigateToEditUser(user) : null,
       onDelete: PermissionChecker.canDeleteUser ? () => _confirmDelete(user) : null,
       onTap: () => _showUserDetails(user),

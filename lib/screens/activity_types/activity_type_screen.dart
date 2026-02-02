@@ -12,6 +12,7 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../widgets/common/filter_sort_bar.dart';
+import '../../utils/date_formatter.dart';
 
 /// Activity Type list screen with full features: filter, sort, pagination, and details
 class ActivityTypeScreen extends StatefulWidget {
@@ -330,15 +331,11 @@ class _ActivityTypeScreenState extends State<ActivityTypeScreen> {
           label: 'Activity Type Name',
           value: activityType.name,
         ),
-        CardField.regular(
-          label: 'Created By',
-          value: activityType.createdBy,
-        ),
-        CardField.regular(
-          label: 'Created Date',
-          value: activityType.createdAt,
-        ),
       ],
+      createdBy: activityType.createdBy,
+      createdAt: formatDate(activityType.createdAt),
+      updatedBy: activityType.updatedBy,
+      updatedAt: activityType.updatedAt != null ? formatDate(activityType.updatedAt!) : null,
       onEdit: PermissionChecker.canUpdateActivityType
           ? () async {
               final result = await Navigator.pushNamed(
