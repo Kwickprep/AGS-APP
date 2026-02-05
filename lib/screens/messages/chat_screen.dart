@@ -207,6 +207,29 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  bool _canSendMessage() {
+    if (_messages.isEmpty) return false;
+
+    // Find the last inbound message
+    WhatsAppMessage? lastInbound;
+    for (int i = _messages.length - 1; i >= 0; i--) {
+      if (_messages[i].isInbound) {
+        lastInbound = _messages[i];
+        break;
+      }
+    }
+
+    if (lastInbound == null) return false;
+
+    try {
+      final messageTime = DateTime.parse(lastInbound.createdAt);
+      final now = DateTime.now();
+      return now.difference(messageTime).inHours < 24;
+    } catch (e) {
+      return false;
+    }
+  }
+
   bool _shouldShowDateHeader(int index) {
     if (index == 0) return true;
 
@@ -224,7 +247,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFECE5DD),
+      backgroundColor: Colors.white,
       appBar: _buildAppBar(),
       body: Column(
         children: [
@@ -259,8 +282,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
           ),
 
-          // Input area
-          _buildMessageInput(),
+          // Input area or 24-hour warning
+          if (_isLoading)
+            const SizedBox.shrink()
+          else if (_canSendMessage())
+            _buildMessageInput()
+          else
+            _buildExpiredWarning(),
         ],
       ),
     );
@@ -270,16 +298,23 @@ class _ChatScreenState extends State<ChatScreen> {
     final profileImageUrl = widget.profileImageUrl;
 
     return AppBar(
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.white,
       elevation: 0,
       scrolledUnderElevation: 0,
       titleSpacing: 0,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          color: AppColors.divider,
+          height: 1,
+        ),
+      ),
       leading: Padding(
         padding: const EdgeInsets.only(left: 8),
         child: Center(
           child: CircleAvatar(
             radius: 20,
-            backgroundColor: AppColors.white.withValues(alpha: 0.2),
+            backgroundColor: AppColors.primary,
             backgroundImage:
                 profileImageUrl != null && profileImageUrl.isNotEmpty
                 ? NetworkImage(profileImageUrl)
@@ -302,31 +337,31 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Text(
             widget.contact.displayName,
-            style: AppTextStyles.cardTitle.copyWith(color: AppColors.white),
+            style: AppTextStyles.cardTitle.copyWith(color: AppColors.textPrimary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           Text(
             widget.contact.formattedPhone,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.white.withValues(alpha: 0.8),
+              color: AppColors.textSecondary,
             ),
           ),
         ],
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.close, color: AppColors.white),
+          icon: Icon(Icons.close, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
           tooltip: 'Close',
         ),
         IconButton(
-          icon: const Icon(Icons.refresh, color: AppColors.white),
+          icon: Icon(Icons.refresh, color: AppColors.textPrimary),
           onPressed: _refreshMessages,
           tooltip: 'Refresh',
         ),
         IconButton(
-          icon: const Icon(Icons.open_in_new, color: AppColors.white),
+          icon: Icon(Icons.open_in_new, color: AppColors.textPrimary),
           onPressed: () => _showContactInfo(),
           tooltip: 'Contact Info',
         ),
@@ -367,7 +402,6 @@ class _ChatScreenState extends State<ChatScreen> {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 1),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -457,6 +491,40 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpiredWarning() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF8E1),
+          border: Border(
+            top: BorderSide(color: const Color(0xFFFFE082), width: 1),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 18,
+              color: const Color(0xFFF9A825),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Cannot send messages. The last message from this user was received more than 24 hours ago, or no messages have been received yet.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: const Color(0xFF795548),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

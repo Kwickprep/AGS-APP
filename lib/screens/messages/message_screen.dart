@@ -6,10 +6,8 @@ import '../../config/app_text_styles.dart';
 import '../../models/whatsapp_contact_model.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/file_upload_service.dart';
-import '../../widgets/app_drawer.dart';
 import '../messages/chat_screen.dart';
 
-/// WhatsApp-style messages/contacts screen
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
 
@@ -27,7 +25,6 @@ class _MessageScreenState extends State<MessageScreen> {
   bool _isLoading = true;
   String? _error;
 
-  // Profile picture presigned URLs cache
   final Map<String, String> _profileImageCache = {};
 
   @override
@@ -53,9 +50,10 @@ class _MessageScreenState extends State<MessageScreen> {
       setState(() {
         _contacts = response.records;
         _filteredContacts = response.records;
+        _isLoading = false;        _contacts = response.records;
+        _filteredContacts = response.records;
         _isLoading = false;
       });
-      // Load presigned URLs for profile pictures
       _loadProfileImages(response.records);
     } catch (e) {
       setState(() {
@@ -84,7 +82,6 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   Future<void> _loadProfileImages(List<WhatsAppContact> contacts) async {
-    // Collect all unique profile picture IDs from contacts
     final imageIdsToLoad = <String>[];
     for (final contact in contacts) {
       final profilePicture = contact.user.profilePicture;
@@ -103,7 +100,6 @@ class _MessageScreenState extends State<MessageScreen> {
         _profileImageCache.addAll(presignedUrls);
       });
     } catch (e) {
-      // Silently fail - avatars will show initials instead
       debugPrint('Failed to load profile picture presigned URLs: $e');
     }
   }
@@ -151,10 +147,7 @@ class _MessageScreenState extends State<MessageScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Search bar
             _buildSearchBar(),
-
-            // Content
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -186,8 +179,10 @@ class _MessageScreenState extends State<MessageScreen> {
         onChanged: _filterContacts,
         decoration: InputDecoration(
           hintText: 'Search contacts...',
-          hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textLight),
-          prefixIcon: const Icon(Icons.search, color: AppColors.textLight),
+          hintStyle: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textLight,
+          ),
+          prefixIcon: const Icon(Icons.search, color: AppColors.white),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear, size: 20),
@@ -198,7 +193,7 @@ class _MessageScreenState extends State<MessageScreen> {
                 )
               : null,
           filled: true,
-          fillColor: AppColors.grey.withValues(alpha: 0.1),
+          fillColor: AppColors.white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 12,
@@ -314,7 +309,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                 : contact.unreadCount.toString(),
                             style: AppTextStyles.bodySmall.copyWith(
                               color: Colors.white,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -345,9 +340,7 @@ class _MessageScreenState extends State<MessageScreen> {
       child: presignedUrl == null || presignedUrl.isEmpty
           ? Text(
               contact.user.initials,
-              style: AppTextStyles.heading3.copyWith(
-                color: AppColors.primary,
-              ),
+              style: AppTextStyles.heading3.copyWith(color: AppColors.primary),
             )
           : null,
     );

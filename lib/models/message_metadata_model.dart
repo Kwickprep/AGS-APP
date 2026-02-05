@@ -78,6 +78,7 @@ class InteractiveButtonMetadata extends MessageMetadata {
 
   bool get hasImage => header?.type == 'image' && (header?.imageUrl != null || header?.imageId != null);
   bool get hasVideo => header?.type == 'video' && (header?.videoUrl != null || header?.videoId != null);
+  bool get hasTextHeader => header?.type == 'text' && header?.text != null;
 }
 
 /// Interactive list message metadata (outbound with list selection)
@@ -155,6 +156,7 @@ class InteractiveResponseMetadata extends MessageMetadata {
 /// Message header (for interactive_button with images)
 class MessageHeader {
   final String type;
+  final String? text;
   final String? imageUrl;
   final String? imageId;
   final String? videoUrl;
@@ -162,6 +164,7 @@ class MessageHeader {
 
   MessageHeader({
     required this.type,
+    this.text,
     this.imageUrl,
     this.imageId,
     this.videoUrl,
@@ -169,10 +172,15 @@ class MessageHeader {
   });
 
   factory MessageHeader.fromJson(Map<String, dynamic> json) {
+    String? text;
     String? imageUrl;
     String? imageId;
     String? videoUrl;
     String? videoId;
+
+    if (json['type'] == 'text' && json['text'] != null) {
+      text = json['text'] is String ? json['text'] : json['text'].toString();
+    }
 
     if (json['type'] == 'image' && json['image'] != null) {
       final imageData = json['image'];
@@ -198,6 +206,7 @@ class MessageHeader {
 
     return MessageHeader(
       type: json['type'] ?? '',
+      text: text,
       imageUrl: imageUrl,
       imageId: imageId,
       videoUrl: videoUrl,

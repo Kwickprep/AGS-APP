@@ -37,7 +37,6 @@ class ActivityService {
     }
   }
 
-  @override
   Future<GenericResponse<ActivityModel>> getData({
     required int page,
     required int take,
@@ -71,7 +70,6 @@ class ActivityService {
     }
   }
 
-  @override
   Future<void> deleteData(String id) async {
     await deleteActivity(id);
   }

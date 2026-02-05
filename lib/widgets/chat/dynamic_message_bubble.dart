@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:video_player/video_player.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
 import '../../models/whatsapp_contact_model.dart';
@@ -23,6 +24,13 @@ class DynamicMessageBubble extends StatelessWidget {
     final isOutbound = message.isOutbound;
     final metadata = MessageMetadata.fromJson(message.metadata, message.messageType);
 
+    final borderRadius = BorderRadius.only(
+      topLeft: const Radius.circular(12),
+      topRight: const Radius.circular(12),
+      bottomLeft: Radius.circular(isOutbound ? 12 : 0),
+      bottomRight: Radius.circular(isOutbound ? 0 : 12),
+    );
+
     return Align(
       alignment: isOutbound ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -35,30 +43,33 @@ class DynamicMessageBubble extends StatelessWidget {
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
-        decoration: BoxDecoration(
-          color: isOutbound ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(12),
-            topRight: const Radius.circular(12),
-            bottomLeft: Radius.circular(isOutbound ? 12 : 0),
-            bottomRight: Radius.circular(isOutbound ? 0 : 12),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
+        child: Column(
+          crossAxisAlignment: isOutbound ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            // Bubble container
+            Container(
+              decoration: BoxDecoration(
+                color: isOutbound ? AppColors.primary : Colors.white,
+                borderRadius: borderRadius,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: borderRadius,
+                child: _buildMessageContent(context, metadata, isOutbound),
+              ),
+            ),
+            // Footer outside bubble
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 4, right: 4, bottom: 2),
+              child: _MessageFooter(message: message, isOutbound: isOutbound),
             ),
           ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(12),
-            topRight: const Radius.circular(12),
-            bottomLeft: Radius.circular(isOutbound ? 12 : 0),
-            bottomRight: Radius.circular(isOutbound ? 0 : 12),
-          ),
-          child: _buildMessageContent(context, metadata, isOutbound),
         ),
       ),
     );
@@ -93,53 +104,107 @@ class DynamicMessageBubble extends StatelessWidget {
           message: message,
           isOutbound: isOutbound,
           contactName: contactName,
+          mediaUrlCache: mediaUrlCache,
         );
       default:
         return _TextMessage(
           message: message,
           isOutbound: isOutbound,
           contactName: contactName,
+          mediaUrlCache: mediaUrlCache,
         );
     }
   }
 }
 
-/// Simple text message
+/// Two-line dark green header bar for interactive messages
+class _InteractiveHeaderBar extends StatelessWidget {
+  final String contactName;
+  final String typeLabel;
+
+  const _InteractiveHeaderBar({
+    required this.contactName,
+    required this.typeLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: const BoxDecoration(
+        color: AppColors.primaryDark,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            contactName,
+            style: AppTextStyles.buttonSmall.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.white,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            typeLabel,
+            style: AppTextStyles.label.copyWith(
+              color: AppColors.white.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Simple text message (also handles image/video/audio message types)
 class _TextMessage extends StatelessWidget {
   final WhatsAppMessage message;
   final bool isOutbound;
   final String? contactName;
+  final Map<String, String>? mediaUrlCache;
 
   const _TextMessage({
     required this.message,
     required this.isOutbound,
     this.contactName,
+    this.mediaUrlCache,
   });
+
+  String? _getMediaUrl() {
+    if (message.mediaUrl != null && message.mediaUrl!.isNotEmpty) {
+      if (mediaUrlCache != null && mediaUrlCache!.containsKey(message.mediaUrl!)) {
+        return mediaUrlCache![message.mediaUrl!];
+      }
+      // If it looks like a URL already, use it directly
+      if (message.mediaUrl!.startsWith('http')) {
+        return message.mediaUrl!;
+      }
+    }
+    return null;
+  }
+
+  bool get _isImageMessage =>
+      message.messageType == 'image' ||
+      (message.mediaUrl != null && message.metadata?['type'] == 'image');
+
+  bool get _isVideoMessage =>
+      message.messageType == 'video' ||
+      (message.mediaUrl != null && message.metadata?['type'] == 'video');
 
   @override
   Widget build(BuildContext context) {
+    final mediaUrl = _getMediaUrl();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Contact name header for inbound messages
-        if (!isOutbound && contactName != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Text(
-              contactName!,
-              style: AppTextStyles.buttonSmall.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.white,
-              ),
-            ),
-          ),
+        // Media content
+        if (mediaUrl != null && _isImageMessage)
+          _ImageHeader(imageUrl: mediaUrl),
+        if (mediaUrl != null && _isVideoMessage)
+          _VideoHeader(videoUrl: mediaUrl),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Column(
@@ -162,8 +227,6 @@ class _TextMessage extends StatelessWidget {
                     ),
                   ),
                 ),
-              const SizedBox(height: 4),
-              _MessageFooter(message: message, isOutbound: isOutbound),
             ],
           ),
         ),
@@ -218,28 +281,16 @@ class _InteractiveButtonMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     final imageUrl = _getImageUrl();
     final videoUrl = _getVideoUrl();
+    final headerLabel = metadata.header?.text ?? 'Interactive Button';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Contact name header for inbound messages
-        if (!isOutbound && contactName != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Text(
-              contactName!,
-              style: AppTextStyles.buttonSmall.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.white,
-              ),
-            ),
+        // Two-line interactive header on both directions
+        if (contactName != null)
+          _InteractiveHeaderBar(
+            contactName: contactName!,
+            typeLabel: headerLabel,
           ),
 
         // Image header if present
@@ -293,12 +344,6 @@ class _InteractiveButtonMessage extends StatelessWidget {
                 isOutbound: isOutbound,
               )),
         ],
-
-        // Time and status
-        Padding(
-          padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
-          child: _MessageFooter(message: message, isOutbound: isOutbound),
-        ),
       ],
     );
   }
@@ -323,24 +368,11 @@ class _InteractiveListMessage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Contact name header for inbound messages
-        if (!isOutbound && contactName != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Text(
-              contactName!,
-              style: AppTextStyles.buttonSmall.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.white,
-              ),
-            ),
+        // Two-line interactive header on both directions
+        if (contactName != null)
+          _InteractiveHeaderBar(
+            contactName: contactName!,
+            typeLabel: 'Interactive List',
           ),
 
         // Content
@@ -376,12 +408,6 @@ class _InteractiveListMessage extends StatelessWidget {
             isOutbound: isOutbound,
           ),
         ],
-
-        // Time and status
-        Padding(
-          padding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
-          child: _MessageFooter(message: message, isOutbound: isOutbound),
-        ),
       ],
     );
   }
@@ -406,24 +432,11 @@ class _ButtonResponseMessage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Contact name header for inbound messages
-        if (!isOutbound && contactName != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Text(
-              contactName!,
-              style: AppTextStyles.buttonSmall.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppColors.white,
-              ),
-            ),
+        // Two-line interactive header on both directions
+        if (contactName != null)
+          _InteractiveHeaderBar(
+            contactName: contactName!,
+            typeLabel: 'Interactive Button',
           ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -472,8 +485,6 @@ class _ButtonResponseMessage extends StatelessWidget {
                   color: isOutbound ? AppColors.white : AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 4),
-              _MessageFooter(message: message, isOutbound: isOutbound),
             ],
           ),
         ),
@@ -532,60 +543,159 @@ class _ImageHeader extends StatelessWidget {
   }
 }
 
-/// Video header widget
-class _VideoHeader extends StatelessWidget {
+/// Video player widget
+class _VideoHeader extends StatefulWidget {
   final String videoUrl;
 
   const _VideoHeader({required this.videoUrl});
 
   @override
+  State<_VideoHeader> createState() => _VideoHeaderState();
+}
+
+class _VideoHeaderState extends State<_VideoHeader> {
+  late VideoPlayerController _controller;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..initialize().then((_) {
+        if (mounted) setState(() {});
+      }).catchError((e) {
+        if (mounted) setState(() => _hasError = true);
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _togglePlayPause() {
+    setState(() {
+      _controller.value.isPlaying ? _controller.pause() : _controller.play();
+    });
+  }
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(
-        maxHeight: 200,
-      ),
-      width: double.infinity,
-      color: AppColors.grey.withValues(alpha: 0.1),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Video thumbnail placeholder
-          Container(
-            height: 150,
-            color: AppColors.grey.withValues(alpha: 0.2),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.videocam,
-                    color: AppColors.textLight,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Video',
-                    style: AppTextStyles.caption,
-                  ),
-                ],
+    if (_hasError) {
+      return Container(
+        height: 150,
+        width: double.infinity,
+        color: AppColors.grey.withValues(alpha: 0.1),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, color: AppColors.textLight, size: 40),
+              const SizedBox(height: 8),
+              Text(
+                'Failed to load video',
+                style: AppTextStyles.caption.copyWith(color: AppColors.textLight),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (!_controller.value.isInitialized) {
+      return Container(
+        height: 150,
+        width: double.infinity,
+        color: AppColors.grey.withValues(alpha: 0.1),
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _togglePlayPause,
+      child: Container(
+        constraints: const BoxConstraints(maxHeight: 250),
+        width: double.infinity,
+        color: Colors.black,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: VideoPlayer(_controller),
+            ),
+            // Play/pause overlay
+            if (!_controller.value.isPlaying)
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.8),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.play_arrow,
+                  color: AppColors.white,
+                  size: 32,
+                ),
+              ),
+            // Progress bar at bottom
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                color: Colors.black.withValues(alpha: 0.5),
+                child: Row(
+                  children: [
+                    ValueListenableBuilder<VideoPlayerValue>(
+                      valueListenable: _controller,
+                      builder: (context, value, child) {
+                        return Text(
+                          _formatDuration(value.position),
+                          style: AppTextStyles.label.copyWith(
+                            color: AppColors.white,
+                            fontSize: 11,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: VideoProgressIndicator(
+                        _controller,
+                        allowScrubbing: true,
+                        colors: VideoProgressColors(
+                          playedColor: AppColors.primary,
+                          bufferedColor: AppColors.white.withValues(alpha: 0.3),
+                          backgroundColor: AppColors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatDuration(_controller.value.duration),
+                      style: AppTextStyles.label.copyWith(
+                        color: AppColors.white,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          // Play button overlay
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.8),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.play_arrow,
-              color: AppColors.white,
-              size: 32,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -612,6 +722,7 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
+          color: isOutbound ? AppColors.white.withValues(alpha: 0.15) : null,
           border: Border(
             bottom: BorderSide(
               color: isOutbound
@@ -815,7 +926,7 @@ class _ReferencedMessageWidget extends StatelessWidget {
             _getSenderName(),
             style: AppTextStyles.bodySmall.copyWith(
               fontWeight: FontWeight.w600,
-              color: AppColors.white,
+              color: isOutbound ? AppColors.white : AppColors.primary,
             ),
           ),
           const SizedBox(height: 2),
@@ -856,8 +967,6 @@ class _MessageFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = isOutbound ? AppColors.white.withValues(alpha: 0.7) : AppColors.textLight;
-
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.end,
@@ -865,7 +974,7 @@ class _MessageFooter extends StatelessWidget {
         Text(
           _formatMessageTime(message.createdAt),
           style: AppTextStyles.label.copyWith(
-            color: textColor,
+            color: AppColors.textLight,
           ),
         ),
         if (isOutbound) ...[
@@ -877,7 +986,7 @@ class _MessageFooter extends StatelessWidget {
                     ? Icons.done_all
                     : Icons.done,
             size: 16,
-            color: message.status == 'read' ? Colors.lightBlueAccent : textColor,
+            color: message.status == 'read' ? Colors.lightBlueAccent : AppColors.textLight,
           ),
         ],
       ],

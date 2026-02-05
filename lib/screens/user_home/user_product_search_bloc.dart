@@ -114,8 +114,7 @@ class UserProductSearchError extends UserProductSearchState {
 
 class UserProductSearchBloc
     extends Bloc<UserProductSearchEvent, UserProductSearchState> {
-  final UserProductSearchService _service =
-      GetIt.I<UserProductSearchService>();
+  final UserProductSearchService _service = GetIt.I<UserProductSearchService>();
 
   UserProductSearchBloc() : super(UserProductSearchInitial()) {
     on<SearchProducts>(_onSearchProducts);
@@ -161,33 +160,39 @@ class UserProductSearchBloc
         botMessage += "Here's what I found for you.";
       }
 
-      currentMessages.add(ChatMessage(
-        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
-        content: botMessage,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      currentMessages.add(
+        ChatMessage(
+          id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+          content: botMessage,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
+      );
 
       // Determine stage from response data, not backend stage string
       // (backend may echo 'INITIAL' which the UI doesn't handle)
       final stage = response.aiSuggestedThemes.isNotEmpty
           ? 'THEME_SELECTION'
           : response.products.isNotEmpty
-              ? 'PRODUCT_SELECTION'
-              : 'THEME_SELECTION';
+          ? 'PRODUCT_SELECTION'
+          : 'THEME_SELECTION';
 
-      emit(UserProductSearchConversation(
-        activityId: response.activityId,
-        messages: currentMessages,
-        suggestedThemes: response.aiSuggestedThemes,
-        products: response.products,
-        stage: stage,
-      ));
+      emit(
+        UserProductSearchConversation(
+          activityId: response.activityId,
+          messages: currentMessages,
+          suggestedThemes: response.aiSuggestedThemes,
+          products: response.products,
+          stage: stage,
+        ),
+      );
     } catch (e) {
-      emit(UserProductSearchError(
-        message: _friendlyError(e),
-        messages: currentMessages,
-      ));
+      emit(
+        UserProductSearchError(
+          message: _friendlyError(e),
+          messages: currentMessages,
+        ),
+      );
     }
   }
 
@@ -217,27 +222,30 @@ class UserProductSearchBloc
         skipCategories: true,
       );
 
-      messages.add(ChatMessage(
-        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
-        content:
-            "Great choice! '${event.theme.name}' selected. Now, select your budget range to find the best products.",
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      messages.add(
+        ChatMessage(
+          id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+          content:
+              "Great choice! '${event.theme.name}' selected. Now, select your budget range to find the best products.",
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
+      );
 
-      emit(UserProductSearchConversation(
-        activityId: currentState.activityId,
-        messages: messages,
-        availablePriceRanges: response.availablePriceRanges,
-        stage: 'PRICE_RANGE_SELECTION',
-        selectedTheme: event.theme,
-        previousState: currentState,
-      ));
+      emit(
+        UserProductSearchConversation(
+          activityId: currentState.activityId,
+          messages: messages,
+          availablePriceRanges: response.availablePriceRanges,
+          stage: 'PRICE_RANGE_SELECTION',
+          selectedTheme: event.theme,
+          previousState: currentState,
+        ),
+      );
     } catch (e) {
-      emit(UserProductSearchError(
-        message: _friendlyError(e),
-        messages: messages,
-      ));
+      emit(
+        UserProductSearchError(message: _friendlyError(e), messages: messages),
+      );
     }
   }
 
@@ -275,27 +283,30 @@ class UserProductSearchBloc
             "No products found for this combination. Try a different price range or start a new search.";
       }
 
-      messages.add(ChatMessage(
-        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
-        content: botMessage,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      messages.add(
+        ChatMessage(
+          id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+          content: botMessage,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
+      );
 
-      emit(UserProductSearchConversation(
-        activityId: currentState.activityId,
-        messages: messages,
-        products: response.products,
-        stage: 'PRODUCT_SELECTION',
-        selectedTheme: currentState.selectedTheme,
-        selectedPriceRange: event.priceRange,
-        previousState: currentState,
-      ));
+      emit(
+        UserProductSearchConversation(
+          activityId: currentState.activityId,
+          messages: messages,
+          products: response.products,
+          stage: 'PRODUCT_SELECTION',
+          selectedTheme: currentState.selectedTheme,
+          selectedPriceRange: event.priceRange,
+          previousState: currentState,
+        ),
+      );
     } catch (e) {
-      emit(UserProductSearchError(
-        message: _friendlyError(e),
-        messages: messages,
-      ));
+      emit(
+        UserProductSearchError(message: _friendlyError(e), messages: messages),
+      );
     }
   }
 
@@ -316,24 +327,28 @@ class UserProductSearchBloc
 
     final messages = [...currentState.messages, userMessage];
 
-    messages.add(ChatMessage(
-      id: '${DateTime.now().millisecondsSinceEpoch}_bot',
-      content:
-          "Excellent choice! Please select the approximate quantity you need.",
-      isUser: false,
-      timestamp: DateTime.now(),
-    ));
+    messages.add(
+      ChatMessage(
+        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+        content:
+            "Excellent choice! Please select the approximate quantity you need.",
+        isUser: false,
+        timestamp: DateTime.now(),
+      ),
+    );
 
-    emit(UserProductSearchConversation(
-      activityId: currentState.activityId,
-      messages: messages,
-      products: currentState.products,
-      stage: 'MOQ_SELECTION',
-      selectedTheme: currentState.selectedTheme,
-      selectedPriceRange: currentState.selectedPriceRange,
-      selectedProduct: event.product,
-      previousState: currentState,
-    ));
+    emit(
+      UserProductSearchConversation(
+        activityId: currentState.activityId,
+        messages: messages,
+        products: currentState.products,
+        stage: 'MOQ_SELECTION',
+        selectedTheme: currentState.selectedTheme,
+        selectedPriceRange: currentState.selectedPriceRange,
+        selectedProduct: event.product,
+        previousState: currentState,
+      ),
+    );
   }
 
   /// Handle MOQ submission
@@ -363,38 +378,35 @@ class UserProductSearchBloc
         moq: event.moq,
       );
 
-      messages.add(ChatMessage(
-        id: '${DateTime.now().millisecondsSinceEpoch}_bot',
-        content:
-            "Thank you! Your interest in '${currentState.selectedProduct!.name}' has been recorded. One of our AGS Promotional Aid Experts will connect with you within 24 working hours.",
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
+      messages.add(
+        ChatMessage(
+          id: '${DateTime.now().millisecondsSinceEpoch}_bot',
+          content:
+              "Thank you! Your interest in '${currentState.selectedProduct!.name}' has been recorded. One of our AGS Promotional Aid Experts will connect with you within 24 working hours.",
+          isUser: false,
+          timestamp: DateTime.now(),
+        ),
+      );
 
-      emit(UserProductSearchCompleted(
-        messages: messages,
-        product: currentState.selectedProduct!,
-        moq: event.moq,
-      ));
+      emit(
+        UserProductSearchCompleted(
+          messages: messages,
+          product: currentState.selectedProduct!,
+          moq: event.moq,
+        ),
+      );
     } catch (e) {
-      emit(UserProductSearchError(
-        message: _friendlyError(e),
-        messages: messages,
-      ));
+      emit(
+        UserProductSearchError(message: _friendlyError(e), messages: messages),
+      );
     }
   }
 
-  void _onClearSearch(
-    ClearSearch event,
-    Emitter<UserProductSearchState> emit,
-  ) {
+  void _onClearSearch(ClearSearch event, Emitter<UserProductSearchState> emit) {
     emit(UserProductSearchInitial());
   }
 
-  void _onGoBack(
-    GoBack event,
-    Emitter<UserProductSearchState> emit,
-  ) {
+  void _onGoBack(GoBack event, Emitter<UserProductSearchState> emit) {
     if (state is UserProductSearchConversation) {
       final currentState = state as UserProductSearchConversation;
       if (currentState.previousState != null) {

@@ -22,10 +22,30 @@ class SummaryCardsWidget extends StatelessWidget {
     }
 
     final items = [
-      _CardData('Admins', data!.totalAdmins, Icons.admin_panel_settings_outlined, const Color(0xFF6366F1)),
-      _CardData('Employees', data!.totalEmployees, Icons.people_outline, const Color(0xFF22C55E)),
-      _CardData('Companies', data!.totalCompanies, Icons.business_outlined, const Color(0xFFF59E0B)),
-      _CardData('Customers', data!.totalCustomers, Icons.group_outlined, const Color(0xFF3B82F6)),
+      _CardData(
+        'Admins',
+        data!.totalAdmins,
+        Icons.admin_panel_settings_outlined,
+        const Color(0xFF6366F1),
+      ),
+      _CardData(
+        'Employees',
+        data!.totalEmployees,
+        Icons.people_outline,
+        const Color(0xFF22C55E),
+      ),
+      _CardData(
+        'Companies',
+        data!.totalCompanies,
+        Icons.business_outlined,
+        const Color(0xFFF59E0B),
+      ),
+      _CardData(
+        'Customers',
+        data!.totalCustomers,
+        Icons.group_outlined,
+        const Color(0xFF3B82F6),
+      ),
     ];
 
     return Padding(
@@ -44,7 +64,7 @@ class SummaryCardsWidget extends StatelessWidget {
 
   Widget _buildCard(_CardData item) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -58,7 +78,7 @@ class SummaryCardsWidget extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
-
 import '../../../models/user_product_search_model.dart';
 import '../../../services/file_upload_service.dart';
 import '../../../widgets/custom_toast.dart';
@@ -45,10 +44,16 @@ class _UserHomeState extends State<UserHome> {
   void _handleSearch(BuildContext context) {
     final query = _controller.text.trim();
     if (query.isEmpty && _uploadedDocumentIds.isEmpty) {
-      CustomToast.show(context, 'Please enter your brand message or upload visual material', type: ToastType.error);
+      CustomToast.show(
+        context,
+        'Please enter your brand message or upload visual material',
+        type: ToastType.error,
+      );
       return;
     }
-    context.read<UserProductSearchBloc>().add(SearchProducts(query: query, documentIds: _uploadedDocumentIds));
+    context.read<UserProductSearchBloc>().add(
+      SearchProducts(query: query, documentIds: _uploadedDocumentIds),
+    );
     _controller.clear();
     setState(() {
       _selectedImages.clear();
@@ -65,7 +70,13 @@ class _UserHomeState extends State<UserHome> {
         await _uploadImages();
       }
     } catch (e) {
-      if (mounted) CustomToast.show(context, 'Failed to pick images', type: ToastType.error);
+      if (mounted) {
+        CustomToast.show(
+          context,
+          'Failed to pick images',
+          type: ToastType.error,
+        );
+      }
     }
   }
 
@@ -80,14 +91,22 @@ class _UserHomeState extends State<UserHome> {
       });
     } catch (e) {
       setState(() => _isUploadingImages = false);
-      if (mounted) CustomToast.show(context, 'Failed to upload images', type: ToastType.error);
+      if (mounted) {
+        CustomToast.show(
+          context,
+          'Failed to upload images',
+          type: ToastType.error,
+        );
+      }
     }
   }
 
   void _removeImage(int index) {
     setState(() {
       _selectedImages.removeAt(index);
-      if (index < _uploadedDocumentIds.length) _uploadedDocumentIds.removeAt(index);
+      if (index < _uploadedDocumentIds.length) {
+        _uploadedDocumentIds.removeAt(index);
+      }
     });
   }
 
@@ -95,7 +114,9 @@ class _UserHomeState extends State<UserHome> {
     print('[IMG] _loadProductImages called with ${products.length} products');
     final idsToLoad = <String>[];
     for (final p in products) {
-      print('[IMG] Product "${p.name}" has ${p.images.length} images, imageUrl=${p.imageUrl}');
+      print(
+        '[IMG] Product "${p.name}" has ${p.images.length} images, imageUrl=${p.imageUrl}',
+      );
       for (final img in p.images) {
         print('[IMG]   image id="${img.id}" fileUrl="${img.fileUrl}"');
         if (img.id.isNotEmpty && !_imageUrlCache.containsKey(img.id)) {
@@ -107,9 +128,13 @@ class _UserHomeState extends State<UserHome> {
       print('[IMG] No image IDs to load - returning early');
       return;
     }
-    print('[IMG] Loading presigned URLs for ${idsToLoad.length} IDs: $idsToLoad');
+    print(
+      '[IMG] Loading presigned URLs for ${idsToLoad.length} IDs: $idsToLoad',
+    );
     try {
-      final presignedUrls = await _fileUploadService.getPresignedUrls(idsToLoad);
+      final presignedUrls = await _fileUploadService.getPresignedUrls(
+        idsToLoad,
+      );
       print('[IMG] Got ${presignedUrls.length} presigned URLs');
       for (final entry in presignedUrls.entries) {
         print('[IMG]   ${entry.key} => ${entry.value.substring(0, 80)}...');
@@ -164,7 +189,8 @@ class _UserHomeState extends State<UserHome> {
             _pickedMoq = null;
           });
           // Load presigned image URLs when products arrive
-          if (state is UserProductSearchConversation && state.products.isNotEmpty) {
+          if (state is UserProductSearchConversation &&
+              state.products.isNotEmpty) {
             _loadProductImages(state.products);
           }
         },
@@ -189,7 +215,8 @@ class _UserHomeState extends State<UserHome> {
             stage = 'COMPLETED';
           }
 
-          final showStepIndicator = !isInitial && !isLoading && !isError && stage != 'COMPLETED';
+          final showStepIndicator =
+              !isInitial && !isLoading && !isError && stage != 'COMPLETED';
 
           return GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
@@ -199,16 +226,22 @@ class _UserHomeState extends State<UserHome> {
                 child: Column(
                   children: [
                     _buildHeader(context, isInitial && !isError),
-                    if (showStepIndicator)
-                      _buildStepIndicator(stage),
+                    if (showStepIndicator) _buildStepIndicator(stage),
                     Expanded(
                       child: isInitial
                           ? _buildInitialForm(context)
                           : isLoading
-                              ? _buildLoadingView(context)
-                              : isError
-                                  ? _buildErrorView(context, state.message)
-                                  : _buildStageContent(context, stage, themes, priceRanges, products, canGoBack),
+                          ? _buildLoadingView(context)
+                          : isError
+                          ? _buildErrorView(context, state.message)
+                          : _buildStageContent(
+                              context,
+                              stage,
+                              themes,
+                              priceRanges,
+                              products,
+                              canGoBack,
+                            ),
                     ),
                   ],
                 ),
@@ -236,11 +269,19 @@ class _UserHomeState extends State<UserHome> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset('assets/images/ags_icon.png', width: 32, height: 32),
+                  Image.asset(
+                    'assets/images/ags_icon.png',
+                    width: 32,
+                    height: 32,
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     "AGS Connect",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -248,11 +289,19 @@ class _UserHomeState extends State<UserHome> {
           ),
           if (!isInitial)
             GestureDetector(
-              onTap: () => context.read<UserProductSearchBloc>().add(ClearSearch()),
+              onTap: () =>
+                  context.read<UserProductSearchBloc>().add(ClearSearch()),
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.add, size: 20, color: AppColors.primary),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.add,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
               ),
             )
           else
@@ -264,7 +313,12 @@ class _UserHomeState extends State<UserHome> {
 
   // ===== STEP INDICATOR =====
   Widget _buildStepIndicator(String stage) {
-    final steps = ['THEME_SELECTION', 'PRICE_RANGE_SELECTION', 'PRODUCT_SELECTION', 'MOQ_SELECTION'];
+    final steps = [
+      'THEME_SELECTION',
+      'PRICE_RANGE_SELECTION',
+      'PRODUCT_SELECTION',
+      'MOQ_SELECTION',
+    ];
     final stepIndex = steps.indexOf(stage);
     final currentStep = stepIndex >= 0 ? stepIndex + 2 : 2;
     const totalSteps = 5;
@@ -277,8 +331,17 @@ class _UserHomeState extends State<UserHome> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Step $currentStep of $totalSteps', style: AppTextStyles.caption),
-              Text(_getStepLabel(stage), style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: AppColors.primary)),
+              Text(
+                'Step $currentStep of $totalSteps',
+                style: AppTextStyles.caption,
+              ),
+              Text(
+                _getStepLabel(stage),
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -287,7 +350,9 @@ class _UserHomeState extends State<UserHome> {
             child: LinearProgressIndicator(
               value: currentStep / totalSteps,
               backgroundColor: AppColors.border,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.primary,
+              ),
               minHeight: 4,
             ),
           ),
@@ -322,17 +387,26 @@ class _UserHomeState extends State<UserHome> {
           Center(
             child: Column(
               children: [
-                Image.asset('assets/images/ags_icon.png', width: 56, height: 56),
+                Image.asset(
+                  'assets/images/ags_icon.png',
+                  width: 56,
+                  height: 56,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Promotional Aid Ideas',
-                  style: AppTextStyles.heading2.copyWith(color: AppColors.textPrimary),
+                  style: AppTextStyles.heading2.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Please write your brand message or brand tagline, or upload your brand visual material to discover the perfect promotional aid.',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary, height: 1.5),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -351,12 +425,19 @@ class _UserHomeState extends State<UserHome> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline, size: 18, color: Color(0xFFF9A825)),
+                const Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: Color(0xFFF9A825),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Either a brand message/tagline OR visual material upload is required. You can provide both for better results.',
-                    style: AppTextStyles.caption.copyWith(color: const Color(0xFF6D4C00), height: 1.4),
+                    style: AppTextStyles.caption.copyWith(
+                      color: const Color(0xFF6D4C00),
+                      height: 1.4,
+                    ),
                   ),
                 ),
               ],
@@ -365,7 +446,13 @@ class _UserHomeState extends State<UserHome> {
           const SizedBox(height: 24),
 
           // Brand Message field
-          Text('Brand Message / Tagline', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          Text(
+            'Brand Message / Tagline',
+            style: AppTextStyles.bodySmall.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: _controller,
@@ -395,7 +482,13 @@ class _UserHomeState extends State<UserHome> {
           const SizedBox(height: 24),
 
           // Upload section
-          Text('Upload Brand Visual Material', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+          Text(
+            'Upload Brand Visual Material',
+            style: AppTextStyles.bodySmall.copyWith(
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 8),
           _buildUploadArea(),
           const SizedBox(height: 6),
@@ -416,7 +509,9 @@ class _UserHomeState extends State<UserHome> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _isUploadingImages ? null : () => _handleSearch(context),
+              onPressed: _isUploadingImages
+                  ? null
+                  : () => _handleSearch(context),
               icon: const Icon(Icons.search, size: 20),
               label: const Text('Search Promotional Aids'),
               style: ElevatedButton.styleFrom(
@@ -424,8 +519,13 @@ class _UserHomeState extends State<UserHome> {
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: AppColors.grey,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -444,18 +544,24 @@ class _UserHomeState extends State<UserHome> {
         decoration: BoxDecoration(
           color: AppColors.primary.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_upload_outlined, size: 36, color: AppColors.primary),
+            Icon(
+              Icons.cloud_upload_outlined,
+              size: 36,
+              color: AppColors.primary,
+            ),
             const SizedBox(height: 8),
             Text(
               'Tap to upload images or documents',
-              style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -471,12 +577,30 @@ class _UserHomeState extends State<UserHome> {
         if (_isUploadingImages)
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary))),
-              SizedBox(width: 12),
-              Text('Uploading...', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
-            ]),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Uploading...',
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                ),
+              ],
+            ),
           ),
         if (_selectedImages.isNotEmpty && !_isUploadingImages)
           SizedBox(
@@ -493,7 +617,10 @@ class _UserHomeState extends State<UserHome> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.primary),
-                      image: DecorationImage(image: FileImage(_selectedImages[index]), fit: BoxFit.cover),
+                      image: DecorationImage(
+                        image: FileImage(_selectedImages[index]),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   Positioned(
@@ -503,8 +630,15 @@ class _UserHomeState extends State<UserHome> {
                       onTap: () => _removeImage(index),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                        child: const Icon(Icons.close, size: 14, color: Colors.white),
+                        decoration: const BoxDecoration(
+                          color: AppColors.error,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -565,35 +699,52 @@ class _UserHomeState extends State<UserHome> {
             const SizedBox(height: 24),
             Text(
               title,
-              style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Text(subtitle, style: AppTextStyles.caption, textAlign: TextAlign.center),
+            Text(
+              subtitle,
+              style: AppTextStyles.caption,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             Text(
               'Elapsed: $timeStr',
-              style: AppTextStyles.caption.copyWith(color: AppColors.grey, fontSize: 12),
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.grey,
+                fontSize: 12,
+              ),
             ),
             if (showCancel) ...[
               const SizedBox(height: 32),
               Text(
                 'This is taking longer than expected.',
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () => context.read<UserProductSearchBloc>().add(ClearSearch()),
+                  onPressed: () =>
+                      context.read<UserProductSearchBloc>().add(ClearSearch()),
                   icon: const Icon(Icons.cancel_outlined, size: 18),
                   label: const Text('Cancel & Start Over'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.error,
-                    side: BorderSide(color: AppColors.error.withValues(alpha: 0.5)),
+                    side: BorderSide(
+                      color: AppColors.error.withValues(alpha: 0.5),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -614,7 +765,13 @@ class _UserHomeState extends State<UserHome> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -622,25 +779,51 @@ class _UserHomeState extends State<UserHome> {
               Container(
                 width: 64,
                 height: 64,
-                decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.refresh_outlined, size: 32, color: Colors.orange),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.refresh_outlined,
+                  size: 32,
+                  color: Colors.orange,
+                ),
               ),
               const SizedBox(height: 16),
-              const Text('Please Try Again', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary), textAlign: TextAlign.center),
+              const Text(
+                'Please Try Again',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 8),
-              Text(message, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4), textAlign: TextAlign.center),
+              Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => context.read<UserProductSearchBloc>().add(ClearSearch()),
+                  onPressed: () =>
+                      context.read<UserProductSearchBloc>().add(ClearSearch()),
                   icon: const Icon(Icons.refresh, size: 20),
                   label: const Text('Start New Search'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -677,9 +860,18 @@ class _UserHomeState extends State<UserHome> {
   }
 
   // ===== THEME SELECTION (Step 2) =====
-  Widget _buildThemeSelection(BuildContext context, List<AISuggestedTheme> themes, bool canGoBack) {
+  Widget _buildThemeSelection(
+    BuildContext context,
+    List<AISuggestedTheme> themes,
+    bool canGoBack,
+  ) {
     if (themes.isEmpty) {
-      return _buildEmptyState(context, 'No Matching Themes', 'Try different brand information.', canGoBack);
+      return _buildEmptyState(
+        context,
+        'No Matching Themes',
+        'Try different brand information.',
+        canGoBack,
+      );
     }
 
     return Column(
@@ -693,7 +885,9 @@ class _UserHomeState extends State<UserHome> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
                   'Select the theme that best matches your brand:',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               ...themes.map((t) => _buildThemeCard(context, t)),
@@ -703,14 +897,20 @@ class _UserHomeState extends State<UserHome> {
         ),
         if (_pickedTheme != null)
           _buildNextButton(context, () {
-            context.read<UserProductSearchBloc>().add(SelectTheme(theme: _pickedTheme!));
+            context.read<UserProductSearchBloc>().add(
+              SelectTheme(theme: _pickedTheme!),
+            );
           }),
       ],
     );
   }
 
   // ===== PRICE RANGE SELECTION (Step 3) =====
-  Widget _buildPriceRangeSelection(BuildContext context, List<PriceRange> priceRanges, bool canGoBack) {
+  Widget _buildPriceRangeSelection(
+    BuildContext context,
+    List<PriceRange> priceRanges,
+    bool canGoBack,
+  ) {
     // Use WhatsApp-style 4 broad price ranges
     final ranges = PriceRange.defaultOptions;
 
@@ -725,7 +925,9 @@ class _UserHomeState extends State<UserHome> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
                   'Select your preferred budget range:',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               ...ranges.map((pr) {
@@ -734,15 +936,28 @@ class _UserHomeState extends State<UserHome> {
                   onTap: () => setState(() => _pickedPriceRange = pr),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
+                      color: isSelected
+                          ? AppColors.primary.withValues(alpha: 0.08)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.border,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.border,
                         width: isSelected ? 2 : 1,
                       ),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 1))],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
@@ -750,11 +965,15 @@ class _UserHomeState extends State<UserHome> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.1),
+                            color: isSelected
+                                ? AppColors.primary.withValues(alpha: 0.15)
+                                : AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            isSelected ? Icons.check_circle : Icons.payments_outlined,
+                            isSelected
+                                ? Icons.check_circle
+                                : Icons.payments_outlined,
                             color: AppColors.primary,
                             size: 20,
                           ),
@@ -765,13 +984,21 @@ class _UserHomeState extends State<UserHome> {
                             pr.label,
                             style: TextStyle(
                               fontSize: 15,
-                              color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                             ),
                           ),
                         ),
                         if (isSelected)
-                          const Icon(Icons.check_circle, color: AppColors.primary, size: 22),
+                          const Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary,
+                            size: 22,
+                          ),
                       ],
                     ),
                   ),
@@ -783,16 +1010,27 @@ class _UserHomeState extends State<UserHome> {
         ),
         if (_pickedPriceRange != null)
           _buildNextButton(context, () {
-            context.read<UserProductSearchBloc>().add(SelectPriceRange(priceRange: _pickedPriceRange!));
+            context.read<UserProductSearchBloc>().add(
+              SelectPriceRange(priceRange: _pickedPriceRange!),
+            );
           }),
       ],
     );
   }
 
   // ===== PRODUCT SELECTION (Step 4) =====
-  Widget _buildProductSelection(BuildContext context, List<UserProductSearchModel> products, bool canGoBack) {
+  Widget _buildProductSelection(
+    BuildContext context,
+    List<UserProductSearchModel> products,
+    bool canGoBack,
+  ) {
     if (products.isEmpty) {
-      return _buildEmptyState(context, 'No Products Found', 'Try a different budget range or theme.', canGoBack);
+      return _buildEmptyState(
+        context,
+        'No Products Found',
+        'Try a different budget range or theme.',
+        canGoBack,
+      );
     }
 
     return Column(
@@ -806,7 +1044,9 @@ class _UserHomeState extends State<UserHome> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
                   'Tap a product to select it, then press Next to proceed:',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               ...products.map((p) => _buildProductCard(context, p)),
@@ -816,14 +1056,20 @@ class _UserHomeState extends State<UserHome> {
         ),
         if (_pickedProduct != null)
           _buildNextButton(context, () {
-            context.read<UserProductSearchBloc>().add(SelectProduct(product: _pickedProduct!));
+            context.read<UserProductSearchBloc>().add(
+              SelectProduct(product: _pickedProduct!),
+            );
           }),
       ],
     );
   }
 
   // ===== MOQ SELECTION (Step 5) =====
-  Widget _buildMoqSelection(BuildContext context, List<UserProductSearchModel> products, bool canGoBack) {
+  Widget _buildMoqSelection(
+    BuildContext context,
+    List<UserProductSearchModel> products,
+    bool canGoBack,
+  ) {
     return Column(
       children: [
         Expanded(
@@ -835,7 +1081,9 @@ class _UserHomeState extends State<UserHome> {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
                   'Select the approximate quantity you need:',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               ...MoqRange.options.map((moq) {
@@ -844,15 +1092,28 @@ class _UserHomeState extends State<UserHome> {
                   onTap: () => setState(() => _pickedMoq = moq),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
+                      color: isSelected
+                          ? AppColors.primary.withValues(alpha: 0.08)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.border,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.border,
                         width: isSelected ? 2 : 1,
                       ),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 1))],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
                     child: Row(
                       children: [
@@ -860,11 +1121,15 @@ class _UserHomeState extends State<UserHome> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.1),
+                            color: isSelected
+                                ? AppColors.primary.withValues(alpha: 0.15)
+                                : AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            isSelected ? Icons.check_circle : Icons.inventory_2_outlined,
+                            isSelected
+                                ? Icons.check_circle
+                                : Icons.inventory_2_outlined,
                             color: AppColors.primary,
                             size: 20,
                           ),
@@ -875,13 +1140,21 @@ class _UserHomeState extends State<UserHome> {
                             moq.label,
                             style: TextStyle(
                               fontSize: 15,
-                              color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                             ),
                           ),
                         ),
                         if (isSelected)
-                          const Icon(Icons.check_circle, color: AppColors.primary, size: 22),
+                          const Icon(
+                            Icons.check_circle,
+                            color: AppColors.primary,
+                            size: 22,
+                          ),
                       ],
                     ),
                   ),
@@ -893,7 +1166,9 @@ class _UserHomeState extends State<UserHome> {
         ),
         if (_pickedMoq != null)
           _buildNextButton(context, () {
-            context.read<UserProductSearchBloc>().add(SubmitMoq(moq: _pickedMoq!.label));
+            context.read<UserProductSearchBloc>().add(
+              SubmitMoq(moq: _pickedMoq!.label),
+            );
           }),
       ],
     );
@@ -910,7 +1185,13 @@ class _UserHomeState extends State<UserHome> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -918,15 +1199,33 @@ class _UserHomeState extends State<UserHome> {
               Container(
                 width: 64,
                 height: 64,
-                decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.check_circle_outline, size: 36, color: AppColors.primary),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  size: 36,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(height: 20),
-              const Text('Request Submitted!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+              const Text(
+                'Request Submitted!',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 12),
               Text(
                 'Our AGS Promotional Aid Expert will connect with you within 24 working hours.',
-                style: TextStyle(fontSize: 15, color: AppColors.textSecondary, height: 1.5),
+                style: TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
@@ -939,14 +1238,17 @@ class _UserHomeState extends State<UserHome> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => context.read<UserProductSearchBloc>().add(ClearSearch()),
+                  onPressed: () =>
+                      context.read<UserProductSearchBloc>().add(ClearSearch()),
                   icon: const Icon(Icons.search, size: 20),
                   label: const Text('New Search'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -966,13 +1268,21 @@ class _UserHomeState extends State<UserHome> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -980,7 +1290,9 @@ class _UserHomeState extends State<UserHome> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.primary.withValues(alpha: 0.1),
+                color: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.15)
+                    : AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -994,10 +1306,28 @@ class _UserHomeState extends State<UserHome> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(theme.name, style: TextStyle(color: isSelected ? AppColors.primary : AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(
+                    theme.name,
+                    style: TextStyle(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   if (theme.reason != null) ...[
                     const SizedBox(height: 4),
-                    Text(theme.reason!, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.3), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(
+                      theme.reason!,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ],
               ),
@@ -1013,7 +1343,10 @@ class _UserHomeState extends State<UserHome> {
   }
 
   // ===== PRODUCT CARD =====
-  Widget _buildProductCard(BuildContext context, UserProductSearchModel product) {
+  Widget _buildProductCard(
+    BuildContext context,
+    UserProductSearchModel product,
+  ) {
     final desc = product.aiGeneratedDescription ?? product.description ?? '';
     final isSelected = _pickedProduct?.id == product.id;
     // Use presigned URL from cache (S3 bucket is private, raw URLs return 403)
@@ -1026,13 +1359,21 @@ class _UserHomeState extends State<UserHome> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.04) : Colors.white,
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.04)
+              : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -1048,13 +1389,22 @@ class _UserHomeState extends State<UserHome> {
                   children: [
                     Icon(Icons.check_circle, color: Colors.white, size: 16),
                     SizedBox(width: 6),
-                    Text('Selected', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text(
+                      'Selected',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
             if (imageUrl != null && imageUrl.isNotEmpty)
               ClipRRect(
-                borderRadius: isSelected ? BorderRadius.zero : const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: isSelected
+                    ? BorderRadius.zero
+                    : const BorderRadius.vertical(top: Radius.circular(16)),
                 child: Container(
                   width: double.infinity,
                   color: const Color(0xFFF5F5F5),
@@ -1066,7 +1416,13 @@ class _UserHomeState extends State<UserHome> {
                     errorBuilder: (_, __, ___) => Container(
                       height: 120,
                       color: AppColors.lightGrey,
-                      child: const Center(child: Icon(Icons.image_not_supported_outlined, size: 40, color: AppColors.grey)),
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          size: 40,
+                          color: AppColors.grey,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -1076,25 +1432,63 @@ class _UserHomeState extends State<UserHome> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.name, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   if (product.brand != null) ...[
                     const SizedBox(height: 4),
-                    Text(product.brand!.name, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    Text(
+                      product.brand!.name,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ],
                   if (desc.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text(desc, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, height: 1.5)),
+                    Text(
+                      desc,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                        height: 1.5,
+                      ),
+                    ),
                   ],
                   if (product.conceptAlignment.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
-                      children: product.conceptAlignment.take(3).map((c) => Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                            child: Text(c, style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500)),
-                          )).toList(),
+                      children: product.conceptAlignment
+                          .take(3)
+                          .map(
+                            (c) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                c,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ],
                 ],
@@ -1107,7 +1501,12 @@ class _UserHomeState extends State<UserHome> {
   }
 
   // ===== EMPTY STATE =====
-  Widget _buildEmptyState(BuildContext context, String title, String subtitle, bool canGoBack) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    String title,
+    String subtitle,
+    bool canGoBack,
+  ) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -1116,7 +1515,13 @@ class _UserHomeState extends State<UserHome> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1124,13 +1529,36 @@ class _UserHomeState extends State<UserHome> {
               Container(
                 width: 64,
                 height: 64,
-                decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.search_off_outlined, size: 32, color: AppColors.error),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.search_off_outlined,
+                  size: 32,
+                  color: AppColors.error,
+                ),
               ),
               const SizedBox(height: 16),
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textPrimary), textAlign: TextAlign.center),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 8),
-              Text(subtitle, style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4), textAlign: TextAlign.center),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 24),
               if (canGoBack)
                 Padding(
@@ -1138,14 +1566,17 @@ class _UserHomeState extends State<UserHome> {
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () => context.read<UserProductSearchBloc>().add(GoBack()),
+                      onPressed: () =>
+                          context.read<UserProductSearchBloc>().add(GoBack()),
                       icon: const Icon(Icons.arrow_back, size: 20),
                       label: const Text('Go Back'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -1153,14 +1584,17 @@ class _UserHomeState extends State<UserHome> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () => context.read<UserProductSearchBloc>().add(ClearSearch()),
+                  onPressed: () =>
+                      context.read<UserProductSearchBloc>().add(ClearSearch()),
                   icon: const Icon(Icons.refresh, size: 20),
                   label: const Text('Start Over'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -1178,7 +1612,13 @@ class _UserHomeState extends State<UserHome> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: const Border(top: BorderSide(color: AppColors.divider)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, -2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SizedBox(
         width: double.infinity,
@@ -1188,8 +1628,13 @@ class _UserHomeState extends State<UserHome> {
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
