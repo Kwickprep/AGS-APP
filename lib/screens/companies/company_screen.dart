@@ -12,7 +12,7 @@ import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
-import '../../widgets/common/details_bottom_sheet.dart';
+import '../../widgets/company/company_details_bottom_sheet.dart';
 import '../../utils/date_formatter.dart';
 
 /// Company list screen with full features: filter, sort, pagination, and details
@@ -140,65 +140,7 @@ class _CompanyScreenState extends State<CompanyScreen> {
   }
 
   void _showCompanyDetails(CompanyModel company) {
-    DetailsBottomSheet.show(
-      context: context,
-      title: company.name,
-      isActive: company.isActive == "Active",
-      fields: [
-        DetailField(
-          label: 'Company Name',
-          value: company.name,
-        ),
-        DetailField(
-          label: 'Email',
-          value: company.email,
-        ),
-        DetailField(
-          label: 'Website',
-          value: company.website,
-        ),
-        DetailField(
-          label: 'Industry',
-          value: company.industry,
-        ),
-        DetailField(
-          label: 'Employees',
-          value: company.employees,
-        ),
-        DetailField(
-          label: 'Turnover',
-          value: company.turnover,
-        ),
-        DetailField(
-          label: 'GST Number',
-          value: company.gstNumber,
-        ),
-        DetailField(
-          label: 'Country',
-          value: company.country,
-        ),
-        DetailField(
-          label: 'State',
-          value: company.state,
-        ),
-        DetailField(
-          label: 'City',
-          value: company.city,
-        ),
-        DetailField(
-          label: 'Status',
-          value: company.isActive == "Active" ? 'Active' : 'Inactive',
-        ),
-        DetailField(
-          label: 'Created By',
-          value: company.createdBy,
-        ),
-        DetailField(
-          label: 'Created Date',
-          value: company.createdAt,
-        ),
-      ],
-    );
+    CompanyDetailsBottomSheet.show(context: context, company: company);
   }
 
   void _navigateToEditCompany(CompanyModel company) async {
@@ -426,6 +368,30 @@ class _CompanyScreenState extends State<CompanyScreen> {
         CardField.regular(
           label: 'Industry',
           value: company.industry,
+        ),
+        CardField.regular(
+          label: 'Website',
+          value: company.website,
+        ),
+        CardField.regular(
+          label: 'Employees',
+          value: company.employees,
+        ),
+        CardField.regular(
+          label: 'Turnover',
+          value: company.turnover,
+        ),
+        CardField.regular(
+          label: 'GST Number',
+          value: company.gstNumber,
+        ),
+        CardField.regular(
+          label: 'City',
+          value: company.city,
+        ),
+        CardField.regular(
+          label: 'State',
+          value: company.state,
         ),
       ],
       createdBy: company.createdBy,

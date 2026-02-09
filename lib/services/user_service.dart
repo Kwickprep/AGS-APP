@@ -103,6 +103,15 @@ class UserService {
     }
   }
 
+  Future<Map<String, dynamic>> getUserInsights(String id) async {
+    try {
+      final response = await _apiService.get('/api/users/$id/insights');
+      return response.data['data'] as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Failed to fetch user insights: ${e.toString()}');
+    }
+  }
+
   // Get users by company IDs (for Select Users section in Admin/Employee role)
   Future<List<Map<String, dynamic>>> getUsersByCompanies(
     List<String> companyIds,

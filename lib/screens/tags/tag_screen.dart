@@ -139,6 +139,8 @@ class _TagScreenState extends State<TagScreen> {
         DetailField(label: 'Status', value: tag.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: tag.createdBy),
         DetailField(label: 'Created Date', value: tag.createdAt),
+        if (tag.updatedBy != null && tag.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: tag.updatedBy!),
+        if (tag.updatedAt != null && tag.updatedAt!.isNotEmpty) DetailField(label: 'Updated Date', value: tag.updatedAt!),
       ],
     );
   }

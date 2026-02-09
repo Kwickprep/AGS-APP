@@ -12,7 +12,7 @@ import '../../widgets/common/filter_sort_bar.dart';
 import '../../widgets/common/pagination_controls.dart';
 import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
-import '../../widgets/common/details_bottom_sheet.dart';
+import '../../widgets/user/user_details_bottom_sheet.dart';
 import '../../utils/date_formatter.dart';
 
 /// User list screen with full features: filter, sort, pagination, and details
@@ -140,29 +140,7 @@ class _UserScreenState extends State<UserScreen> {
   }
 
   void _showUserDetails(UserScreenModel user) {
-    DetailsBottomSheet.show(
-      context: context,
-      title: "${user.firstName} ${user.lastName}",
-      isActive: user.isActive == "Active",
-      fields: [
-        DetailField(
-          label: 'User Name',
-          value: "${user.firstName} ${user.lastName}",
-        ),
-        DetailField(
-          label: 'Status',
-          value: user.isActive == "Active" ? 'Active' : 'Inactive',
-        ),
-        DetailField(
-          label: 'Created By',
-          value: (user as dynamic).createdBy ?? "",
-        ),
-        DetailField(
-          label: 'Created Date',
-          value: (user as dynamic).createdAt ?? "",
-        ),
-      ],
-    );
+    UserDetailsBottomSheet.show(context: context, user: user);
   }
 
   void _navigateToEditUser(UserScreenModel user) async {
@@ -371,7 +349,31 @@ class _UserScreenState extends State<UserScreen> {
       fields: [
         CardField.title(
           label: 'User Name',
-          value: "${user.firstName} ${user.lastName}",
+          value: user.fullName,
+        ),
+        CardField.regular(
+          label: 'Email',
+          value: user.email,
+        ),
+        CardField.regular(
+          label: 'Phone',
+          value: user.phone,
+        ),
+        CardField.regular(
+          label: 'Role',
+          value: user.role,
+        ),
+        CardField.regular(
+          label: 'Department',
+          value: user.department,
+        ),
+        CardField.regular(
+          label: 'Company',
+          value: user.company,
+        ),
+        CardField.regular(
+          label: 'Designation',
+          value: user.designation,
         ),
       ],
       createdBy: user.createdBy,
