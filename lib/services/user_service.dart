@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:get_it/get_it.dart';
 import '../models/user_screen_model.dart';
+import '../models/user_insights_model.dart';
 import '../widgets/generic/generic_model.dart';
 import 'api_service.dart';
 
@@ -100,6 +101,15 @@ class UserService {
       return response.data['data']['record'] as Map<String, dynamic>;
     } catch (e) {
       throw Exception('Failed to update user: ${e.toString()}');
+    }
+  }
+
+  Future<UserInsightsResponse> getUserInsights(String userId) async {
+    try {
+      final response = await _apiService.get('/api/users/$userId/insights');
+      return UserInsightsResponse.fromJson(response.data);
+    } catch (e) {
+      throw Exception('Failed to load user insights: ${e.toString()}');
     }
   }
 

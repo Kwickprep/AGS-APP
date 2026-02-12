@@ -64,7 +64,7 @@ class SummaryCardsWidget extends StatelessWidget {
 
   Widget _buildCard(_CardData item) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),

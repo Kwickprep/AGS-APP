@@ -345,9 +345,27 @@ class _InquiryScreenState extends State<InquiryScreen> {
   Widget _buildInquiryCard(InquiryModel inquiry, int serialNumber) {
     return RecordCard(
       serialNumber: serialNumber,
-      isActive: true,
+      status: inquiry.status,
       fields: [
         CardField.title(label: 'Inquiry Name', value: inquiry.name),
+        CardField.regular(
+          label: 'Status',
+          value: inquiry.status,
+        ),
+        CardField.regular(
+          label: 'Company',
+          value: inquiry.company,
+        ),
+        CardField.regular(
+          label: 'Contact User',
+          value: inquiry.contactUser,
+        ),
+        if (inquiry.note.isNotEmpty && inquiry.note != '-')
+          CardField.description(
+            label: 'Note',
+            value: inquiry.note,
+            maxLines: 2,
+          ),
       ],
       createdBy: inquiry.createdBy,
       createdAt: formatDate(inquiry.createdAt),

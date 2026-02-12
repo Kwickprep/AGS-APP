@@ -427,6 +427,26 @@ class _CompanyScreenState extends State<CompanyScreen> {
           label: 'Industry',
           value: company.industry,
         ),
+        CardField.regular(
+          label: 'Website',
+          value: company.website,
+        ),
+        CardField.regular(
+          label: 'Employees',
+          value: company.employees,
+        ),
+        CardField.regular(
+          label: 'Turnover',
+          value: company.turnover,
+        ),
+        CardField.regular(
+          label: 'GST Number',
+          value: company.gstNumber,
+        ),
+        CardField.regular(
+          label: 'Location',
+          value: _formatLocation(company),
+        ),
       ],
       createdBy: company.createdBy,
       createdAt: formatDate(company.createdAt),
@@ -434,6 +454,14 @@ class _CompanyScreenState extends State<CompanyScreen> {
       onDelete: PermissionChecker.canDeleteCompany ? () => _confirmDelete(company) : null,
       onTap: () => _showCompanyDetails(company),
     );
+  }
+
+  String _formatLocation(CompanyModel company) {
+    final parts = <String>[];
+    if (company.city.isNotEmpty && company.city != '-') parts.add(company.city);
+    if (company.state.isNotEmpty && company.state != '-') parts.add(company.state);
+    if (company.country.isNotEmpty && company.country != '-') parts.add(company.country);
+    return parts.isNotEmpty ? parts.join(', ') : '-';
   }
 
   void _confirmDelete(CompanyModel company) {

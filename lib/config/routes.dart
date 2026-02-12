@@ -35,6 +35,7 @@ import '../screens/whatsapp_auto_replies/auto_reply_screen.dart';
 import '../screens/whatsapp_auto_replies/auto_reply_create_screen.dart';
 import '../screens/whatsapp_campaigns/campaign_screen.dart';
 import '../screens/whatsapp_campaigns/campaign_create_screen.dart';
+import '../screens/users/user_detail/user_detail_screen.dart';
 
 class AppRoutes {
   static const String startup = '/startup';
@@ -71,6 +72,7 @@ class AppRoutes {
   static const String createAutoReply = '/whatsapp/auto-replies/create';
   static const String campaigns = '/whatsapp/campaigns';
   static const String createCampaign = '/whatsapp/campaigns/create';
+  static const String userDetail = '/users/detail';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -144,6 +146,11 @@ class AppRoutes {
       products: (context) => const ProductScreen(),
       users: (context) => const UserScreen(),
       createUser: (context) => const UserCreateScreen(),
+      userDetail: (context) {
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        return UserDetailScreen(userId: args?['userId'] ?? '');
+      },
       activityTypes: (context) => const ActivityTypeScreen(),
       createActivityType: (context) {
         final args =
