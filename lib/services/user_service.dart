@@ -104,12 +104,12 @@ class UserService {
     }
   }
 
-  Future<UserInsightsResponse> getUserInsights(String userId) async {
+  Future<Map<String, dynamic>> getUserInsights(String id) async {
     try {
-      final response = await _apiService.get('/api/users/$userId/insights');
-      return UserInsightsResponse.fromJson(response.data);
+      final response = await _apiService.get('/api/users/$id/insights');
+      return response.data['data'] as Map<String, dynamic>;
     } catch (e) {
-      throw Exception('Failed to load user insights: ${e.toString()}');
+      throw Exception('Failed to fetch user insights: ${e.toString()}');
     }
   }
 

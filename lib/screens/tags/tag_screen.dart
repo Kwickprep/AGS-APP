@@ -140,6 +140,7 @@ class _TagScreenState extends State<TagScreen> {
         DetailField(label: 'Product Count', value: tag.productCount.toString()),
         DetailField(label: 'Status', value: tag.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: tag.createdBy),
+        DetailField(label: 'Created Date', value: tag.createdAt),
         DetailField(label: 'Created Date', value: formatDate(tag.createdAt)),
         if (tag.updatedBy != null && tag.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: tag.updatedBy!),
         if (tag.updatedAt != null) DetailField(label: 'Updated Date', value: formatDate(tag.updatedAt!)),

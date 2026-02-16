@@ -145,9 +145,14 @@ class _InquiryScreenState extends State<InquiryScreen> {
       isActive: true,
       fields: [
         DetailField(label: 'Inquiry Name', value: inquiry.name),
-        DetailField(label: 'Status', value: 'Active'),
+        DetailField(label: 'Company', value: inquiry.company),
+        DetailField(label: 'Contact', value: inquiry.contactUser),
+        DetailField(label: 'Status', value: inquiry.status.isNotEmpty ? inquiry.status : 'N/A'),
+        DetailField(label: 'Note', value: inquiry.note.isNotEmpty ? inquiry.note : 'N/A'),
         DetailField(label: 'Created By', value: inquiry.createdBy),
         DetailField(label: 'Created Date', value: inquiry.createdAt),
+        if (inquiry.updatedBy != null && inquiry.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: inquiry.updatedBy!),
+        if (inquiry.updatedAt != null && inquiry.updatedAt!.isNotEmpty) DetailField(label: 'Updated Date', value: inquiry.updatedAt!),
       ],
     );
   }
@@ -348,6 +353,9 @@ class _InquiryScreenState extends State<InquiryScreen> {
       status: inquiry.status,
       fields: [
         CardField.title(label: 'Inquiry Name', value: inquiry.name),
+        CardField.regular(label: 'Company', value: inquiry.company),
+        CardField.regular(label: 'Status', value: inquiry.status),
+        CardField.regular(label: 'Contact', value: inquiry.contactUser),
         CardField.regular(
           label: 'Status',
           value: inquiry.status,

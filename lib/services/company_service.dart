@@ -108,6 +108,15 @@ class CompanyService {
     }
   }
 
+  Future<Map<String, dynamic>> getCompanyInsights(String id) async {
+    try {
+      final response = await _apiService.get('/api/companies/$id/insights');
+      return response.data['data'] as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Failed to fetch company insights: ${e.toString()}');
+    }
+  }
+
   Future<Map<String, dynamic>> updateCompany(
     String id,
     Map<String, dynamic> data,

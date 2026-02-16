@@ -146,10 +146,9 @@ class _GroupScreenState extends State<GroupScreen> {
       isActive: group.isActive,
       fields: [
         DetailField(label: 'Group Name', value: group.name),
-        DetailField(
-          label: 'Status',
-          value: group.isActive ? 'Active' : 'Inactive',
-        ),
+        DetailField(label: 'Members', value: group.users.isNotEmpty ? group.users : 'N/A'),
+        DetailField(label: 'Note', value: group.note.isNotEmpty ? group.note : 'N/A'),
+        DetailField(label: 'Status', value: group.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: group.createdBy),
         DetailField(label: 'Created Date', value: group.createdAt),
       ],

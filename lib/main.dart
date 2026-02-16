@@ -18,6 +18,7 @@ import 'services/activity_type_service.dart';
 import 'services/company_service.dart';
 import 'services/user_product_search_service.dart';
 import 'services/whatsapp_service.dart';
+import 'models/user_model.dart';
 import 'services/dashboard_service.dart';
 import 'services/whatsapp_template_category_service.dart';
 import 'services/whatsapp_auto_reply_service.dart';
@@ -61,13 +62,27 @@ void main() async {
   final isLoggedIn = await authService.checkAndRestoreSession();
 
   // Check if logged-in customer needs registration
+  // Fetch fresh user data from API to avoid stale cache issues
   bool needsRegistration = false;
   String userId = '';
   if (isLoggedIn) {
-    final user = await getIt<StorageService>().getUser();
-    if (user != null && user.needsRegistration) {
-      needsRegistration = true;
-      userId = user.id;
+    final storageService = getIt<StorageService>();
+    final cachedUser = await storageService.getUser();
+    if (cachedUser != null) {
+      userId = cachedUser.id;
+      try {
+        // Fetch fresh user profile from backend
+        final userService = getIt<UserService>();
+        final freshUserData = await userService.getUserById(cachedUser.id);
+        final freshUser = UserModel.fromJson(freshUserData['record'] as Map<String, dynamic>);
+        // Update cache with fresh data
+        await storageService.saveUser(freshUser);
+        needsRegistration = freshUser.needsRegistration;
+        userId = freshUser.id;
+      } catch (_) {
+        // API call failed (offline, etc.) — fall back to cached data
+        needsRegistration = cachedUser.needsRegistration;
+      }
     }
   }
 

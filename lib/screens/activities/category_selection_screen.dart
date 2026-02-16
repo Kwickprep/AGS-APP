@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../widgets/custom_button.dart';
 import 'package:get_it/get_it.dart';
-import '../../widgets/custom_button.dart';
 import '../../config/app_colors.dart';
-import '../../widgets/custom_button.dart';
 import '../../services/activity_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/custom_toast.dart';
-import '../../widgets/custom_button.dart';
 import 'price_range_selection_screen.dart';
-import '../../widgets/custom_button.dart';
 
 class CategorySelectionScreen extends StatefulWidget {
   final String activityId;
@@ -34,15 +29,6 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
   bool _isLoading = false;
 
   Future<void> _submitCategorySelection() async {
-    if (_selectedCategory == null) {
-      CustomToast.show(
-        context,
-        'Please select a category',
-        type: ToastType.error,
-      );
-      return;
-    }
-
     setState(() {
       _isLoading = true;
     });
@@ -50,11 +36,13 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
     try {
       final data = {
         'body': {
-          'selectedCategory': {
-            'id': _selectedCategory!['id'],
-            'name': _selectedCategory!['name'],
-            'reason': _selectedCategory!['reason'],
-          },
+          'selectedCategory': _selectedCategory != null
+              ? {
+                  'id': _selectedCategory!['id'],
+                  'name': _selectedCategory!['name'],
+                  'reason': _selectedCategory!['reason'],
+                }
+              : null,
         },
       };
 
@@ -259,7 +247,7 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
             ),
             const SizedBox(width: 12),
             const Text(
-              'Select a Category',
+              'Select a Category (Optional)',
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 18,
