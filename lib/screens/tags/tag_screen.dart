@@ -129,16 +129,20 @@ class _TagScreenState extends State<TagScreen> {
     );
   }
 
-  void _showTagDetails(TagModel tag) {
+  void _showTagDetails(TagModel tag, int serialNumber) {
     DetailsBottomSheet.show(
       context: context,
       title: tag.name,
       isActive: tag.isActive,
       fields: [
+        DetailField(label: 'SR', value: serialNumber.toString()),
         DetailField(label: 'Tag Name', value: tag.name),
+        DetailField(label: 'Product Count', value: tag.productCount.toString()),
         DetailField(label: 'Status', value: tag.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: tag.createdBy),
-        DetailField(label: 'Created Date', value: tag.createdAt),
+        DetailField(label: 'Created Date', value: formatDate(tag.createdAt)),
+        if (tag.updatedBy != null && tag.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: tag.updatedBy!),
+        if (tag.updatedAt != null) DetailField(label: 'Updated Date', value: formatDate(tag.updatedAt!)),
       ],
     );
   }
@@ -313,6 +317,7 @@ class _TagScreenState extends State<TagScreen> {
       isActive: tag.isActive,
       fields: [
         CardField.title(label: 'Tag Name', value: tag.name),
+        CardField.regular(label: 'Product Count', value: tag.productCount.toString()),
       ],
       createdBy: tag.createdBy,
       createdAt: formatDate(tag.createdAt),
@@ -327,7 +332,7 @@ class _TagScreenState extends State<TagScreen> {
             }
           : null,
       onDelete: PermissionChecker.canDeleteTag ? () => _confirmDelete(tag) : null,
-      onTap: () => _showTagDetails(tag),
+      onTap: () => _showTagDetails(tag, serialNumber),
     );
   }
 

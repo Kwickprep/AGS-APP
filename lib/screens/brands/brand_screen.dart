@@ -134,20 +134,23 @@ class _BrandScreenState extends State<BrandScreen> {
     _loadBrands();
   }
 
-  void _showBrandDetails(BrandModel brand) {
+  void _showBrandDetails(BrandModel brand, int serialNumber) {
     DetailsBottomSheet.show(
       context: context,
       title: brand.name,
       isActive: brand.isActive,
       fields: [
+        DetailField(label: 'SR', value: serialNumber.toString()),
         DetailField(label: 'Brand Name', value: brand.name),
-        DetailField(label: 'Status', value: brand.isActive ? 'Active' : 'Inactive'),
+        DetailField(label: 'Product Count', value: brand.productCount.toString()),
+        DetailField(label: 'Selections', value: brand.selectionCount.toString()),
         DetailField(label: 'AOP %', value: brand.aop != null ? '${brand.aop!.toStringAsFixed(2)}%' : 'N/A'),
-        DetailField(label: 'Discount %', value: brand.discount != null ? '${brand.discount!.toStringAsFixed(2)}%' : 'N/A'),
+        DetailField(label: 'Discount to AGS from Brand %', value: brand.discount != null ? '${brand.discount!.toStringAsFixed(2)}%' : 'N/A'),
+        DetailField(label: 'Status', value: brand.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: brand.createdBy),
-        DetailField(label: 'Created Date', value: brand.createdAt),
-        if (brand.updatedBy != null) DetailField(label: 'Updated By', value: brand.updatedBy!),
-        if (brand.updatedAt != null) DetailField(label: 'Updated Date', value: brand.updatedAt!),
+        DetailField(label: 'Created Date', value: formatDate(brand.createdAt)),
+        if (brand.updatedBy != null && brand.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: brand.updatedBy!),
+        if (brand.updatedAt != null) DetailField(label: 'Updated Date', value: formatDate(brand.updatedAt!)),
       ],
     );
   }
@@ -339,6 +342,14 @@ class _BrandScreenState extends State<BrandScreen> {
           value: brand.name,
         ),
         CardField.regular(
+          label: 'Product Count',
+          value: brand.productCount.toString(),
+        ),
+        CardField.regular(
+          label: 'Selections',
+          value: brand.selectionCount.toString(),
+        ),
+        CardField.regular(
           label: 'AOP %',
           value: brand.aop != null ? '${brand.aop!.toStringAsFixed(2)}%' : 'N/A',
         ),
@@ -360,7 +371,7 @@ class _BrandScreenState extends State<BrandScreen> {
             }
           : null,
       onDelete: PermissionChecker.canDeleteBrand ? () => _confirmDelete(brand) : null,
-      onTap: () => _showBrandDetails(brand),
+      onTap: () => _showBrandDetails(brand, serialNumber),
     );
   }
 

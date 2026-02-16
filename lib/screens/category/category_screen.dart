@@ -133,19 +133,22 @@ class _CategoryScreenState extends State<CategoryScreen> {
     _loadCategories();
   }
 
-  void _showCategoryDetails(CategoryModel category) {
+  void _showCategoryDetails(CategoryModel category, int serialNumber) {
     DetailsBottomSheet.show(
       context: context,
       title: category.name,
       isActive: category.isActive,
       fields: [
+        DetailField(label: 'SR', value: serialNumber.toString()),
         DetailField(label: 'Category Name', value: category.name),
         DetailField(label: 'Description', value: category.description.isNotEmpty ? category.description : 'N/A'),
+        DetailField(label: 'Product Count', value: category.productCount?.toString() ?? '0'),
+        DetailField(label: 'Selections', value: category.selectionCount.toString()),
         DetailField(label: 'Status', value: category.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: category.createdBy),
-        DetailField(label: 'Created Date', value: category.createdAt),
-        if (category.updatedBy != null) DetailField(label: 'Updated By', value: category.updatedBy!),
-        if (category.updatedAt != null) DetailField(label: 'Updated Date', value: category.updatedAt!),
+        DetailField(label: 'Created Date', value: formatDate(category.createdAt)),
+        if (category.updatedBy != null && category.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: category.updatedBy!),
+        if (category.updatedAt != null) DetailField(label: 'Updated Date', value: formatDate(category.updatedAt!)),
       ],
     );
   }
@@ -340,6 +343,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
           label: 'Product Count',
           value: category.productCount?.toString() ?? '0',
         ),
+        CardField.regular(
+          label: 'Selections',
+          value: category.selectionCount.toString(),
+        ),
       ],
       createdBy: category.createdBy,
       createdAt: formatDate(category.createdAt),
@@ -358,7 +365,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             }
           : null,
       onDelete: PermissionChecker.canDeleteCategory ? () => _confirmDelete(category) : null,
-      onTap: () => _showCategoryDetails(category),
+      onTap: () => _showCategoryDetails(category, serialNumber),
     );
   }
 

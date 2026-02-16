@@ -5,6 +5,7 @@ class TagModel implements GenericModel {
   final String id;
   final String name;
   final bool isActive;
+  final int productCount;
   final String createdBy;
   final String createdAt;
   final String? updatedBy;
@@ -15,6 +16,7 @@ class TagModel implements GenericModel {
     required this.id,
     required this.name,
     required this.isActive,
+    this.productCount = 0,
     required this.createdBy,
     required this.createdAt,
     this.updatedBy,
@@ -28,6 +30,7 @@ class TagModel implements GenericModel {
       'id': id,
       'name': name,
       'isActive': isActive,
+      'productCount': productCount,
       'createdBy': createdBy,
       'createdAt': createdAt,
       if (updatedBy != null) 'updatedBy': updatedBy,
@@ -56,6 +59,8 @@ class TagModel implements GenericModel {
         return createdBy;
       case 'createdAt':
         return createdAt;
+      case 'productCount':
+        return productCount.toString();
       default:
         return null;
     }
@@ -85,14 +90,58 @@ class TagModel implements GenericModel {
       return value.toString();
     }
 
+    // Extract name from creator/updater object (firstName + lastName)
+    String extractCreatorName(dynamic value) {
+      if (value == null) return '';
+      if (value is Map<String, dynamic>) {
+        final firstName = value['firstName']?.toString() ?? '';
+        final lastName = value['lastName']?.toString() ?? '';
+        return '$firstName $lastName'.trim();
+      }
+      return extractString(value);
+    }
+
+    // Extract date from createdInfo/updatedInfo format: "name (date, time)"
+    String extractDateFromInfo(dynamic info) {
+      if (info == null) return '';
+      final str = info.toString();
+      final match = RegExp(r'\((.+)\)').firstMatch(str);
+      return match?.group(1) ?? '';
+    }
+
+    // Resolve createdBy: prefer creator object, fallback to createdBy field, then createdInfo
+    final createdBy = extractCreatorName(json['creator']).isNotEmpty
+        ? extractCreatorName(json['creator'])
+        : extractString(json['createdBy']).isNotEmpty
+            ? extractString(json['createdBy'])
+            : (json['createdInfo'] != null ? json['createdInfo'].toString().split('(').first.trim() : '');
+
+    // Resolve createdAt: prefer createdAt field, fallback to createdInfo date
+    final createdAt = (json['createdAt'] != null && json['createdAt'].toString().isNotEmpty)
+        ? json['createdAt'].toString()
+        : extractDateFromInfo(json['createdInfo']);
+
+    // Resolve updatedBy: prefer updater object, fallback to updatedBy field, then updatedInfo
+    final updatedBy = extractCreatorName(json['updater']).isNotEmpty
+        ? extractCreatorName(json['updater'])
+        : extractString(json['updatedBy']).isNotEmpty
+            ? extractString(json['updatedBy'])
+            : (json['updatedInfo'] != null ? json['updatedInfo'].toString().split('(').first.trim() : null);
+
+    // Resolve updatedAt: prefer updatedAt field, fallback to updatedInfo date
+    final updatedAt = (json['updatedAt'] != null && json['updatedAt'].toString().isNotEmpty)
+        ? json['updatedAt'].toString()
+        : (json['updatedInfo'] != null ? extractDateFromInfo(json['updatedInfo']) : null);
+
     return TagModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
-      createdBy: extractString(json['createdBy']),
-      createdAt: json['createdAt'] ?? '',
-      updatedBy: extractString(json['updatedBy']),
-      updatedAt: json['updatedAt'],
+      productCount: json['productCount'] is int ? json['productCount'] : int.tryParse(json['productCount']?.toString() ?? '') ?? 0,
+      createdBy: createdBy,
+      createdAt: createdAt,
+      updatedBy: updatedBy,
+      updatedAt: updatedAt,
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => TagAction.fromJson(e))
           .toList() ?? [],

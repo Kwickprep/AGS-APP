@@ -131,23 +131,22 @@ class _ThemeScreenState extends State<ThemeScreen> {
     _loadThemes();
   }
 
-  void _showThemeDetails(ThemeModel theme) {
+  void _showThemeDetails(ThemeModel theme, int serialNumber) {
     DetailsBottomSheet.show(
       context: context,
       title: theme.name,
       isActive: theme.isActive,
       fields: [
+        DetailField(label: 'SR', value: serialNumber.toString()),
         DetailField(label: 'Theme Name', value: theme.name),
-        DetailField(label: 'Status', value: theme.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Description', value: theme.description.isNotEmpty ? theme.description : 'N/A'),
-        DetailField(label: 'Created By', value: theme.createdBy),
         DetailField(label: 'Product Count', value: theme.productCount.toString()),
-        DetailField(label: 'Created Date', value: theme.createdAt),
-        DetailField(label: 'Updated Date', value: theme.updatedAt),
-        if (theme.creator != null) DetailField(label: 'Creator Name', value: theme.creator!.fullName),
-        if (theme.creator != null) DetailField(label: 'Creator Role', value: theme.creator!.role),
-        if (theme.updater != null) DetailField(label: 'Updater Name', value: theme.updater!.fullName),
-        if (theme.updater != null) DetailField(label: 'Updater Role', value: theme.updater!.role),
+        DetailField(label: 'Selections', value: theme.selectionCount.toString()),
+        DetailField(label: 'Status', value: theme.isActive ? 'Active' : 'Inactive'),
+        DetailField(label: 'Created By', value: theme.createdBy),
+        DetailField(label: 'Created Date', value: formatDate(theme.createdAt)),
+        if (theme.updatedBy != null && theme.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: theme.updatedBy!),
+        if (theme.updatedAt != null) DetailField(label: 'Updated Date', value: formatDate(theme.updatedAt!)),
       ],
     );
   }
@@ -323,6 +322,8 @@ class _ThemeScreenState extends State<ThemeScreen> {
       fields: [
         CardField.title(label: 'Theme Name', value: theme.name),
         CardField.regular(label: 'Description', value: theme.description.isNotEmpty ? theme.description : 'N/A'),
+        CardField.regular(label: 'Product Count', value: theme.productCount.toString()),
+        CardField.regular(label: 'Selections', value: theme.selectionCount.toString()),
       ],
       createdBy: theme.createdBy,
       createdAt: formatDate(theme.createdAt),
@@ -341,7 +342,7 @@ class _ThemeScreenState extends State<ThemeScreen> {
             }
           : null,
       onDelete: PermissionChecker.canDeleteTheme ? () => _confirmDelete(theme) : null,
-      onTap: () => _showThemeDetails(theme),
+      onTap: () => _showThemeDetails(theme, serialNumber),
     );
   }
 

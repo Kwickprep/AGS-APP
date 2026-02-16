@@ -14,6 +14,8 @@ class BrandModel implements GenericModel {
   final List<BrandAction> actions;
   final double? aop;
   final double? discount;
+  final int productCount;
+  final int selectionCount;
 
   BrandModel({
     required this.id,
@@ -26,6 +28,8 @@ class BrandModel implements GenericModel {
     required this.actions,
     this.aop,
     this.discount,
+    this.productCount = 0,
+    this.selectionCount = 0,
   });
 
   @override
@@ -40,6 +44,8 @@ class BrandModel implements GenericModel {
       if (updatedAt != null) 'updatedAt': updatedAt,
       if (aop != null) 'aop': aop,
       if (discount != null) 'discount': discount,
+      'productCount': productCount,
+      'selectionCount': selectionCount,
       'actions': actions.map((a) => {
         'icon': a.icon,
         'type': a.type,
@@ -68,6 +74,10 @@ class BrandModel implements GenericModel {
         return aop != null ? '${aop!.toStringAsFixed(2)}%' : 'N/A';
       case 'discount':
         return discount != null ? '${discount!.toStringAsFixed(2)}%' : 'N/A';
+      case 'productCount':
+        return productCount.toString();
+      case 'selectionCount':
+        return selectionCount.toString();
       default:
         return null;
     }
@@ -107,16 +117,61 @@ class BrandModel implements GenericModel {
       return value.toString();
     }
 
+    // Extract name from creator/updater object (firstName + lastName)
+    String extractCreatorName(dynamic value) {
+      if (value == null) return '';
+      if (value is Map<String, dynamic>) {
+        final firstName = value['firstName']?.toString() ?? '';
+        final lastName = value['lastName']?.toString() ?? '';
+        return '$firstName $lastName'.trim();
+      }
+      return extractString(value);
+    }
+
+    // Extract date from createdInfo/updatedInfo format: "name (date, time)"
+    String extractDateFromInfo(dynamic info) {
+      if (info == null) return '';
+      final str = info.toString();
+      final match = RegExp(r'\((.+)\)').firstMatch(str);
+      return match?.group(1) ?? '';
+    }
+
+    // Resolve createdBy: prefer creator object, fallback to createdBy field, then createdInfo
+    final createdBy = extractCreatorName(json['creator']).isNotEmpty
+        ? extractCreatorName(json['creator'])
+        : extractString(json['createdBy']).isNotEmpty
+            ? extractString(json['createdBy'])
+            : (json['createdInfo'] != null ? json['createdInfo'].toString().split('(').first.trim() : '');
+
+    // Resolve createdAt: prefer createdAt field, fallback to createdInfo date
+    final createdAt = (json['createdAt'] != null && json['createdAt'].toString().isNotEmpty)
+        ? json['createdAt'].toString()
+        : extractDateFromInfo(json['createdInfo']);
+
+    // Resolve updatedBy: prefer updater object, fallback to updatedBy field, then updatedInfo
+    final updatedBy = extractCreatorName(json['updater']).isNotEmpty
+        ? extractCreatorName(json['updater'])
+        : extractString(json['updatedBy']).isNotEmpty
+            ? extractString(json['updatedBy'])
+            : (json['updatedInfo'] != null ? json['updatedInfo'].toString().split('(').first.trim() : null);
+
+    // Resolve updatedAt: prefer updatedAt field, fallback to updatedInfo date
+    final updatedAt = (json['updatedAt'] != null && json['updatedAt'].toString().isNotEmpty)
+        ? json['updatedAt'].toString()
+        : (json['updatedInfo'] != null ? extractDateFromInfo(json['updatedInfo']) : null);
+
     return BrandModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
-      createdBy: extractString(json['createdBy']),
-      createdAt: json['createdAt'] ?? '',
-      updatedBy: extractString(json['updatedBy']),
-      updatedAt: json['updatedAt'],
+      createdBy: createdBy,
+      createdAt: createdAt,
+      updatedBy: updatedBy,
+      updatedAt: updatedAt,
       aop: parseDouble(json['aop']),
       discount: parseDouble(json['discount']),
+      productCount: json['productCount'] is int ? json['productCount'] : int.tryParse(json['productCount']?.toString() ?? '') ?? 0,
+      selectionCount: json['selectionCount'] is int ? json['selectionCount'] : int.tryParse(json['selectionCount']?.toString() ?? '') ?? 0,
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => BrandAction.fromJson(e))
           .toList() ?? [],

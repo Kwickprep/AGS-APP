@@ -13,6 +13,7 @@ class ProductModel implements GenericModel {
   final String landed;
   final int tagCount;
   final String description;
+  final int selectionCount;
   final int themeCount;
   final int priceValue;
   final int priceRangeMin;
@@ -25,7 +26,8 @@ class ProductModel implements GenericModel {
   final List<SimpleTheme> themesSimple;
   final Creator? creator;
   final Creator? updater;
-  final String updatedAt;
+  final String? updatedBy;
+  final String? updatedAt;
   final bool isActive;
   @override
   final String createdBy;
@@ -45,6 +47,7 @@ class ProductModel implements GenericModel {
     required this.landed,
     required this.tagCount,
     required this.description,
+    this.selectionCount = 0,
     required this.themeCount,
     required this.priceValue,
     required this.priceRangeMin,
@@ -57,7 +60,8 @@ class ProductModel implements GenericModel {
     required this.themesSimple,
     this.creator,
     this.updater,
-    required this.updatedAt,
+    this.updatedBy,
+    this.updatedAt,
     required this.isActive,
     required this.createdBy,
     required this.createdAt,
@@ -122,6 +126,50 @@ class ProductModel implements GenericModel {
   }
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    // Extract name from creator/updater object (firstName + lastName)
+    String extractCreatorName(dynamic value) {
+      if (value == null) return '';
+      if (value is Map<String, dynamic>) {
+        final firstName = value['firstName']?.toString() ?? '';
+        final lastName = value['lastName']?.toString() ?? '';
+        return '$firstName $lastName'.trim();
+      }
+      if (value is String) return value;
+      return value.toString();
+    }
+
+    // Extract date from createdInfo/updatedInfo format: "name (date, time)"
+    String extractDateFromInfo(dynamic info) {
+      if (info == null) return '';
+      final str = info.toString();
+      final match = RegExp(r'\((.+)\)').firstMatch(str);
+      return match?.group(1) ?? '';
+    }
+
+    // Resolve createdBy: prefer creator object, fallback to createdBy field, then createdInfo
+    final createdBy = extractCreatorName(json['creator']).isNotEmpty
+        ? extractCreatorName(json['creator'])
+        : (json['createdBy'] != null && json['createdBy'].toString().isNotEmpty)
+            ? json['createdBy'].toString()
+            : (json['createdInfo'] != null ? json['createdInfo'].toString().split('(').first.trim() : '');
+
+    // Resolve createdAt: prefer createdAt field, fallback to createdInfo date
+    final createdAt = (json['createdAt'] != null && json['createdAt'].toString().isNotEmpty)
+        ? json['createdAt'].toString()
+        : extractDateFromInfo(json['createdInfo']);
+
+    // Resolve updatedBy: prefer updater object, fallback to updatedBy field, then updatedInfo
+    final updatedBy = extractCreatorName(json['updater']).isNotEmpty
+        ? extractCreatorName(json['updater'])
+        : (json['updatedBy'] != null && json['updatedBy'].toString().isNotEmpty)
+            ? json['updatedBy'].toString()
+            : (json['updatedInfo'] != null ? json['updatedInfo'].toString().split('(').first.trim() : null);
+
+    // Resolve updatedAt: prefer updatedAt field, fallback to updatedInfo date
+    final updatedAt = (json['updatedAt'] != null && json['updatedAt'].toString().isNotEmpty)
+        ? json['updatedAt'].toString()
+        : (json['updatedInfo'] != null ? extractDateFromInfo(json['updatedInfo']) : null);
+
     return ProductModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
@@ -134,6 +182,7 @@ class ProductModel implements GenericModel {
       landed: json['landed']?.toString() ?? '-',
       tagCount: json['tagCount'] ?? 0,
       description: json['description'] ?? '',
+      selectionCount: json['selectionCount'] is int ? json['selectionCount'] : int.tryParse(json['selectionCount']?.toString() ?? '') ?? 0,
       themeCount: json['themeCount'] ?? 0,
       priceValue: json['priceValue'] ?? 0,
       priceRangeMin: json['priceRangeMin'] ?? 0,
@@ -165,10 +214,11 @@ class ProductModel implements GenericModel {
           json['creator'] != null ? Creator.fromJson(json['creator']) : null,
       updater:
           json['updater'] != null ? Creator.fromJson(json['updater']) : null,
-      updatedAt: json['updatedAt'] ?? '',
+      updatedBy: updatedBy,
+      updatedAt: updatedAt,
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
-      createdBy: json['createdBy'] ?? '',
-      createdAt: json['createdAt'] ?? '',
+      createdBy: createdBy,
+      createdAt: createdAt,
       actions: (json['actions'] as List<dynamic>?)
               ?.map((e) => ProductAction.fromJson(e))
               .toList() ??

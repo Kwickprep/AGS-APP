@@ -7,6 +7,7 @@ class CategoryModel implements GenericModel {
   final String description;
   final bool isActive;
   final int? productCount;
+  final int selectionCount;
   @override
   final String createdBy;
   @override
@@ -15,12 +16,13 @@ class CategoryModel implements GenericModel {
   final String? updatedAt;
   final List<CategoryAction> actions;
 
-  CategoryModel({
+  CategoryModel ({
     required this.id,
     required this.name,
     required this.description,
     required this.isActive,
     this.productCount,
+    this.selectionCount = 0,
     required this.createdBy,
     required this.createdAt,
     this.updatedBy,
@@ -36,6 +38,7 @@ class CategoryModel implements GenericModel {
       'description': description,
       'isActive': isActive,
       if (productCount != null) 'productCount': productCount,
+      'selectionCount': selectionCount,
       'createdBy': createdBy,
       'createdAt': createdAt,
       if (updatedBy != null) 'updatedBy': updatedBy,
@@ -66,6 +69,10 @@ class CategoryModel implements GenericModel {
         return createdBy;
       case 'createdAt':
         return createdAt;
+      case 'productCount':
+        return productCount?.toString() ?? '0';
+      case 'selectionCount':
+        return selectionCount.toString();
       default:
         return null;
     }
@@ -95,16 +102,60 @@ class CategoryModel implements GenericModel {
       return value.toString();
     }
 
+    // Extract name from creator/updater object (firstName + lastName)
+    String extractCreatorName(dynamic value) {
+      if (value == null) return '';
+      if (value is Map<String, dynamic>) {
+        final firstName = value['firstName']?.toString() ?? '';
+        final lastName = value['lastName']?.toString() ?? '';
+        return '$firstName $lastName'.trim();
+      }
+      return extractString(value);
+    }
+
+    // Extract date from createdInfo/updatedInfo format: "name (date, time)"
+    String extractDateFromInfo(dynamic info) {
+      if (info == null) return '';
+      final str = info.toString();
+      final match = RegExp(r'\((.+)\)').firstMatch(str);
+      return match?.group(1) ?? '';
+    }
+
+    // Resolve createdBy: prefer creator object, fallback to createdBy field, then createdInfo
+    final createdBy = extractCreatorName(json['creator']).isNotEmpty
+        ? extractCreatorName(json['creator'])
+        : extractString(json['createdBy']).isNotEmpty
+            ? extractString(json['createdBy'])
+            : (json['createdInfo'] != null ? json['createdInfo'].toString().split('(').first.trim() : '');
+
+    // Resolve createdAt: prefer createdAt field, fallback to createdInfo date
+    final createdAt = (json['createdAt'] != null && json['createdAt'].toString().isNotEmpty)
+        ? json['createdAt'].toString()
+        : extractDateFromInfo(json['createdInfo']);
+
+    // Resolve updatedBy: prefer updater object, fallback to updatedBy field, then updatedInfo
+    final updatedBy = extractCreatorName(json['updater']).isNotEmpty
+        ? extractCreatorName(json['updater'])
+        : extractString(json['updatedBy']).isNotEmpty
+            ? extractString(json['updatedBy'])
+            : (json['updatedInfo'] != null ? json['updatedInfo'].toString().split('(').first.trim() : null);
+
+    // Resolve updatedAt: prefer updatedAt field, fallback to updatedInfo date
+    final updatedAt = (json['updatedAt'] != null && json['updatedAt'].toString().isNotEmpty)
+        ? json['updatedAt'].toString()
+        : (json['updatedInfo'] != null ? extractDateFromInfo(json['updatedInfo']) : null);
+
     return CategoryModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
       productCount: json['productCount'],
-      createdBy: extractString(json['createdBy']),
-      createdAt: json['createdAt'] ?? '',
-      updatedBy: extractString(json['updatedBy']),
-      updatedAt: json['updatedAt'],
+      selectionCount: json['selectionCount'] is int ? json['selectionCount'] : int.tryParse(json['selectionCount']?.toString() ?? '') ?? 0,
+      createdBy: createdBy,
+      createdAt: createdAt,
+      updatedBy: updatedBy,
+      updatedAt: updatedAt,
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => CategoryAction.fromJson(e))
           .toList() ?? [],

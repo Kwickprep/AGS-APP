@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
 import '../../models/product_model.dart';
+import '../../utils/date_formatter.dart';
 
 class ProductDetailsBottomSheet extends StatefulWidget {
   final ProductModel product;
@@ -340,6 +341,10 @@ class _ProductDetailsBottomSheetState extends State<ProductDetailsBottomSheet> {
                     const SizedBox(height: 16),
                   ],
 
+                  // Selection Count
+                  _buildDetailRow('Selections', widget.product.selectionCount.toString()),
+                  const SizedBox(height: 16),
+
                   // Status
                   _buildDetailRow(
                     'Status',
@@ -353,7 +358,19 @@ class _ProductDetailsBottomSheetState extends State<ProductDetailsBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Created date
-                  _buildDetailRow('Created Date', widget.product.createdAt),
+                  _buildDetailRow('Created Date', formatDate(widget.product.createdAt)),
+
+                  // Updated by
+                  if (widget.product.updatedBy != null && widget.product.updatedBy!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildDetailRow('Updated By', widget.product.updatedBy!),
+                  ],
+
+                  // Updated date
+                  if (widget.product.updatedAt != null) ...[
+                    const SizedBox(height: 16),
+                    _buildDetailRow('Updated Date', formatDate(widget.product.updatedAt!)),
+                  ],
                 ],
               ),
             ),
