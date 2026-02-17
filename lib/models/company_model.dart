@@ -19,6 +19,8 @@ class CompanyModel implements GenericModel {
   final String createdBy;
   @override
   final String createdAt;
+  final String createdInfo;
+  final String? updatedInfo;
   final List<CompanyAction> actions;
 
   CompanyModel({
@@ -37,6 +39,8 @@ class CompanyModel implements GenericModel {
     required this.users,
     required this.createdBy,
     required this.createdAt,
+    this.createdInfo = '',
+    this.updatedInfo,
     required this.actions,
   });
 
@@ -119,6 +123,8 @@ class CompanyModel implements GenericModel {
           [],
       createdBy: extractString(json['createdBy']),
       createdAt: extractString(json['createdAt']),
+      createdInfo: extractString(json['createdInfo']),
+      updatedInfo: json['updatedInfo']?.toString(),
       actions: (json['actions'] as List<dynamic>?)
               ?.map((e) => CompanyAction.fromJson(e))
               .toList() ??
@@ -144,6 +150,8 @@ class CompanyModel implements GenericModel {
       'users': users.map((e) => e.toJson()).toList(),
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (createdInfo.isNotEmpty) 'createdInfo': createdInfo,
+      if (updatedInfo != null) 'updatedInfo': updatedInfo,
     };
   }
 

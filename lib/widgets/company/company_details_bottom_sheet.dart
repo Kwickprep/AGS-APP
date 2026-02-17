@@ -208,8 +208,31 @@ class _CompanyDetailsBottomSheetState extends State<CompanyDetailsBottomSheet> {
           _buildDetailRow('State', company.state),
         if (company.city.isNotEmpty && company.city != '-')
           _buildDetailRow('City', company.city),
-        _buildDetailRow('Created By', company.createdBy),
-        _buildDetailRow('Created Date', formatDate(company.createdAt)),
+        if (company.createdInfo.isNotEmpty && company.createdInfo != '-')
+          _buildDetailRow('Created', company.createdInfo),
+        if (company.createdInfo.isEmpty || company.createdInfo == '-') ...[
+          _buildDetailRow('Created By', company.createdBy),
+          _buildDetailRow('Created Date', formatDate(company.createdAt)),
+        ],
+        if (company.updatedInfo != null && company.updatedInfo!.isNotEmpty && company.updatedInfo != '-')
+          _buildDetailRow('Updated', company.updatedInfo!),
+
+        // Users section
+        if (company.users.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              const Icon(Icons.people_outline, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Text(
+                'Users (${company.users.length})',
+                style: AppTextStyles.heading3.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...company.users.map((user) => _buildUserCard(user)),
+        ],
       ],
     );
   }
@@ -431,34 +454,225 @@ class _CompanyDetailsBottomSheetState extends State<CompanyDetailsBottomSheet> {
     );
   }
 
-  Widget _buildContactTile(String name, {String? role, String? phone, String? email}) {
+  Widget _buildUserCard(UserInfo user) {
+    final initials = _getInitials(user.firstName, user.lastName);
+    final isActive = user.isActive == 'Active';
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-          if (role != null && role.isNotEmpty && role != '-') ...[
-            const SizedBox(height: 2),
-            Text(role, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          ],
-          if (phone != null && phone.isNotEmpty && phone != '-') ...[
-            const SizedBox(height: 2),
-            Text(phone, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
-          ],
-          if (email != null && email.isNotEmpty && email != '-') ...[
-            const SizedBox(height: 2),
-            Text(email, style: const TextStyle(fontSize: 12, color: AppColors.textLight)),
-          ],
+          // Top row: Avatar + Name + Badges
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.fullName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (user.role.isNotEmpty && user.role != '-')
+                          _buildSmallBadge(user.role, AppColors.primary),
+                        _buildSmallBadge(
+                          isActive ? 'Active' : 'Inactive',
+                          isActive ? AppColors.success : AppColors.error,
+                        ),
+                        if (user.isWhatsapp)
+                          _buildSmallBadge('WhatsApp', Colors.green),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Info rows
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                if (user.designation.isNotEmpty && user.designation != '-')
+                  _buildContactInfoRow(Icons.work_outline, user.designation),
+                if (user.department.isNotEmpty && user.department != '-')
+                  _buildContactInfoRow(Icons.business_outlined, user.department),
+                if (user.email.isNotEmpty && user.email != '-')
+                  _buildContactInfoRow(Icons.email_outlined, user.email),
+                if (user.phone.isNotEmpty && user.phone != '-')
+                  _buildContactInfoRow(Icons.phone_outlined, user.phone),
+                if (user.division.isNotEmpty && user.division != '-')
+                  _buildContactInfoRow(Icons.category_outlined, user.division),
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildContactTile(String name, {String? role, String? phone, String? email}) {
+    final initials = name.isNotEmpty
+        ? name.split(' ').where((w) => w.isNotEmpty).take(2).map((w) => w[0].toUpperCase()).join()
+        : '?';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+            child: Text(
+              initials,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (role != null && role.isNotEmpty && role != '-')
+                      _buildSmallBadge(role, AppColors.primary),
+                  ],
+                ),
+                if (email != null && email.isNotEmpty && email != '-') ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.email_outlined, size: 13, color: AppColors.textLight),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(email, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                  ),
+                ],
+                if (phone != null && phone.isNotEmpty && phone != '-') ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.phone_outlined, size: 13, color: AppColors.textLight),
+                      const SizedBox(width: 6),
+                      Text(phone, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Widget _buildContactInfoRow(IconData icon, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: AppColors.textLight),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getInitials(String first, String last) {
+    final f = first.isNotEmpty && first != '-' ? first[0].toUpperCase() : '';
+    final l = last.isNotEmpty && last != '-' ? last[0].toUpperCase() : '';
+    return f.isNotEmpty || l.isNotEmpty ? '$f$l' : '?';
   }
 
   Widget _buildListTile(String title, {String? subtitle, String? trailing, String? date}) {

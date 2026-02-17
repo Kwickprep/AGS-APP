@@ -11,6 +11,8 @@ class GroupModel implements GenericModel {
   final String createdBy;
   @override
   final String createdAt;
+  final String createdInfo;
+  final String? updatedInfo;
   final List<GroupAction> actions;
 
   GroupModel({
@@ -21,6 +23,8 @@ class GroupModel implements GenericModel {
     required this.isActive,
     required this.createdBy,
     required this.createdAt,
+    this.createdInfo = '',
+    this.updatedInfo,
     required this.actions,
   });
 
@@ -34,6 +38,8 @@ class GroupModel implements GenericModel {
       'isActive': isActive,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (createdInfo.isNotEmpty) 'createdInfo': createdInfo,
+      if (updatedInfo != null) 'updatedInfo': updatedInfo,
       'actions': actions.map((a) => {
         'icon': a.icon,
         'type': a.type,
@@ -89,6 +95,8 @@ class GroupModel implements GenericModel {
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
       createdBy: json['createdBy']?.toString() ?? '',
       createdAt: json['createdAt']?.toString() ?? '',
+      createdInfo: json['createdInfo']?.toString() ?? '',
+      updatedInfo: json['updatedInfo']?.toString(),
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => GroupAction.fromJson(e))
           .toList() ?? [],

@@ -49,14 +49,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   void _loadCategories() {
-    _bloc.add(LoadCategories(
-      page: _currentPage,
-      take: _itemsPerPage,
-      search: _currentSearch,
-      sortBy: _currentSortBy,
-      sortOrder: _currentSortOrder,
-      filters: _currentFilters,
-    ));
+    _bloc.add(
+      LoadCategories(
+        page: _currentPage,
+        take: _itemsPerPage,
+        search: _currentSearch,
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+        filters: _currentFilters,
+      ),
+    );
   }
 
   void _showFilterSheet() {
@@ -83,7 +85,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 !filter.selectedStatuses.contains('Inactive')) {
               _currentFilters['isActive'] = true;
             } else if (filter.selectedStatuses.contains('Inactive') &&
-                       !filter.selectedStatuses.contains('Active')) {
+                !filter.selectedStatuses.contains('Active')) {
               _currentFilters['isActive'] = false;
             }
           }
@@ -100,7 +102,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
   void _showSortSheet() {
     SortBottomSheet.show(
       context: context,
-      initialSort: SortModel(sortBy: _currentSortBy, sortOrder: _currentSortOrder),
+      initialSort: SortModel(
+        sortBy: _currentSortBy,
+        sortOrder: _currentSortOrder,
+      ),
       sortOptions: const [
         SortOption(field: 'name', label: 'Name'),
         SortOption(field: 'isActive', label: 'Status'),
@@ -141,14 +146,34 @@ class _CategoryScreenState extends State<CategoryScreen> {
       fields: [
         DetailField(label: 'SR', value: serialNumber.toString()),
         DetailField(label: 'Category Name', value: category.name),
-        DetailField(label: 'Description', value: category.description.isNotEmpty ? category.description : 'N/A'),
-        DetailField(label: 'Product Count', value: category.productCount?.toString() ?? '0'),
-        DetailField(label: 'Selections', value: category.selectionCount.toString()),
-        DetailField(label: 'Status', value: category.isActive ? 'Active' : 'Inactive'),
+        DetailField(
+          label: 'Description',
+          value: category.description.isNotEmpty ? category.description : 'N/A',
+        ),
+        DetailField(
+          label: 'Product Count',
+          value: category.productCount?.toString() ?? '0',
+        ),
+        DetailField(
+          label: 'Selections',
+          value: category.selectionCount.toString(),
+        ),
+        DetailField(
+          label: 'Status',
+          value: category.isActive ? 'Active' : 'Inactive',
+        ),
         DetailField(label: 'Created By', value: category.createdBy),
-        DetailField(label: 'Created Date', value: formatDate(category.createdAt)),
-        if (category.updatedBy != null && category.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: category.updatedBy!),
-        if (category.updatedAt != null) DetailField(label: 'Updated Date', value: formatDate(category.updatedAt!)),
+        DetailField(
+          label: 'Created Date',
+          value: formatDate(category.createdAt),
+        ),
+        if (category.updatedBy != null && category.updatedBy!.isNotEmpty)
+          DetailField(label: 'Updated By', value: category.updatedBy!),
+        if (category.updatedAt != null)
+          DetailField(
+            label: 'Updated Date',
+            value: formatDate(category.updatedAt!),
+          ),
       ],
     );
   }
@@ -166,7 +191,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
             permission: 'categories.create',
             child: IconButton(
               onPressed: () async {
-                final result = await Navigator.pushNamed(context, '/categories/create');
+                final result = await Navigator.pushNamed(
+                  context,
+                  '/categories/create',
+                );
                 // Refresh the list if a category was created
                 if (result == true) {
                   _loadCategories();
@@ -237,7 +265,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
               // Filter and Sort bar
               Container(
                 color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: FilterSortBar(
                   onFilterTap: _showFilterSheet,
                   onSortTap: _showSortSheet,
@@ -255,9 +286,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: AppColors.error,
+                            ),
                             const SizedBox(height: 16),
-                            Text(state.message, style: const TextStyle(fontSize: 16)),
+                            Text(
+                              state.message,
+                              style: const TextStyle(fontSize: 16),
+                            ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _loadCategories,
@@ -272,11 +310,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.category_outlined, size: 64, color: AppColors.grey),
+                              const Icon(
+                                Icons.category_outlined,
+                                size: 64,
+                                color: AppColors.grey,
+                              ),
                               const SizedBox(height: 16),
                               Text(
                                 'No categorys found',
-                                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
+                                style: AppTextStyles.bodyLarge.copyWith(
+                                  color: AppColors.textLight,
+                                ),
                               ),
                             ],
                           ),
@@ -289,15 +333,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             child: RefreshIndicator(
                               onRefresh: () async {
                                 _loadCategories();
-                                await Future.delayed(const Duration(milliseconds: 500));
+                                await Future.delayed(
+                                  const Duration(milliseconds: 500),
+                                );
                               },
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(16),
                                 itemCount: state.categories.length,
                                 itemBuilder: (context, index) {
                                   final category = state.categories[index];
-                                  final serialNumber = (state.page - 1) * state.take + index + 1;
-                                  return _buildCategoryCard(category, serialNumber);
+                                  final serialNumber =
+                                      (state.page - 1) * state.take + index + 1;
+                                  return _buildCategoryCard(
+                                    category,
+                                    serialNumber,
+                                  );
                                 },
                               ),
                             ),
@@ -331,10 +381,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       serialNumber: serialNumber,
       isActive: category.isActive,
       fields: [
-        CardField.title(
-          label: 'Category Name',
-          value: category.name,
-        ),
+        CardField.title(label: 'Category Name', value: category.name),
         CardField.regular(
           label: 'Description',
           value: category.description.isNotEmpty ? category.description : 'N/A',
@@ -351,7 +398,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
       createdBy: category.createdBy,
       createdAt: formatDate(category.createdAt),
       updatedBy: category.updatedBy,
-      updatedAt: category.updatedAt != null ? formatDate(category.updatedAt!) : null,
+      updatedAt: category.updatedAt != null
+          ? formatDate(category.updatedAt!)
+          : null,
       onEdit: PermissionChecker.canUpdateCategory
           ? () async {
               final result = await Navigator.pushNamed(
@@ -364,7 +413,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
               }
             }
           : null,
-      onDelete: PermissionChecker.canDeleteCategory ? () => _confirmDelete(category) : null,
+      onDelete: PermissionChecker.canDeleteCategory
+          ? () => _confirmDelete(category)
+          : null,
       onTap: () => _showCategoryDetails(category, serialNumber),
     );
   }
@@ -395,5 +446,4 @@ class _CategoryScreenState extends State<CategoryScreen> {
       ),
     );
   }
-
 }

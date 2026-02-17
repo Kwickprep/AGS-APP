@@ -67,6 +67,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
 
   // Themes data
   List<ThemeModel> _themes = [];
+  List<ThemeModel> _scoredThemes = []; // Themes with scores from product API, always shown first
   int _themesCurrentPage = 1;
   int _themesTotalPages = 1;
   int _themesTotal = 0;
@@ -163,12 +164,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
         .map((i) => i.id)
         .toList();
 
-    // Set theme relevance scores
-    for (final theme in product.themes) {
-      if (theme.id.isNotEmpty && theme.id != '-') {
-        _themeRelevanceScores[theme.id] = theme.relevanceScore;
-      }
-    }
+    // Theme relevance scores are loaded from the API in _loadInitialData()
 
     // Load existing images
     if (_existingImageIds.isNotEmpty) {
@@ -214,7 +210,7 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
 
     try {
       // Load brands, categories, tags, and themes in parallel
-      final results = await Future.wait([
+      final futures = <Future>[
         _brandService.getActiveBrands(),
         _categoryService.getActiveCategories(),
         _tagService.getActiveTags(),
@@ -223,12 +219,62 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
           take: _themesPerPage,
           filters: {'isActive': true},
         ),
-      ]);
+      ];
+
+      // Also fetch product detail with page layout to get theme scores
+      if (widget.isEdit && widget.product != null) {
+        futures.add(
+          _productService.getProductThemeScores(widget.product!.id),
+        );
+      }
+
+      final results = await Future.wait(futures);
 
       final brands = results[0] as List;
       final categories = results[1] as List;
       final tags = results[2] as List;
       final themesResponse = results[3] as ThemeResponse;
+
+      // Extract theme relevance scores and build scored themes from product detail API
+      if (widget.isEdit && widget.product != null && results.length > 4) {
+        final productThemes =
+            results[4] as List<Map<String, dynamic>>;
+        _themeRelevanceScores.clear();
+        _scoredThemes = [];
+        for (final themeData in productThemes) {
+          final themeId = themeData['themeId'] as String? ?? '';
+          final score = themeData['relevanceScore'] as int? ?? 0;
+          final themeObj = themeData['theme'] as Map<String, dynamic>?;
+          if (themeId.isNotEmpty && score > 0) {
+            _themeRelevanceScores[themeId] = score;
+            // Build ThemeModel from nested theme object
+            if (themeObj != null) {
+              _scoredThemes.add(ThemeModel(
+                id: themeObj['id'] ?? themeId,
+                name: themeObj['name'] ?? '',
+                description: themeObj['description'] ?? '',
+                productCount: 0,
+                selectionCount: 0,
+                isActive: themeObj['isActive'] ?? true,
+                isActiveRaw: themeObj['isActive'] ?? true,
+                createdBy: '',
+                createdAt: '',
+                products: [],
+                actions: [],
+              ));
+            }
+          }
+        }
+        // Sort scored themes by score descending
+        _scoredThemes.sort((a, b) {
+          final aScore = _themeRelevanceScores[a.id] ?? 0;
+          final bScore = _themeRelevanceScores[b.id] ?? 0;
+          return bScore.compareTo(aScore);
+        });
+      }
+
+      // Collect scored theme IDs to exclude from paginated list
+      final scoredThemeIds = _scoredThemes.map((t) => t.id).toSet();
 
       setState(() {
         _brandOptions = brands
@@ -249,28 +295,29 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
             .map((tag) => TagOption(id: tag.id, name: tag.name))
             .toList();
 
-        _themes = themesResponse.records;
+        _themes = themesResponse.records
+            .where((t) => !scoredThemeIds.contains(t.id))
+            .toList();
         _themesCurrentPage = themesResponse.page;
         _themesTotalPages = themesResponse.totalPages;
         _themesTotal = themesResponse.total;
 
-        // Sort themes to show ones with scores first when in edit mode
-        if (widget.isEdit && _themeRelevanceScores.isNotEmpty) {
-          _sortThemesByRelevanceScore();
-        }
-
-        // Initialize relevance score controllers for each theme
-        for (var theme in _themes) {
+        // Initialize relevance score controllers for scored themes
+        for (var theme in _scoredThemes) {
           if (!_relevanceScoreControllers.containsKey(theme.id)) {
             final controller = TextEditingController();
-            // Prefill score if it exists
-            if (_themeRelevanceScores.containsKey(theme.id)) {
-              final score = _themeRelevanceScores[theme.id];
-              if (score != null && score > 0) {
-                controller.text = score.toString();
-              }
+            final score = _themeRelevanceScores[theme.id];
+            if (score != null && score > 0) {
+              controller.text = score.toString();
             }
             _relevanceScoreControllers[theme.id] = controller;
+          }
+        }
+
+        // Initialize relevance score controllers for paginated themes
+        for (var theme in _themes) {
+          if (!_relevanceScoreControllers.containsKey(theme.id)) {
+            _relevanceScoreControllers[theme.id] = TextEditingController();
           }
         }
 
@@ -299,29 +346,21 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
         filters: {'isActive': true},
       );
 
+      // Exclude scored themes from paginated list
+      final scoredThemeIds = _scoredThemes.map((t) => t.id).toSet();
+
       setState(() {
-        _themes = themesResponse.records;
+        _themes = themesResponse.records
+            .where((t) => !scoredThemeIds.contains(t.id))
+            .toList();
         _themesCurrentPage = themesResponse.page;
         _themesTotalPages = themesResponse.totalPages;
         _themesTotal = themesResponse.total;
 
-        // Sort themes to show ones with scores first when in edit mode
-        if (widget.isEdit && _themeRelevanceScores.isNotEmpty) {
-          _sortThemesByRelevanceScore();
-        }
-
         // Initialize relevance score controllers for new themes
         for (var theme in _themes) {
           if (!_relevanceScoreControllers.containsKey(theme.id)) {
-            final controller = TextEditingController();
-            // Prefill score if it exists
-            if (_themeRelevanceScores.containsKey(theme.id)) {
-              final score = _themeRelevanceScores[theme.id];
-              if (score != null && score > 0) {
-                controller.text = score.toString();
-              }
-            }
-            _relevanceScoreControllers[theme.id] = controller;
+            _relevanceScoreControllers[theme.id] = TextEditingController();
           }
         }
       });
@@ -347,32 +386,6 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
         _themesCurrentPage = 1;
       });
       _loadThemes(page: 1, search: _themeSearchQuery);
-    });
-  }
-
-  void _sortThemesByRelevanceScore() {
-    // Sort themes: ones with scores first, then the rest
-    _themes.sort((a, b) {
-      final aHasScore =
-          _themeRelevanceScores.containsKey(a.id) &&
-          _themeRelevanceScores[a.id] != null &&
-          _themeRelevanceScores[a.id]! > 0;
-      final bHasScore =
-          _themeRelevanceScores.containsKey(b.id) &&
-          _themeRelevanceScores[b.id] != null &&
-          _themeRelevanceScores[b.id]! > 0;
-
-      if (aHasScore && !bHasScore) {
-        return -1; // a comes first
-      } else if (!aHasScore && bHasScore) {
-        return 1; // b comes first
-      } else if (aHasScore && bHasScore) {
-        // Both have scores, sort by score value (descending)
-        return _themeRelevanceScores[b.id]!.compareTo(
-          _themeRelevanceScores[a.id]!,
-        );
-      }
-      return 0; // Keep original order for themes without scores
     });
   }
 
@@ -1248,11 +1261,13 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
         const SizedBox(height: 12),
 
         // Results count
-        if (_themes.isNotEmpty)
+        if (_themes.isNotEmpty || _scoredThemes.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
-              'Showing ${(_themesCurrentPage - 1) * _themesPerPage + 1}-${(_themesCurrentPage - 1) * _themesPerPage + _themes.length} of $_themesTotal',
+              _scoredThemes.isNotEmpty
+                  ? '${_scoredThemes.length} scored theme${_scoredThemes.length > 1 ? 's' : ''} + Showing ${(_themesCurrentPage - 1) * _themesPerPage + 1}-${(_themesCurrentPage - 1) * _themesPerPage + _themes.length} of $_themesTotal'
+                  : 'Showing ${(_themesCurrentPage - 1) * _themesPerPage + 1}-${(_themesCurrentPage - 1) * _themesPerPage + _themes.length} of $_themesTotal',
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.textLight.withValues(alpha: 0.7),
               ),
@@ -1318,22 +1333,41 @@ class _ProductCreateScreenState extends State<ProductCreateScreen> {
                 ),
               ),
 
-              // Table rows
+              // Table rows - scored themes first, then paginated themes
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _themes.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemCount: _scoredThemes.length + _themes.length,
+                separatorBuilder: (context, index) {
+                  // Add a thicker divider between scored and regular themes
+                  if (index == _scoredThemes.length - 1 && _themes.isNotEmpty) {
+                    return Divider(
+                      height: 2,
+                      thickness: 2,
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                    );
+                  }
+                  return const Divider(height: 1);
+                },
                 itemBuilder: (context, index) {
-                  final theme = _themes[index];
-                  final serialNumber =
-                      (_themesCurrentPage - 1) * _themesPerPage + index + 1;
+                  final bool isScored = index < _scoredThemes.length;
+                  final theme = isScored
+                      ? _scoredThemes[index]
+                      : _themes[index - _scoredThemes.length];
+                  final serialNumber = isScored
+                      ? index + 1
+                      : (_themesCurrentPage - 1) * _themesPerPage +
+                          (index - _scoredThemes.length) +
+                          1;
 
                   return Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
                     ),
+                    color: isScored
+                        ? AppColors.primary.withValues(alpha: 0.05)
+                        : null,
                     child: Row(
                       children: [
                         // Serial number

@@ -88,6 +88,28 @@ class ProductService  {
     }
   }
 
+  /// Get product with page layout (includes theme relevance scores)
+  Future<List<Map<String, dynamic>>> getProductThemeScores(String id) async {
+    try {
+      final response = await _apiService.get(
+        '/api/products/$id',
+        params: {'isPageLayout': 'true'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        final record = data['record'];
+        final themes = record['themes'] as List<dynamic>? ?? [];
+        return themes.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Failed to load product themes: ${response.statusMessage}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load product themes: $e');
+    }
+  }
+
   /// Create new product
   Future<ProductModel> createProduct(Map<String, dynamic> data) async {
     try {

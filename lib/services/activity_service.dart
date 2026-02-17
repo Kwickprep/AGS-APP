@@ -61,6 +61,59 @@ class ActivityService {
     );
   }
 
+  Future<ActivityModel> getActivityDetail(String id) async {
+    try {
+      final response = await _apiService.get('/api/activities/$id');
+      final responseData = response.data;
+
+      // Navigate through the response to find the actual record
+      Map<String, dynamic> recordJson = _extractRecord(responseData);
+
+      print('getActivityDetail - record keys: ${recordJson.keys.toList()}');
+      print('getActivityDetail - has body: ${recordJson.containsKey('body')}');
+      if (recordJson['body'] is Map) {
+        print('getActivityDetail - body stage: ${(recordJson['body'] as Map)['stage']}');
+      }
+
+      return ActivityModel.fromJson(recordJson);
+    } catch (e) {
+      throw Exception('Failed to load activity detail: ${e.toString()}');
+    }
+  }
+
+  /// Extracts the actual record map from various possible API response structures:
+  /// - { data: { record: { ... } } }
+  /// - { record: { ... } }
+  /// - { data: { ... } }  (data itself is the record)
+  /// - { ... }  (response itself is the record)
+  Map<String, dynamic> _extractRecord(dynamic responseData) {
+    if (responseData is! Map<String, dynamic>) {
+      throw Exception('Unexpected response type: ${responseData.runtimeType}');
+    }
+
+    // Case: { data: { record: { ... } } }
+    final data = responseData['data'];
+    if (data is Map<String, dynamic>) {
+      final record = data['record'];
+      if (record is Map<String, dynamic>) {
+        return record;
+      }
+      // Case: { data: { ... } } where data itself is the record (has 'body' or 'id')
+      if (data.containsKey('body') || data.containsKey('activityTypeId')) {
+        return data;
+      }
+    }
+
+    // Case: { record: { ... } }
+    final record = responseData['record'];
+    if (record is Map<String, dynamic>) {
+      return record;
+    }
+
+    // Case: response itself is the record
+    return responseData;
+  }
+
   Future<bool> deleteActivity(String id) async {
     try {
       await _apiService.delete('/api/activities/$id');

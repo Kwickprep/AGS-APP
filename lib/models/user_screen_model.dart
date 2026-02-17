@@ -23,6 +23,8 @@ class UserScreenModel implements GenericModel {
   final String createdBy;
   @override
   final String createdAt;
+  final String createdInfo;
+  final String? updatedInfo;
   final List<UserAction> actions;
   final String? profilePictureUrl;
 
@@ -46,6 +48,8 @@ class UserScreenModel implements GenericModel {
     required this.isActive,
     required this.createdBy,
     required this.createdAt,
+    this.createdInfo = '',
+    this.updatedInfo,
     required this.actions,
     this.profilePictureUrl,
   });
@@ -140,6 +144,8 @@ class UserScreenModel implements GenericModel {
       isActive: extractString(json['isActive']),
       createdBy: extractString(json['createdBy']),
       createdAt: extractString(json['createdAt']),
+      createdInfo: extractString(json['createdInfo']),
+      updatedInfo: json['updatedInfo']?.toString(),
       actions: (json['actions'] as List<dynamic>?)
               ?.map((e) => UserAction.fromJson(e))
               .toList() ??
@@ -170,6 +176,8 @@ class UserScreenModel implements GenericModel {
       'isActive': isActive,
       'createdBy': createdBy,
       'createdAt': createdAt,
+      if (createdInfo.isNotEmpty) 'createdInfo': createdInfo,
+      if (updatedInfo != null) 'updatedInfo': updatedInfo,
     };
   }
 

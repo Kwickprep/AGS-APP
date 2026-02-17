@@ -142,17 +142,25 @@ class _InquiryScreenState extends State<InquiryScreen> {
     DetailsBottomSheet.show(
       context: context,
       title: inquiry.name,
-      isActive: true,
+      status: inquiry.status,
       fields: [
         DetailField(label: 'Inquiry Name', value: inquiry.name),
         DetailField(label: 'Company', value: inquiry.company),
         DetailField(label: 'Contact', value: inquiry.contactUser),
         DetailField(label: 'Status', value: inquiry.status.isNotEmpty ? inquiry.status : 'N/A'),
         DetailField(label: 'Note', value: inquiry.note.isNotEmpty ? inquiry.note : 'N/A'),
-        DetailField(label: 'Created By', value: inquiry.createdBy),
-        DetailField(label: 'Created Date', value: inquiry.createdAt),
-        if (inquiry.updatedBy != null && inquiry.updatedBy!.isNotEmpty) DetailField(label: 'Updated By', value: inquiry.updatedBy!),
-        if (inquiry.updatedAt != null && inquiry.updatedAt!.isNotEmpty) DetailField(label: 'Updated Date', value: inquiry.updatedAt!),
+        if (inquiry.createdInfo.isNotEmpty)
+          DetailField(label: 'Created', value: inquiry.createdInfo),
+        if (inquiry.createdInfo.isEmpty)
+          DetailField(label: 'Created By', value: inquiry.createdBy),
+        if (inquiry.createdInfo.isEmpty)
+          DetailField(label: 'Created Date', value: formatDate(inquiry.createdAt)),
+        if (inquiry.updatedInfo != null && inquiry.updatedInfo!.isNotEmpty)
+          DetailField(label: 'Updated', value: inquiry.updatedInfo!),
+        if ((inquiry.updatedInfo == null || inquiry.updatedInfo!.isEmpty) && inquiry.updatedBy != null && inquiry.updatedBy!.isNotEmpty)
+          DetailField(label: 'Updated By', value: inquiry.updatedBy!),
+        if ((inquiry.updatedInfo == null || inquiry.updatedInfo!.isEmpty) && inquiry.updatedAt != null && inquiry.updatedAt!.isNotEmpty)
+          DetailField(label: 'Updated Date', value: formatDate(inquiry.updatedAt!)),
       ],
     );
   }
@@ -354,20 +362,8 @@ class _InquiryScreenState extends State<InquiryScreen> {
       fields: [
         CardField.title(label: 'Inquiry Name', value: inquiry.name),
         CardField.regular(label: 'Company', value: inquiry.company),
-        CardField.regular(label: 'Status', value: inquiry.status),
         CardField.regular(label: 'Contact', value: inquiry.contactUser),
-        CardField.regular(
-          label: 'Status',
-          value: inquiry.status,
-        ),
-        CardField.regular(
-          label: 'Company',
-          value: inquiry.company,
-        ),
-        CardField.regular(
-          label: 'Contact User',
-          value: inquiry.contactUser,
-        ),
+        CardField.regular(label: 'Status', value: inquiry.status),
         if (inquiry.note.isNotEmpty && inquiry.note != '-')
           CardField.description(
             label: 'Note',
@@ -375,10 +371,10 @@ class _InquiryScreenState extends State<InquiryScreen> {
             maxLines: 2,
           ),
       ],
-      createdBy: inquiry.createdBy,
-      createdAt: formatDate(inquiry.createdAt),
-      updatedBy: inquiry.updatedBy,
-      updatedAt: inquiry.updatedAt != null ? formatDate(inquiry.updatedAt!) : null,
+      createdBy: inquiry.createdInfo.isNotEmpty ? inquiry.createdInfo : inquiry.createdBy,
+      createdAt: inquiry.createdInfo.isNotEmpty ? null : formatDate(inquiry.createdAt),
+      updatedBy: inquiry.updatedInfo != null && inquiry.updatedInfo!.isNotEmpty ? inquiry.updatedInfo : inquiry.updatedBy,
+      updatedAt: inquiry.updatedInfo != null && inquiry.updatedInfo!.isNotEmpty ? null : (inquiry.updatedAt != null ? formatDate(inquiry.updatedAt!) : null),
       onEdit: PermissionChecker.canUpdateInquiry
           ? () async {
               final result = await Navigator.pushNamed(

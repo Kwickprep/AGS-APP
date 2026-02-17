@@ -14,6 +14,8 @@ class InquiryModel implements GenericModel {
   final String createdAt;
   final String? updatedBy;
   final String? updatedAt;
+  final String createdInfo;
+  final String? updatedInfo;
   final List<InquiryAction> actions;
 
   InquiryModel({
@@ -27,6 +29,8 @@ class InquiryModel implements GenericModel {
     required this.createdAt,
     this.updatedBy,
     this.updatedAt,
+    this.createdInfo = '',
+    this.updatedInfo,
     required this.actions,
   });
 
@@ -43,6 +47,8 @@ class InquiryModel implements GenericModel {
       'createdAt': createdAt,
       if (updatedBy != null) 'updatedBy': updatedBy,
       if (updatedAt != null) 'updatedAt': updatedAt,
+      if (createdInfo.isNotEmpty) 'createdInfo': createdInfo,
+      if (updatedInfo != null) 'updatedInfo': updatedInfo,
       'actions': actions.map((a) => {
         'icon': a.icon,
         'type': a.type,
@@ -113,6 +119,8 @@ class InquiryModel implements GenericModel {
       createdAt: json['createdAt'] ?? '',
       updatedBy: extractString(json['updatedBy']),
       updatedAt: json['updatedAt'],
+      createdInfo: json['createdInfo'] ?? '',
+      updatedInfo: json['updatedInfo'],
       actions: (json['actions'] as List<dynamic>?)
           ?.map((e) => InquiryAction.fromJson(e))
           .toList() ?? [],

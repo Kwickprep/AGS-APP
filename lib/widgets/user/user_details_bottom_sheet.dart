@@ -222,8 +222,14 @@ class _UserDetailsBottomSheetState extends State<UserDetailsBottomSheet> {
           _buildDetailRow('Company', user.company),
         if (user.employeeCode.isNotEmpty && user.employeeCode != '-')
           _buildDetailRow('Employee Code', user.employeeCode),
-        _buildDetailRow('Created By', user.createdBy),
-        _buildDetailRow('Created Date', formatDate(user.createdAt)),
+        if (user.createdInfo.isNotEmpty && user.createdInfo != '-')
+          _buildDetailRow('Created', user.createdInfo),
+        if (user.createdInfo.isEmpty || user.createdInfo == '-') ...[
+          _buildDetailRow('Created By', user.createdBy),
+          _buildDetailRow('Created Date', formatDate(user.createdAt)),
+        ],
+        if (user.updatedInfo != null && user.updatedInfo!.isNotEmpty && user.updatedInfo != '-')
+          _buildDetailRow('Updated', user.updatedInfo!),
       ],
     );
   }

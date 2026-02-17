@@ -52,7 +52,7 @@ class UserDetailBloc extends Bloc<UserDetailEvent, UserDetailState> {
     emit(UserDetailLoading());
     try {
       final response = await _userService.getUserInsights(event.userId);
-      emit(UserDetailLoaded(response));
+      emit(UserDetailLoaded(response as UserInsightsResponse));
     } catch (e) {
       emit(UserDetailError(e.toString().replaceAll('Exception: ', '')));
     }

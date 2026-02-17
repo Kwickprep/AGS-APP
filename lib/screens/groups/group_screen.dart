@@ -149,8 +149,14 @@ class _GroupScreenState extends State<GroupScreen> {
         DetailField(label: 'Members', value: group.users.isNotEmpty ? group.users : 'N/A'),
         DetailField(label: 'Note', value: group.note.isNotEmpty ? group.note : 'N/A'),
         DetailField(label: 'Status', value: group.isActive ? 'Active' : 'Inactive'),
-        DetailField(label: 'Created By', value: group.createdBy),
-        DetailField(label: 'Created Date', value: group.createdAt),
+        if (group.createdInfo.isNotEmpty)
+          DetailField(label: 'Created', value: group.createdInfo),
+        if (group.createdInfo.isEmpty)
+          DetailField(label: 'Created By', value: group.createdBy),
+        if (group.createdInfo.isEmpty)
+          DetailField(label: 'Created Date', value: formatDate(group.createdAt)),
+        if (group.updatedInfo != null && group.updatedInfo!.isNotEmpty)
+          DetailField(label: 'Updated', value: group.updatedInfo!),
       ],
       onEdit: () => _navigateToEditGroup(group),
     );
@@ -362,9 +368,13 @@ class _GroupScreenState extends State<GroupScreen> {
       isActive: group.isActive,
       fields: [
         CardField.title(label: 'Group Name', value: group.name),
+        CardField.regular(label: 'Members', value: group.users),
+        if (group.note.isNotEmpty && group.note != '-')
+          CardField.description(label: 'Note', value: group.note, maxLines: 2),
       ],
-      createdBy: group.createdBy,
-      createdAt: formatDate(group.createdAt),
+      createdBy: group.createdInfo.isNotEmpty ? group.createdInfo : group.createdBy,
+      createdAt: group.createdInfo.isNotEmpty ? null : formatDate(group.createdAt),
+      updatedBy: group.updatedInfo != null && group.updatedInfo!.isNotEmpty ? group.updatedInfo : null,
       onView: () => _showGroupDetails(group),
       onEdit: PermissionChecker.canUpdateGroup
           ? () => _navigateToEditGroup(group)

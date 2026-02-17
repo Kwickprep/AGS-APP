@@ -13,6 +13,7 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../utils/date_formatter.dart';
+import 'product_search_edit_router.dart';
 
 /// Activity list screen with full features: filter, sort, pagination, and details
 /// Uses individual BLoC pattern - every change triggers new API call
@@ -143,32 +144,50 @@ class _ActivityScreenState extends State<ActivityScreen> {
         DetailField(label: 'Category', value: activity.category),
         DetailField(label: 'Price Range', value: activity.priceRange),
         DetailField(label: 'Product', value: activity.product),
+        DetailField(label: 'AOP', value: activity.aop),
         DetailField(label: 'MOQ', value: activity.moq),
         DetailField(label: 'Documents', value: activity.documents),
         DetailField(
           label: 'Next Schedule Date',
           value: activity.nextScheduleDate,
         ),
-        DetailField(label: 'Details', value: activity.note),
+        DetailField(label: 'Note', value: activity.note),
         DetailField(label: 'Created By', value: activity.createdBy),
-        DetailField(label: 'Created Date', value: activity.createdAt),
+        DetailField(label: 'Created Date', value: formatDate(activity.createdAt)),
+        if (activity.updatedBy != null)
+          DetailField(label: 'Updated By', value: activity.updatedBy!),
+        if (activity.updatedAt != null)
+          DetailField(label: 'Updated Date', value: formatDate(activity.updatedAt!)),
       ],
     );
   }
 
   Future<void> _navigateToEditActivity(ActivityModel activity) async {
-    final result = await Navigator.pushNamed(
-      context,
-      AppRoutes.createActivity,
-      arguments: {
-        'activity': activity,
-        'isEdit': true,
-      },
-    );
+    final isProductSearch =
+        activity.activityType.toLowerCase().contains('product search');
 
-    // Reload activities if activity was updated successfully
-    if (result == true) {
+    if (isProductSearch) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProductSearchEditRouter(activity: activity),
+        ),
+      );
+      // Always reload after returning from the router
       _loadActivities();
+    } else {
+      final result = await Navigator.pushNamed(
+        context,
+        AppRoutes.createActivity,
+        arguments: {
+          'activity': activity,
+          'isEdit': true,
+        },
+      );
+
+      if (result == true) {
+        _loadActivities();
+      }
     }
   }
 
@@ -386,9 +405,17 @@ class _ActivityScreenState extends State<ActivityScreen> {
       isActive: null, // Don't show any status badge for activities
       fields: [
         CardField.title(label: 'Activity Type', value: activity.activityType),
-        CardField.regular(label: 'Company', value: activity.company),
         CardField.regular(label: 'User', value: activity.user),
-        if (activity.nextScheduleDate.isNotEmpty)
+        CardField.regular(label: 'Source', value: activity.source),
+        if (activity.theme.isNotEmpty && activity.theme != '-')
+          CardField.regular(label: 'Theme', value: activity.theme),
+        if (activity.company.isNotEmpty && activity.company != '-')
+          CardField.regular(label: 'Company', value: activity.company),
+        if (activity.priceRange.isNotEmpty && activity.priceRange != '-')
+          CardField.regular(label: 'Price Range', value: activity.priceRange),
+        if (activity.note.isNotEmpty && activity.note != '-')
+          CardField.description(label: 'Note', value: activity.note),
+        if (activity.nextScheduleDate.isNotEmpty && activity.nextScheduleDate != '-')
           CardField.regular(
             label: 'Next Schedule',
             value: activity.nextScheduleDate,
@@ -398,7 +425,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
       createdAt: formatDate(activity.createdAt),
       updatedBy: activity.updatedBy,
       updatedAt: activity.updatedAt != null ? formatDate(activity.updatedAt!) : null,
-      onView: () => _showActivityDetails(activity),
       onEdit: PermissionChecker.canUpdateActivity ? () => _navigateToEditActivity(activity) : null,
       onDelete: PermissionChecker.canDeleteActivity ? () => _confirmDelete(activity) : null,
       onTap: () => _showActivityDetails(activity),

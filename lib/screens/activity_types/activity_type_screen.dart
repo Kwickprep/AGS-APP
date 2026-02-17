@@ -143,9 +143,9 @@ class _ActivityTypeScreenState extends State<ActivityTypeScreen> {
         DetailField(label: 'Activity Type Name', value: activityType.name),
         DetailField(label: 'Status', value: activityType.isActive ? 'Active' : 'Inactive'),
         DetailField(label: 'Created By', value: activityType.createdBy),
-        DetailField(label: 'Created Date', value: activityType.createdAt),
+        DetailField(label: 'Created Date', value: formatDate(activityType.createdAt)),
         if (activityType.updatedBy != null) DetailField(label: 'Updated By', value: activityType.updatedBy!),
-        if (activityType.updatedAt != null) DetailField(label: 'Updated Date', value: activityType.updatedAt!),
+        if (activityType.updatedAt != null) DetailField(label: 'Updated Date', value: formatDate(activityType.updatedAt!)),
       ],
     );
   }

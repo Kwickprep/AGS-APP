@@ -13,6 +13,7 @@ class ActivityModel implements GenericModel {
   final String priceRange;
   final String product;
   final String? productImageFileId;
+  final String aop;
   final String moq;
   final String documents;
   final String nextScheduleDate;
@@ -38,6 +39,7 @@ class ActivityModel implements GenericModel {
     required this.priceRange,
     required this.product,
     this.productImageFileId,
+    required this.aop,
     required this.moq,
     required this.documents,
     required this.nextScheduleDate,
@@ -73,6 +75,8 @@ class ActivityModel implements GenericModel {
         return priceRange;
       case 'product':
         return product;
+      case 'aop':
+        return aop;
       case 'moq':
         return moq;
       case 'documents':
@@ -91,15 +95,33 @@ class ActivityModel implements GenericModel {
   }
 
   factory ActivityModel.fromJson(Map<String, dynamic> json) {
-    // Extract ID from actions if not directly provided
-    String extractedId = '';
-    if (json['actions'] != null && (json['actions'] as List).isNotEmpty) {
-      final firstAction = json['actions'][0];
-      if (firstAction['routerLink'] != null) {
-        final routerLink = firstAction['routerLink'] as String;
-        final parts = routerLink.split('/');
-        if (parts.length > 2) {
-          extractedId = parts.last;
+    // Extract ID: try direct fields first, then from actions
+    print('ActivityModel.fromJson keys: ${json.keys.toList()}');
+    print('ActivityModel.fromJson id: ${json['id']}, _id: ${json['_id']}');
+    String id = (json['id'] ?? json['_id'] ?? '').toString();
+
+    if (id.isEmpty && json['actions'] != null) {
+      final actions = json['actions'] as List;
+      for (final action in actions) {
+        if (action is Map<String, dynamic>) {
+          // Try routerLink: e.g. "/activities/edit/abc123"
+          final routerLink = action['routerLink'] as String?;
+          if (routerLink != null && routerLink.isNotEmpty) {
+            final parts = routerLink.split('/');
+            if (parts.length > 2) {
+              id = parts.last;
+              break;
+            }
+          }
+          // Try deleteEndpoint: e.g. "/api/activities/abc123"
+          final deleteEndpoint = action['deleteEndpoint'] as String?;
+          if (deleteEndpoint != null && deleteEndpoint.isNotEmpty) {
+            final parts = deleteEndpoint.split('/');
+            if (parts.isNotEmpty) {
+              id = parts.last;
+              break;
+            }
+          }
         }
       }
     }
@@ -121,7 +143,7 @@ class ActivityModel implements GenericModel {
     }
 
     return ActivityModel(
-      id: json['id'] ?? extractedId,
+      id: id,
       activityType: extractString(json['activityType']),
       company: extractString(json['company']),
       inquiry: extractString(json['inquiry']),
@@ -133,6 +155,7 @@ class ActivityModel implements GenericModel {
       product: extractString(json['product']),
       productImageFileId: json['productImageFileId'] as String?
           ?? _extractImageFileId(json['body']),
+      aop: extractString(json['aop']),
       moq: extractString(json['moq']),
       documents: extractString(json['documents']),
       nextScheduleDate: extractString(json['nextScheduleDate']),
@@ -202,6 +225,7 @@ class ActivityModel implements GenericModel {
       'category': category,
       'priceRange': priceRange,
       'product': product,
+      'aop': aop,
       'moq': moq,
       'documents': documents,
       'nextScheduleDate': nextScheduleDate,
