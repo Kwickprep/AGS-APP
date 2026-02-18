@@ -74,11 +74,17 @@ class ProductService  {
   /// Get single product by ID
   Future<ProductModel> getProduct(String id) async {
     try {
-      final response = await _apiService.get('/api/products/$id');
+      final response = await _apiService.get(
+        '/api/products/$id',
+        params: {'isPageLayout': 'true'},
+      );
 
       if (response.statusCode == 200) {
         final data = response.data['data'];
-        return ProductModel.fromJson(data);
+        final record = data is Map<String, dynamic> && data.containsKey('record')
+            ? data['record']
+            : data;
+        return ProductModel.fromJson(record);
       } else {
         throw Exception(
             'Failed to load product: ${response.statusMessage}');

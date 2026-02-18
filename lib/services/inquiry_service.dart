@@ -81,7 +81,7 @@ class InquiryService{
       final response = await _apiService.get(
         '/api/companies',
         params: {
-          'filters': '{"filters":{"isActive":true}}',
+          'filters': '{"isActive":true}',
         },
       );
 

@@ -179,7 +179,7 @@ class ActivityService {
       final response = await _apiService.get(
         '/api/companies',
         params: {
-          'filters': '{"filters":{"isActive":true}}',
+          'filters': '{"isActive":true}',
         },
       );
 
@@ -198,7 +198,7 @@ class ActivityService {
       final response = await _apiService.get(
         '/api/companies',
         params: {
-          'filters': '{"filters":{"isActive":true}}',
+          'filters': '{"isActive":true}',
           'isPageLayout': 'true',
         },
       );

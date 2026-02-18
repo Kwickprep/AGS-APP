@@ -40,9 +40,8 @@ class WhatsAppService {
   }) async {
     try {
       final response = await _apiService.post(
-        '/api/whatsapp/messages',
+        '/api/whatsapp/messages/$recipientId',
         data: {
-          'recipientId': recipientId,
           'content': content,
           'messageType': 'text',
         },
