@@ -24,7 +24,6 @@ class UserService {
         'sortBy': sortBy,
         'sortOrder': sortOrder,
         'filters': jsonEncode(filters),
-        'isPageLayout': 'true',
       };
 
       final response = await _apiService.get('/api/users', params: queryParams);
@@ -132,7 +131,6 @@ class UserService {
         'sortBy': 'firstName',
         'sortOrder': 'asc',
         'filters': jsonEncode(filters),
-        'isPageLayout': 'true',
       };
 
       final response = await _apiService.get('/api/users', params: queryParams);

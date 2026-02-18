@@ -40,7 +40,14 @@ class WhatsAppTemplateCategoryModel {
           [],
       createdBy: creatorName,
       createdAt: json['createdAt']?.toString() ?? '',
-      updatedBy: json['updatedBy']?.toString(),
+      updatedBy: () {
+        final updater = json['updater'] as Map<String, dynamic>?;
+        if (updater != null) {
+          final name = '${updater['firstName'] ?? ''} ${updater['lastName'] ?? ''}'.trim();
+          if (name.isNotEmpty) return name;
+        }
+        return json['updatedBy']?.toString();
+      }(),
       updatedAt: json['updatedAt']?.toString(),
       isActive: json['isActive'] ?? true,
     );
@@ -135,7 +142,14 @@ class WhatsAppAutoReplyModel {
       isActive: json['isActive'] ?? true,
       createdBy: creatorName,
       createdAt: json['createdAt']?.toString() ?? '',
-      updatedBy: json['updatedBy']?.toString(),
+      updatedBy: () {
+        final updater = json['updater'] as Map<String, dynamic>?;
+        if (updater != null) {
+          final name = '${updater['firstName'] ?? ''} ${updater['lastName'] ?? ''}'.trim();
+          if (name.isNotEmpty) return name;
+        }
+        return json['updatedBy']?.toString();
+      }(),
       updatedAt: json['updatedAt']?.toString(),
     );
   }
@@ -240,7 +254,14 @@ class WhatsAppCampaignModel {
       categoryName: category?['name'],
       createdBy: creatorName,
       createdAt: json['createdAt']?.toString() ?? '',
-      updatedBy: json['updatedBy']?.toString(),
+      updatedBy: () {
+        final updater = json['updater'] as Map<String, dynamic>?;
+        if (updater != null) {
+          final name = '${updater['firstName'] ?? ''} ${updater['lastName'] ?? ''}'.trim();
+          if (name.isNotEmpty) return name;
+        }
+        return json['updatedBy']?.toString();
+      }(),
       updatedAt: json['updatedAt']?.toString(),
       history: json['history'] as Map<String, dynamic>?,
     );

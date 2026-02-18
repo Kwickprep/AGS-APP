@@ -19,7 +19,6 @@ class WhatsAppTemplateCategoryService {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'isPageLayout': 'true',
       });
       return WhatsAppTemplateCategoryResponse.fromJson(res.data['data']);
     } catch (e) {

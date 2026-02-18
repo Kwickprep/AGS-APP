@@ -142,6 +142,22 @@ class ActivityModel implements GenericModel {
       return value.toString();
     }
 
+    // Helper to extract user name from creator/updater object, fallback to raw string
+    String extractUserName(dynamic obj, dynamic fallback) {
+      if (obj is Map<String, dynamic>) {
+        final first = obj['firstName']?.toString() ?? '';
+        final last = obj['lastName']?.toString() ?? '';
+        final name = '$first $last'.trim();
+        if (name.isNotEmpty) return name;
+      }
+      if (fallback == null) return '';
+      if (fallback is String) return fallback;
+      if (fallback is Map<String, dynamic>) {
+        return fallback['name']?.toString() ?? fallback['id']?.toString() ?? '';
+      }
+      return fallback.toString();
+    }
+
     return ActivityModel(
       id: id,
       activityType: extractString(json['activityType']),
@@ -160,7 +176,7 @@ class ActivityModel implements GenericModel {
       documents: extractString(json['documents']),
       nextScheduleDate: extractString(json['nextScheduleDate']),
       note: extractString(json['note']),
-      createdBy: extractString(json['createdBy']),
+      createdBy: extractUserName(json['creator'], json['createdBy']),
       createdAt: extractString(json['createdAt']),
       updatedBy: json['updatedBy'],
       updatedAt: json['updatedAt'],

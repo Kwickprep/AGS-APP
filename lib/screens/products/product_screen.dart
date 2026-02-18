@@ -14,6 +14,7 @@ import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/product/product_card.dart';
 import '../../widgets/product/product_details_bottom_sheet.dart';
 import '../../widgets/permission_widget.dart';
+import '../../core/permissions/permission_checker.dart';
 import '../../services/file_upload_service.dart';
 
 /// Product list screen with full features: filter, sort, pagination, and details
@@ -444,8 +445,8 @@ class _ProductScreenState extends State<ProductScreen> {
       imageUrl: imageUrl,
       onTap: () => _showProductDetails(product),
       onInfo: () => _showProductDetails(product),
-      onEdit: () => _navigateToEditProduct(product),
-      onDelete: () => _confirmDelete(product),
+      onEdit: PermissionChecker.canUpdateProduct ? () => _navigateToEditProduct(product) : null,
+      onDelete: PermissionChecker.canDeleteProduct ? () => _confirmDelete(product) : null,
     );
   }
 

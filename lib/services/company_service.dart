@@ -28,7 +28,6 @@ class CompanyService {
 
       final queryParams = {
         'filters': jsonEncode(filterObject),
-        'isPageLayout': 'true',
       };
 
       final response =

@@ -36,7 +36,7 @@ class ProductService  {
     String sortBy = 'createdAt',
     String sortOrder = 'desc',
     Map<String, dynamic>? filters,
-    bool isPageLayout = true,
+    bool isPageLayout = false,
   }) async {
     try {
       // Build query parameters

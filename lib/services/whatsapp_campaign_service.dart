@@ -19,7 +19,6 @@ class WhatsAppCampaignService {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'isPageLayout': 'true',
       });
       return WhatsAppCampaignResponse.fromJson(res.data['data']);
     } catch (e) {

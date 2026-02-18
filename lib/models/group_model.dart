@@ -87,13 +87,24 @@ class GroupModel implements GenericModel {
       }
     }
 
+    // Helper to extract user name from creator/updater object
+    String extractUserName(dynamic obj, dynamic fallback) {
+      if (obj is Map<String, dynamic>) {
+        final first = obj['firstName']?.toString() ?? '';
+        final last = obj['lastName']?.toString() ?? '';
+        final name = '$first $last'.trim();
+        if (name.isNotEmpty) return name;
+      }
+      return fallback?.toString() ?? '';
+    }
+
     return GroupModel(
       id: json['id']?.toString() ?? extractedId,
       name: json['name']?.toString() ?? '',
       users: json['users']?.toString() ?? '',
       note: json['note']?.toString() ?? '',
       isActive: json['isActive'] == 'Active' || json['isActive'] == true,
-      createdBy: json['createdBy']?.toString() ?? '',
+      createdBy: extractUserName(json['creator'], json['createdBy']),
       createdAt: json['createdAt']?.toString() ?? '',
       createdInfo: json['createdInfo']?.toString() ?? '',
       updatedInfo: json['updatedInfo']?.toString(),

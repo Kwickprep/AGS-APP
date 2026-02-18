@@ -24,7 +24,6 @@ class GroupService {
         'sortBy': sortBy,
         'sortOrder': sortOrder,
         'filters': jsonEncode(filters),
-        'isPageLayout': 'true',
       };
 
       final response = await _apiService.get(

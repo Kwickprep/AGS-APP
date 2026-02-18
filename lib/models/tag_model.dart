@@ -80,14 +80,20 @@ class TagModel implements GenericModel {
       }
     }
 
-    // Helper function to extract string value from either string or object
-    String extractString(dynamic value) {
-      if (value == null) return '';
-      if (value is String) return value;
-      if (value is Map<String, dynamic>) {
-        return value['name']?.toString() ?? value['fullName']?.toString() ?? value['id']?.toString() ?? '';
+    // Helper to extract user name from creator/updater object, fallback to raw string
+    String extractUserName(dynamic obj, dynamic fallback) {
+      if (obj is Map<String, dynamic>) {
+        final first = obj['firstName']?.toString() ?? '';
+        final last = obj['lastName']?.toString() ?? '';
+        final name = '$first $last'.trim();
+        if (name.isNotEmpty) return name;
       }
-      return value.toString();
+      if (fallback == null) return '';
+      if (fallback is String) return fallback;
+      if (fallback is Map<String, dynamic>) {
+        return fallback['name']?.toString() ?? fallback['id']?.toString() ?? '';
+      }
+      return fallback.toString();
     }
 
     // Extract name from creator/updater object (firstName + lastName)

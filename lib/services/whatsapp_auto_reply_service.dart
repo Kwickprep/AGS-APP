@@ -19,7 +19,6 @@ class WhatsAppAutoReplyService {
         'search': search,
         'sortBy': sortBy,
         'sortOrder': sortOrder,
-        'isPageLayout': 'true',
       });
       return WhatsAppAutoReplyResponse.fromJson(res.data['data']);
     } catch (e) {

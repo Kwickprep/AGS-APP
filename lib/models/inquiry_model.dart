@@ -108,6 +108,22 @@ class InquiryModel implements GenericModel {
       return value.toString();
     }
 
+    // Helper to extract user name from creator/updater object, fallback to raw string
+    String extractUserName(dynamic obj, dynamic fallback) {
+      if (obj is Map<String, dynamic>) {
+        final first = obj['firstName']?.toString() ?? '';
+        final last = obj['lastName']?.toString() ?? '';
+        final name = '$first $last'.trim();
+        if (name.isNotEmpty) return name;
+      }
+      if (fallback == null) return '';
+      if (fallback is String) return fallback;
+      if (fallback is Map<String, dynamic>) {
+        return fallback['name']?.toString() ?? fallback['id']?.toString() ?? '';
+      }
+      return fallback.toString();
+    }
+
     return InquiryModel(
       id: json['id'] ?? extractedId,
       name: json['name'] ?? '',
@@ -115,9 +131,9 @@ class InquiryModel implements GenericModel {
       contactUser: extractString(json['contactUser']),
       status: json['status'] ?? '',
       note: json['note'] ?? '',
-      createdBy: extractString(json['createdBy']),
+      createdBy: extractUserName(json['creator'], json['createdBy']),
       createdAt: json['createdAt'] ?? '',
-      updatedBy: extractString(json['updatedBy']),
+      updatedBy: extractUserName(json['updater'], json['updatedBy']),
       updatedAt: json['updatedAt'],
       createdInfo: json['createdInfo'] ?? '',
       updatedInfo: json['updatedInfo'],
