@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../config/app_colors.dart';
 import '../core/permissions/permission_config.dart';
-import '../core/permissions/permission_manager.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -15,7 +14,6 @@ class AppDrawer extends StatefulWidget {
 
 class _AppDrawerState extends State<AppDrawer> {
   final AuthService _authService = GetIt.I<AuthService>();
-  final PermissionManager _permissionManager = PermissionManager();
   UserModel? _user;
   List<AppModule> _accessibleModules = [];
 
@@ -30,11 +28,7 @@ class _AppDrawerState extends State<AppDrawer> {
     if (mounted) {
       setState(() {
         _user = user;
-        _accessibleModules = _permissionManager.isAdmin
-            ? PermissionConfig.allModules.toList()
-            : PermissionConfig.getAccessibleModules(
-                _permissionManager.permissions,
-              );
+        _accessibleModules = PermissionConfig.getVisibleModules();
       });
     }
   }

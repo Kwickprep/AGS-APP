@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import '../../config/app_colors.dart';
 import '../../config/app_text_styles.dart';
@@ -24,11 +27,20 @@ class _ChatScreenState extends State<ChatScreen> {
   final FileUploadService _fileService = GetIt.I<FileUploadService>();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImagePicker _imagePicker = ImagePicker();
 
   List<WhatsAppMessage> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
   String? _error;
+
+  // Pagination state
+  int _page = 1;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+
+  // Reply state
+  WhatsAppMessage? _replyingTo;
 
   // Media presigned URLs cache
   final Map<String, String> _mediaUrlCache = {};
@@ -38,19 +50,29 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _loadMessages();
     _markAsRead();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels < 200 && !_loadingMore && _hasMore && !_isLoading) {
+      _loadOlderMessages();
+    }
   }
 
   Future<void> _loadMessages() async {
     setState(() {
       _isLoading = true;
       _error = null;
+      _page = 1;
+      _hasMore = true;
     });
 
     try {
@@ -60,8 +82,8 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages = messages.reversed.toList();
         _isLoading = false;
+        _hasMore = messages.length >= 50;
       });
-      // Load presigned URLs for media (images/videos)
       _loadMediaUrls(_messages);
       _scrollToBottom();
     } catch (e) {
@@ -72,29 +94,62 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _loadOlderMessages() async {
+    if (_loadingMore || !_hasMore) return;
+
+    setState(() => _loadingMore = true);
+
+    final prevMaxExtent = _scrollController.position.maxScrollExtent;
+
+    try {
+      _page++;
+      final olderMessages = await _whatsAppService.getMessages(
+        widget.contact.user.id,
+        page: _page,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        final reversed = olderMessages.reversed.toList();
+        _messages.insertAll(0, reversed);
+        _hasMore = olderMessages.length >= 50;
+        _loadingMore = false;
+      });
+
+      _loadMediaUrls(olderMessages.reversed.toList());
+
+      // Restore scroll position
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          final newMaxExtent = _scrollController.position.maxScrollExtent;
+          _scrollController.jumpTo(
+            _scrollController.position.pixels + (newMaxExtent - prevMaxExtent),
+          );
+        }
+      });
+    } catch (e) {
+      _page--;
+      setState(() => _loadingMore = false);
+    }
+  }
+
   Future<void> _loadMediaUrls(List<WhatsAppMessage> messages) async {
-    // Collect all media file IDs that need presigned URLs
     final mediaIds = <String>[];
     for (final message in messages) {
-      // Check for image/video in metadata header
       if (message.metadata != null) {
         final headerData = message.metadata!['header'];
         if (headerData != null && headerData is Map<String, dynamic>) {
-          // Handle image - can be String (ID) or Map with 'id'/'link' field
           final imageData = headerData['image'];
           String? imageId;
           if (imageData is String) {
-            // Direct document ID
             imageId = imageData;
           } else if (imageData is Map<String, dynamic>) {
-            // Map with 'id' field (skip if it has 'link' - already a URL)
             if (imageData['link'] == null) {
               imageId = imageData['id'] as String?;
             }
           }
-          if (imageId != null &&
-              imageId.isNotEmpty &&
-              !_mediaUrlCache.containsKey(imageId)) {
+          if (imageId != null && imageId.isNotEmpty && !_mediaUrlCache.containsKey(imageId)) {
             mediaIds.add(imageId);
           }
 
@@ -107,14 +162,11 @@ class _ChatScreenState extends State<ChatScreen> {
               videoId = videoData['id'] as String?;
             }
           }
-          if (videoId != null &&
-              videoId.isNotEmpty &&
-              !_mediaUrlCache.containsKey(videoId)) {
+          if (videoId != null && videoId.isNotEmpty && !_mediaUrlCache.containsKey(videoId)) {
             mediaIds.add(videoId);
           }
         }
       }
-      // Check for mediaUrl field (document ID)
       if (message.mediaUrl != null &&
           message.mediaUrl!.isNotEmpty &&
           !_mediaUrlCache.containsKey(message.mediaUrl!)) {
@@ -130,7 +182,6 @@ class _ChatScreenState extends State<ChatScreen> {
         _mediaUrlCache.addAll(presignedUrls);
       });
     } catch (e) {
-      // Silently fail - media will show placeholder
       debugPrint('Failed to load media presigned URLs: $e');
     }
   }
@@ -164,11 +215,13 @@ class _ChatScreenState extends State<ChatScreen> {
       final message = await _whatsAppService.sendMessage(
         recipientId: widget.contact.user.id,
         content: content,
+        referencedMessageId: _replyingTo?.id,
       );
 
       setState(() {
         _messages.add(message);
         _isSending = false;
+        _replyingTo = null;
       });
 
       _messageController.clear();
@@ -187,6 +240,287 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     }
   }
+
+  // --- Media sending ---
+
+  void _showAttachOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFromCamera();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppColors.primary),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFromGallery();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.insert_drive_file, color: AppColors.primary),
+                title: const Text('Document'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickDocument();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.audiotrack, color: AppColors.primary),
+                title: const Text('Audio'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAudio();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickFromCamera() async {
+    final image = await _imagePicker.pickImage(source: ImageSource.camera);
+    if (image != null) _showMediaPreview(File(image.path));
+  }
+
+  Future<void> _pickFromGallery() async {
+    final image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (image != null) _showMediaPreview(File(image.path));
+  }
+
+  Future<void> _pickDocument() async {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null && result.files.single.path != null) {
+      _showMediaPreview(File(result.files.single.path!));
+    }
+  }
+
+  Future<void> _pickAudio() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.audio);
+    if (result != null && result.files.single.path != null) {
+      _showMediaPreview(File(result.files.single.path!));
+    }
+  }
+
+  void _showMediaPreview(File file) {
+    final captionController = TextEditingController();
+    final fileName = file.path.split('/').last;
+    final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+        .any((ext) => fileName.toLowerCase().endsWith(ext));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            if (isImage)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(file, height: 200, fit: BoxFit.cover),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.insert_drive_file, size: 48, color: AppColors.primary),
+                    const SizedBox(height: 8),
+                    Text(fileName, style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: captionController,
+              decoration: InputDecoration(
+                hintText: 'Add a caption...',
+                hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textLight),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _sendMediaFile(file, caption: captionController.text.trim());
+                },
+                icon: const Icon(Icons.send),
+                label: const Text('Send'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendMediaFile(File file, {String? caption}) async {
+    setState(() => _isSending = true);
+
+    try {
+      final message = await _whatsAppService.sendMediaMessage(
+        widget.contact.user.id,
+        file,
+        caption: caption != null && caption.isNotEmpty ? caption : null,
+      );
+
+      setState(() {
+        _messages.add(message);
+        _isSending = false;
+      });
+      _scrollToBottom();
+    } catch (e) {
+      setState(() => _isSending = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send media: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  // --- Reply ---
+
+  void _onReplyMessage(WhatsAppMessage message) {
+    setState(() => _replyingTo = message);
+  }
+
+  void _cancelReply() {
+    setState(() => _replyingTo = null);
+  }
+
+  // --- Templates ---
+
+  void _showTemplateList() async {
+    try {
+      final templates = await _whatsAppService.getTemplates();
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (ctx) => _TemplatePicker(
+          templates: templates,
+          onSelect: (template) {
+            Navigator.pop(ctx);
+            _sendTemplate(template);
+          },
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load templates: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendTemplate(Map<String, dynamic> template) async {
+    setState(() => _isSending = true);
+
+    try {
+      final contact = widget.contact;
+      final message = await _whatsAppService.sendTemplateMessage(
+        templateName: template['name'] ?? '',
+        language: template['language'] ?? 'en',
+        tos: [
+          {
+            'id': contact.user.id,
+            'phoneCode': contact.user.phoneCode,
+            'number': contact.user.phoneNumber,
+          }
+        ],
+      );
+
+      setState(() {
+        _messages.add(message);
+        _isSending = false;
+      });
+      _scrollToBottom();
+    } catch (e) {
+      setState(() => _isSending = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send template: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  // --- Helpers ---
 
   String _formatDateHeader(String dateTimeStr) {
     try {
@@ -210,7 +544,6 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _canSendMessage() {
     if (_messages.isEmpty) return false;
 
-    // Find the last inbound message
     WhatsAppMessage? lastInbound;
     for (int i = _messages.length - 1; i >= 0; i--) {
       if (_messages[i].isInbound) {
@@ -231,11 +564,14 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   bool _shouldShowDateHeader(int index) {
-    if (index == 0) return true;
+    // Account for loading indicator at index 0
+    final msgIndex = _loadingMore ? index - 1 : index;
+    if (msgIndex < 0) return false;
+    if (msgIndex == 0) return true;
 
     try {
-      final currentDate = DateTime.parse(_messages[index].createdAt);
-      final previousDate = DateTime.parse(_messages[index - 1].createdAt);
+      final currentDate = DateTime.parse(_messages[msgIndex].createdAt);
+      final previousDate = DateTime.parse(_messages[msgIndex - 1].createdAt);
 
       return DateTime(currentDate.year, currentDate.month, currentDate.day) !=
           DateTime(previousDate.year, previousDate.month, previousDate.day);
@@ -244,14 +580,27 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _scrollToMessage(String messageId) {
+    final index = _messages.indexWhere((m) => m.id == messageId);
+    if (index == -1) return;
+    // Approximate scroll - each message ~80px
+    final offset = index * 80.0;
+    _scrollController.animateTo(
+      offset.clamp(0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final itemCount = _messages.length + (_loadingMore ? 1 : 0);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),
       body: Column(
         children: [
-          // Messages list
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -261,20 +610,38 @@ class _ChatScreenState extends State<ChatScreen> {
                 ? _buildEmptyState()
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 16,
-                    ),
-                    itemCount: _messages.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                    itemCount: itemCount,
                     itemBuilder: (context, index) {
+                      // Loading indicator at top
+                      if (_loadingMore && index == 0) {
+                        return const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        );
+                      }
+
+                      final msgIndex = _loadingMore ? index - 1 : index;
+                      final message = _messages[msgIndex];
+
                       return Column(
                         children: [
                           if (_shouldShowDateHeader(index))
-                            _buildDateHeader(_messages[index].createdAt),
-                          DynamicMessageBubble(
-                            message: _messages[index],
-                            contactName: widget.contact.displayName,
-                            mediaUrlCache: _mediaUrlCache,
+                            _buildDateHeader(message.createdAt),
+                          GestureDetector(
+                            onLongPress: () => _showMessageOptions(message),
+                            child: DynamicMessageBubble(
+                              message: message,
+                              contactName: widget.contact.displayName,
+                              mediaUrlCache: _mediaUrlCache,
+                              onTapReferencedMessage: _scrollToMessage,
+                            ),
                           ),
                         ],
                       );
@@ -290,6 +657,40 @@ class _ChatScreenState extends State<ChatScreen> {
           else
             _buildExpiredWarning(),
         ],
+      ),
+    );
+  }
+
+  void _showMessageOptions(WhatsAppMessage message) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: AppColors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.reply, color: AppColors.primary),
+              title: const Text('Reply'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _onReplyMessage(message);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -406,6 +807,9 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Reply preview
+              if (_replyingTo != null) _buildReplyPreview(),
+
               // Text input
               TextField(
                 onTapOutside: (p0) {
@@ -432,11 +836,18 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    // Template button
+                    IconButton(
+                      onPressed: _showTemplateList,
+                      icon: Icon(Icons.description_outlined, size: 20, color: AppColors.textSecondary),
+                      tooltip: 'Templates',
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 4),
                     // Attach button
                     TextButton.icon(
-                      onPressed: () {
-                        // TODO: Implement attach functionality
-                      },
+                      onPressed: _showAttachOptions,
                       icon: Icon(
                         Icons.attach_file,
                         size: 18,
@@ -492,6 +903,51 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildReplyPreview() {
+    final reply = _replyingTo!;
+    final senderName = reply.isOutbound ? 'You' : widget.contact.displayName;
+    final content = reply.content ?? '';
+    final preview = content.length > 60 ? '${content.substring(0, 60)}...' : content;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.grey.withValues(alpha: 0.1),
+        border: Border(left: BorderSide(color: AppColors.primary, width: 3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  senderName,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+                Text(
+                  preview,
+                  style: AppTextStyles.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _cancelReply,
+            icon: const Icon(Icons.close, size: 18),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
       ),
     );
   }
@@ -618,7 +1074,6 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Handle bar
               Container(
                 width: 40,
                 height: 4,
@@ -628,8 +1083,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-
-              // Profile picture
               CircleAvatar(
                 radius: 48,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -652,8 +1105,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
-
-              // Name
               Text(
                 contact.displayName,
                 style: AppTextStyles.heading1.copyWith(
@@ -661,15 +1112,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-
-              // Phone
               Text(
                 contact.formattedPhone,
                 style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textLight),
               ),
               const SizedBox(height: 24),
-
-              // Info cards
               _buildInfoCard('Role', user.role),
               if (user.userProvidedCompany != null)
                 _buildInfoCard('Company', user.userProvidedCompany!),
@@ -713,5 +1160,114 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
+  }
+}
+
+/// Template picker bottom sheet
+class _TemplatePicker extends StatefulWidget {
+  final List<Map<String, dynamic>> templates;
+  final void Function(Map<String, dynamic>) onSelect;
+
+  const _TemplatePicker({required this.templates, required this.onSelect});
+
+  @override
+  State<_TemplatePicker> createState() => _TemplatePickerState();
+}
+
+class _TemplatePickerState extends State<_TemplatePicker> {
+  String _searchQuery = '';
+
+  List<Map<String, dynamic>> get _filtered {
+    if (_searchQuery.isEmpty) return widget.templates;
+    final q = _searchQuery.toLowerCase();
+    return widget.templates.where((t) {
+      final name = (t['name'] ?? '').toString().toLowerCase();
+      return name.contains(q);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(top: 12, bottom: 12),
+            decoration: BoxDecoration(
+              color: AppColors.grey.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              onChanged: (v) => setState(() => _searchQuery = v),
+              decoration: InputDecoration(
+                hintText: 'Search templates...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: _filtered.isEmpty
+                ? Center(
+                    child: Text('No templates found', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textLight)),
+                  )
+                : ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _filtered.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final t = _filtered[index];
+                      final name = t['name'] ?? 'Unnamed';
+                      final language = t['language'] ?? '';
+                      final bodyText = _extractBodyText(t);
+
+                      return ListTile(
+                        title: Text(name, style: AppTextStyles.button),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (language.isNotEmpty)
+                              Text(language, style: AppTextStyles.caption),
+                            if (bodyText.isNotEmpty)
+                              Text(
+                                bodyText,
+                                style: AppTextStyles.bodySmall,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                        onTap: () => widget.onSelect(t),
+                        contentPadding: EdgeInsets.zero,
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _extractBodyText(Map<String, dynamic> template) {
+    final components = template['components'] as List<dynamic>?;
+    if (components == null) return '';
+    for (final comp in components) {
+      if (comp is Map<String, dynamic> && comp['type'] == 'BODY') {
+        return comp['text'] ?? '';
+      }
+    }
+    return '';
   }
 }

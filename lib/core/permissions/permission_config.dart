@@ -1,188 +1,144 @@
 import 'package:flutter/material.dart';
 import '../../config/huge_icons.dart';
 import '../../config/routes.dart';
+import 'permission_manager.dart';
 
-/// Represents a module/feature in the app with its associated permissions
+/// Represents a module/feature in the app with role-based visibility.
+///
+/// Matches the web frontend's approach: modules are hidden based on role,
+/// not granular permission tokens.
 class AppModule {
   final String name;
   final IconData icon;
   final String route;
-  final String? readPermission;
-  final String? createPermission;
-  final String? updatePermission;
-  final String? deletePermission;
+
+  /// Roles that should NOT see this module in the drawer.
+  /// Empty = visible to all roles.
+  final List<String> hiddenForRoles;
 
   const AppModule({
     required this.name,
     required this.icon,
     required this.route,
-    this.readPermission,
-    this.createPermission,
-    this.updatePermission,
-    this.deletePermission,
+    this.hiddenForRoles = const [],
   });
 
-  /// Check if user has any permission for this module
-  bool hasAnyPermission(List<String> userPermissions) {
-    // system.admin has access to everything
-    if (userPermissions.contains('system.admin')) return true;
-
-    final permissions = [
-      readPermission,
-      createPermission,
-      updatePermission,
-      deletePermission,
-    ].where((p) => p != null).cast<String>();
-
-    if (permissions.isEmpty) return true; // Public module
-
-    return permissions.any((p) => userPermissions.contains(p));
+  /// Check if this module is visible for the given role
+  bool isVisibleForRole(String role) {
+    if (role == 'ADMIN') return true; // Admin sees everything
+    return !hiddenForRoles.contains(role);
   }
 }
 
-/// All app modules configuration
+/// All app modules configuration — matches web frontend sidebar exactly
 class PermissionConfig {
   static const List<AppModule> allModules = [
+    // --- Core modules (visible to ADMIN + EMPLOYEE) ---
     AppModule(
       name: 'Brands',
       icon: HugeIcons.award03,
       route: AppRoutes.brands,
-      readPermission: 'brands.read',
-      createPermission: 'brands.create',
-      updatePermission: 'brands.update',
-      deletePermission: 'brands.delete',
     ),
     AppModule(
       name: 'Categories',
       icon: HugeIcons.orthogonalEdge,
       route: AppRoutes.categories,
-      readPermission: 'categories.read',
-      createPermission: 'categories.create',
-      updatePermission: 'categories.update',
-      deletePermission: 'categories.delete',
     ),
     AppModule(
       name: 'Themes',
       icon: HugeIcons.colors,
       route: AppRoutes.themes,
-      readPermission: 'themes.read',
-      createPermission: 'themes.create',
-      updatePermission: 'themes.update',
-      deletePermission: 'themes.delete',
     ),
     AppModule(
       name: 'Tags',
       icon: HugeIcons.tag01,
       route: AppRoutes.tags,
-      readPermission: 'tags.read',
-      createPermission: 'tags.create',
-      updatePermission: 'tags.update',
-      deletePermission: 'tags.delete',
     ),
     AppModule(
       name: 'Products',
       icon: HugeIcons.package,
       route: AppRoutes.products,
-      readPermission: 'products.read',
-      createPermission: 'products.create',
-      updatePermission: 'products.update',
-      deletePermission: 'products.delete',
     ),
     AppModule(
       name: 'Activities',
       icon: HugeIcons.chartColumn,
       route: AppRoutes.activities,
-      readPermission: 'activities.read',
-      createPermission: 'activities.create',
-      updatePermission: 'activities.update',
-      deletePermission: 'activities.delete',
     ),
     AppModule(
       name: 'Activity Types',
       icon: HugeIcons.share07,
       route: AppRoutes.activityTypes,
-      readPermission: 'activity-types.read',
-      createPermission: 'activity-types.create',
-      updatePermission: 'activity-types.update',
-      deletePermission: 'activity-types.delete',
+      hiddenForRoles: ['EMPLOYEE'],
     ),
     AppModule(
       name: 'Inquiries',
       icon: HugeIcons.messageQuestion,
       route: AppRoutes.inquiries,
-      readPermission: 'inquiries.read',
-      createPermission: 'inquiries.create',
-      updatePermission: 'inquiries.update',
-      deletePermission: 'inquiries.delete',
     ),
     AppModule(
       name: 'Groups',
       icon: HugeIcons.userGroup,
       route: AppRoutes.groups,
-      readPermission: 'groups.read',
-      createPermission: 'groups.create',
-      updatePermission: 'groups.update',
-      deletePermission: 'groups.delete',
     ),
     AppModule(
       name: 'Users',
       icon: HugeIcons.userMultiple02,
       route: AppRoutes.users,
-      readPermission: 'users.read',
-      createPermission: 'users.create',
-      updatePermission: 'users.update',
-      deletePermission: 'users.delete',
     ),
     AppModule(
       name: 'Companies',
       icon: HugeIcons.bandage,
       route: AppRoutes.companies,
-      readPermission: 'companies.read',
-      createPermission: 'companies.create',
-      updatePermission: 'companies.update',
-      deletePermission: 'companies.delete',
     ),
+
+    // --- WhatsApp modules ---
     AppModule(
       name: 'Messages',
       icon: HugeIcons.message01,
       route: AppRoutes.messages,
-      // Messages is accessible to all authenticated users
     ),
     AppModule(
       name: 'Template Categories',
       icon: Icons.folder_outlined,
       route: AppRoutes.templateCategories,
-      readPermission: 'whatsapp.read',
-      createPermission: 'whatsapp.create',
-      updatePermission: 'whatsapp.update',
-      deletePermission: 'whatsapp.delete',
+      hiddenForRoles: ['EMPLOYEE'],
     ),
     AppModule(
       name: 'Auto Replies',
       icon: Icons.reply_all_outlined,
       route: AppRoutes.autoReplies,
-      readPermission: 'whatsapp.read',
-      createPermission: 'whatsapp.create',
-      updatePermission: 'whatsapp.update',
-      deletePermission: 'whatsapp.delete',
+      hiddenForRoles: ['EMPLOYEE'],
     ),
     AppModule(
       name: 'Campaigns',
       icon: Icons.campaign_outlined,
       route: AppRoutes.campaigns,
-      readPermission: 'whatsapp.read',
-      createPermission: 'whatsapp.create',
-      updatePermission: 'whatsapp.update',
-      deletePermission: 'whatsapp.delete',
+      // Visible to EMPLOYEE (view-only) — entity permissions handle CUD blocking
+    ),
+    AppModule(
+      name: 'WA Analytics',
+      icon: Icons.analytics_outlined,
+      route: AppRoutes.whatsappAnalytics,
+      hiddenForRoles: ['EMPLOYEE', 'CUSTOMER'],
+    ),
+    AppModule(
+      name: 'WA Templates',
+      icon: Icons.description_outlined,
+      route: AppRoutes.whatsappTemplates,
+      // Visible to both ADMIN and EMPLOYEE
     ),
   ];
 
-  /// Get modules filtered by user permissions
+  /// Get modules visible for the current user's role
+  static List<AppModule> getVisibleModules() {
+    final role = PermissionManager().role;
+    if (role == 'ADMIN') return allModules.toList();
+    return allModules.where((m) => m.isVisibleForRole(role)).toList();
+  }
+
+  /// Legacy: Get modules filtered by user permissions
+  /// Still works but now delegates to role-based filtering
   static List<AppModule> getAccessibleModules(List<String> userPermissions) {
-    return allModules.isNotEmpty
-        ? allModules
-              .where((module) => module.hasAnyPermission(userPermissions))
-              .toList()
-        : [];
+    return getVisibleModules();
   }
 }

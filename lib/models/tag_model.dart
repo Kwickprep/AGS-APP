@@ -97,6 +97,16 @@ class TagModel implements GenericModel {
     }
 
     // Extract name from creator/updater object (firstName + lastName)
+
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return value['name']?.toString() ?? value['id']?.toString() ?? '';
+      }
+      return value.toString();
+    }
+
     String extractCreatorName(dynamic value) {
       if (value == null) return '';
       if (value is Map<String, dynamic>) {

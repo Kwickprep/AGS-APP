@@ -36,6 +36,8 @@ import '../screens/whatsapp_auto_replies/auto_reply_create_screen.dart';
 import '../screens/whatsapp_campaigns/campaign_screen.dart';
 import '../screens/whatsapp_campaigns/campaign_create_screen.dart';
 import '../screens/users/user_detail/user_detail_screen.dart';
+import '../screens/whatsapp_analytics/analytics_screen.dart';
+import '../screens/whatsapp_templates/template_browse_screen.dart';
 
 class AppRoutes {
   static const String startup = '/startup';
@@ -73,6 +75,8 @@ class AppRoutes {
   static const String campaigns = '/whatsapp/campaigns';
   static const String createCampaign = '/whatsapp/campaigns/create';
   static const String userDetail = '/users/detail';
+  static const String whatsappAnalytics = '/whatsapp/analytics';
+  static const String whatsappTemplates = '/whatsapp/templates';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -206,6 +210,8 @@ class AppRoutes {
           data: args?['data'],
         );
       },
+      whatsappAnalytics: (context) => const AnalyticsScreen(),
+      whatsappTemplates: (context) => const TemplateBrowseScreen(),
     };
   }
 

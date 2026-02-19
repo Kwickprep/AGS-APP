@@ -94,6 +94,16 @@ class ActivityTypeModel implements GenericModel {
     }
 
     // Extract creator name from creator object
+
+    String extractString(dynamic value) {
+      if (value == null) return '';
+      if (value is String) return value;
+      if (value is Map<String, dynamic>) {
+        return value['name']?.toString() ?? value['id']?.toString() ?? '';
+      }
+      return value.toString();
+    }
+
     String extractCreatorName(dynamic value) {
       if (value == null) return '';
       if (value is Map<String, dynamic>) {

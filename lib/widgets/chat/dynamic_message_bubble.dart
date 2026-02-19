@@ -11,12 +11,14 @@ class DynamicMessageBubble extends StatelessWidget {
   final WhatsAppMessage message;
   final String? contactName;
   final Map<String, String>? mediaUrlCache;
+  final void Function(String messageId)? onTapReferencedMessage;
 
   const DynamicMessageBubble({
     super.key,
     required this.message,
     this.contactName,
     this.mediaUrlCache,
+    this.onTapReferencedMessage,
   });
 
   @override
@@ -84,6 +86,7 @@ class DynamicMessageBubble extends StatelessWidget {
           isOutbound: isOutbound,
           contactName: contactName,
           mediaUrlCache: mediaUrlCache,
+          onTapReferencedMessage: onTapReferencedMessage,
         );
       case 'interactive_list':
         return _InteractiveListMessage(
@@ -91,6 +94,7 @@ class DynamicMessageBubble extends StatelessWidget {
           metadata: metadata as InteractiveListMetadata,
           isOutbound: isOutbound,
           contactName: contactName,
+          onTapReferencedMessage: onTapReferencedMessage,
         );
       case 'button':
         return _ButtonResponseMessage(
@@ -98,6 +102,7 @@ class DynamicMessageBubble extends StatelessWidget {
           metadata: metadata as ButtonResponseMetadata,
           isOutbound: isOutbound,
           contactName: contactName,
+          onTapReferencedMessage: onTapReferencedMessage,
         );
       case 'interactive':
         return _TextMessage(
@@ -105,6 +110,7 @@ class DynamicMessageBubble extends StatelessWidget {
           isOutbound: isOutbound,
           contactName: contactName,
           mediaUrlCache: mediaUrlCache,
+          onTapReferencedMessage: onTapReferencedMessage,
         );
       default:
         return _TextMessage(
@@ -112,6 +118,7 @@ class DynamicMessageBubble extends StatelessWidget {
           isOutbound: isOutbound,
           contactName: contactName,
           mediaUrlCache: mediaUrlCache,
+          onTapReferencedMessage: onTapReferencedMessage,
         );
     }
   }
@@ -163,12 +170,14 @@ class _TextMessage extends StatelessWidget {
   final bool isOutbound;
   final String? contactName;
   final Map<String, String>? mediaUrlCache;
+  final void Function(String messageId)? onTapReferencedMessage;
 
   const _TextMessage({
     required this.message,
     required this.isOutbound,
     this.contactName,
     this.mediaUrlCache,
+    this.onTapReferencedMessage,
   });
 
   String? _getMediaUrl() {
@@ -215,6 +224,7 @@ class _TextMessage extends StatelessWidget {
                 _ReferencedMessageWidget(
                   referencedMessage: message.referencedMessage!,
                   isOutbound: isOutbound,
+                  onTap: onTapReferencedMessage,
                 ),
               if (message.content != null && message.content!.isNotEmpty)
                 Align(
@@ -242,6 +252,7 @@ class _InteractiveButtonMessage extends StatelessWidget {
   final bool isOutbound;
   final String? contactName;
   final Map<String, String>? mediaUrlCache;
+  final void Function(String messageId)? onTapReferencedMessage;
 
   const _InteractiveButtonMessage({
     required this.message,
@@ -249,6 +260,7 @@ class _InteractiveButtonMessage extends StatelessWidget {
     required this.isOutbound,
     this.contactName,
     this.mediaUrlCache,
+    this.onTapReferencedMessage,
   });
 
   String? _getImageUrl() {
@@ -312,6 +324,7 @@ class _InteractiveButtonMessage extends StatelessWidget {
                 _ReferencedMessageWidget(
                   referencedMessage: message.referencedMessage!,
                   isOutbound: isOutbound,
+                  onTap: onTapReferencedMessage,
                 ),
               if (message.content != null && message.content!.isNotEmpty)
                 Text(
@@ -355,12 +368,14 @@ class _InteractiveListMessage extends StatelessWidget {
   final InteractiveListMetadata metadata;
   final bool isOutbound;
   final String? contactName;
+  final void Function(String messageId)? onTapReferencedMessage;
 
   const _InteractiveListMessage({
     required this.message,
     required this.metadata,
     required this.isOutbound,
     this.contactName,
+    this.onTapReferencedMessage,
   });
 
   @override
@@ -386,6 +401,7 @@ class _InteractiveListMessage extends StatelessWidget {
                 _ReferencedMessageWidget(
                   referencedMessage: message.referencedMessage!,
                   isOutbound: isOutbound,
+                  onTap: onTapReferencedMessage,
                 ),
               if (message.content != null && message.content!.isNotEmpty)
                 Text(
@@ -419,12 +435,14 @@ class _ButtonResponseMessage extends StatelessWidget {
   final ButtonResponseMetadata metadata;
   final bool isOutbound;
   final String? contactName;
+  final void Function(String messageId)? onTapReferencedMessage;
 
   const _ButtonResponseMessage({
     required this.message,
     required this.metadata,
     required this.isOutbound,
     this.contactName,
+    this.onTapReferencedMessage,
   });
 
   @override
@@ -448,6 +466,7 @@ class _ButtonResponseMessage extends StatelessWidget {
                 _ReferencedMessageWidget(
                   referencedMessage: message.referencedMessage!,
                   isOutbound: isOutbound,
+                  onTap: onTapReferencedMessage,
                 ),
               // Button clicked label
               Container(
@@ -887,10 +906,12 @@ class _ListButton extends StatelessWidget {
 class _ReferencedMessageWidget extends StatelessWidget {
   final WhatsAppMessage referencedMessage;
   final bool isOutbound;
+  final void Function(String messageId)? onTap;
 
   const _ReferencedMessageWidget({
     required this.referencedMessage,
     required this.isOutbound,
+    this.onTap,
   });
 
   String _getSenderName() {
@@ -903,44 +924,45 @@ class _ReferencedMessageWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: isOutbound
-            ? Colors.black.withValues(alpha: 0.05)
-            : AppColors.grey.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border(
-          left: BorderSide(
-            color: AppColors.primary,
-            width: 3,
+    return GestureDetector(
+      onTap: onTap != null ? () => onTap!(referencedMessage.id) : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isOutbound
+              ? Colors.black.withValues(alpha: 0.05)
+              : AppColors.grey.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border(
+            left: BorderSide(
+              color: AppColors.primary,
+              width: 3,
+            ),
           ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Sender name
-          Text(
-            _getSenderName(),
-            style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: FontWeight.w600,
-              color: isOutbound ? AppColors.white : AppColors.primary,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _getSenderName(),
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: isOutbound ? AppColors.white : AppColors.primary,
+              ),
             ),
-          ),
-          const SizedBox(height: 2),
-          // Message content
-          Text(
-            referencedMessage.content ?? '',
-            style: AppTextStyles.buttonSmall.copyWith(
-              fontWeight: FontWeight.normal,
-              color: AppColors.textLight,
+            const SizedBox(height: 2),
+            Text(
+              referencedMessage.content ?? '',
+              style: AppTextStyles.buttonSmall.copyWith(
+                fontWeight: FontWeight.normal,
+                color: AppColors.textLight,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

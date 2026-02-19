@@ -11,7 +11,6 @@ import '../../widgets/common/filter_bottom_sheet.dart';
 import '../../widgets/common/sort_bottom_sheet.dart';
 import '../../widgets/common/details_bottom_sheet.dart';
 import '../../widgets/common/filter_sort_bar.dart';
-import '../../widgets/permission_widget.dart';
 import '../../utils/date_formatter.dart';
 
 /// Campaign list screen with full features: filter, sort, pagination, and details
@@ -192,19 +191,16 @@ class _CampaignScreenState extends State<CampaignScreen> {
         centerTitle: true,
         actions: [
           // Only show "Add" button if user has create permission
-          PermissionWidget(
-            permission: 'whatsapp.create',
-            child: IconButton(
+          if (PermissionChecker.canCreateCampaign)
+            IconButton(
               onPressed: () async {
                 final result = await Navigator.pushNamed(context, '/whatsapp-campaigns/create');
-                // Refresh the list if a record was created
                 if (result == true) {
                   _loadRecords();
                 }
               },
               icon: const Icon(Icons.add),
             ),
-          ),
         ],
         bottom: const PreferredSize(
           preferredSize: Size(double.infinity, 1),
@@ -394,7 +390,7 @@ class _CampaignScreenState extends State<CampaignScreen> {
       createdAt: formatDate(record.createdAt),
       updatedBy: record.updatedBy,
       updatedAt: record.updatedAt != null ? formatDate(record.updatedAt!) : null,
-      onEdit: PermissionChecker.canUpdateWhatsApp
+      onEdit: PermissionChecker.canEditCampaign
           ? () async {
               final result = await Navigator.pushNamed(
                 context,
@@ -406,8 +402,8 @@ class _CampaignScreenState extends State<CampaignScreen> {
               }
             }
           : null,
-      onDelete: PermissionChecker.canDeleteWhatsApp ? () => _confirmDelete(record) : null,
-      onView: (!record.hasRun && !record.isRunning && PermissionChecker.canSendWhatsApp)
+      onDelete: PermissionChecker.canDeleteCampaign ? () => _confirmDelete(record) : null,
+      onView: (!record.hasRun && !record.isRunning && PermissionChecker.canExecuteCampaign)
           ? () => _confirmExecute(record)
           : null,
       onTap: () => _showDetails(record),
